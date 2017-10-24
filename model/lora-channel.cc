@@ -77,7 +77,7 @@ LoraChannel::LoraChannel (Ptr<PropagationLossModel> loss,
 void
 LoraChannel::Add (Ptr<LoraPhy> phy)
 {
-  NS_LOG_FUNCTION (this << phy);
+  NS_LOG_FUNCTION (this << phy << "LORA CHANNEL ADD");
 
   // Add the new phy to the vector
   m_phyList.push_back (phy);

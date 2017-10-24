@@ -59,6 +59,8 @@ LoraNetDevice::LoraNetDevice () :
   m_phy (0),
   m_mac (0),
   m_configComplete (0)
+  
+  
 {
   NS_LOG_FUNCTION_NOARGS ();
 }

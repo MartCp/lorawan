@@ -98,6 +98,7 @@ Ptr<LoraChannel>
 LoraPhy::GetChannel (void) const
 {
   NS_LOG_FUNCTION_NOARGS ();
+  
 
   return m_channel;
 }

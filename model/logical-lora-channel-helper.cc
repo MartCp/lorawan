@@ -125,7 +125,7 @@ LogicalLoraChannelHelper::AddSubBand (double firstFrequency,
                                       double lastFrequency, double dutyCycle,
                                       double maxTxPowerDbm)
 {
-  NS_LOG_FUNCTION (this << firstFrequency << lastFrequency);
+  NS_LOG_FUNCTION (this << "ADDING SUBBAND: First freq: " << firstFrequency << "Last freq: "<<lastFrequency);
 
   Ptr<SubBand> subBand = Create<SubBand> (firstFrequency, lastFrequency,
                                           dutyCycle, maxTxPowerDbm);

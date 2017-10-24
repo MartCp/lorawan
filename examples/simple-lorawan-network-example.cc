@@ -59,7 +59,7 @@ int main (int argc, char *argv[])
   // Create the lora channel object
   Ptr<LogDistancePropagationLossModel> loss = CreateObject<LogDistancePropagationLossModel> ();
   loss->SetPathLossExponent (3.76);
-  loss->SetReference (1, 8.1);
+  loss->SetReference (1, 8.1);  //sets: at distance 1 the path loss must be 8.1
 
   Ptr<PropagationDelayModel> delay = CreateObject<ConstantSpeedPropagationDelayModel> ();
 
@@ -73,7 +73,7 @@ int main (int argc, char *argv[])
 
   MobilityHelper mobility;
   Ptr<ListPositionAllocator> allocator = CreateObject<ListPositionAllocator> ();
-  allocator->Add (Vector (1000,0,0));
+  allocator->Add (Vector (50,0,0));
   allocator->Add (Vector (0,0,0));
   mobility.SetPositionAllocator (allocator);
   mobility.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
@@ -92,11 +92,11 @@ int main (int argc, char *argv[])
   *  Create End Devices  *
   ************************/
 
-  NS_LOG_INFO ("Creating the end device...");
+  NS_LOG_INFO ("1- Creating the end device...");
 
   // Create a set of nodes
   NodeContainer endDevices;
-  endDevices.Create (1);
+  endDevices.Create (2);
 
   // Assign a mobility model to the node
   mobility.Install (endDevices);
@@ -106,15 +106,26 @@ int main (int argc, char *argv[])
   macHelper.SetDeviceType (LoraMacHelper::ED);
   helper.Install (phyHelper, macHelper, endDevices);
 
+  
+  uint32_t id= endDevices.Get(0)->GetId();
+  Vector pos= endDevices.Get(0)->GetObject<MobilityModel>()->GetPosition();
+
+  NS_LOG_INFO ("1- End device id: " << id);
+  NS_LOG_INFO ("1- End device position: " << pos);
+
+  /* come vedere la posizione del nodo in questo momento?? */
+
+  NS_LOG_INFO ("1- End device created with PHY, MAC, mobility model. \n ");
+
   /*********************
   *  Create Gateways  *
   *********************/
 
-  NS_LOG_INFO ("Creating the gateway...");
+  NS_LOG_INFO ("2- Creating the gateway (one)...");
   NodeContainer gateways;
   gateways.Create (1);
 
-  mobility.SetPositionAllocator (allocator);
+  //mobility.SetPositionAllocator (allocator); /**** questa non serve perchè era già stato settato?*/
   mobility.Install (gateways);
 
   // Create a netdevice for each gateway
@@ -122,20 +133,83 @@ int main (int argc, char *argv[])
   macHelper.SetDeviceType (LoraMacHelper::GW);
   helper.Install (phyHelper, macHelper, gateways);
 
+  NS_LOG_INFO ("2- Gateway created with PHY, MAC, mobility model. \n ");
+
+
+  /***************************************
+  *  Set DataRate according to rx power  *
+  ****************************************/
+
+  macHelper.SetSpreadingFactorsUp(endDevices, gateways, channel);
+
+
   /*********************************************
-  *  Install applications on the end devices  *
-  *********************************************/
+  *  Install applications on the end devices   *
+  **********************************************/
 
   OneShotSenderHelper oneShotSenderHelper;
   oneShotSenderHelper.SetSendTime (Seconds (10));
+  OneShotSenderHelper oneShotSenderHelper2;
+  oneShotSenderHelper2.SetSendTime (Seconds (18));
 
   oneShotSenderHelper.Install (endDevices);
+  oneShotSenderHelper2.Install (endDevices);
+
+
+
+  /*******************
+  *    Downlink tx   *     //make a tx from GW to ED (will be used for setting params)
+  ********************/
+ 
+  //Set ED's address
+  LoraDeviceAddress addr= LoraDeviceAddress(123);     // Create the address
+  Ptr<LoraMac> edMac= endDevices.Get(0)->GetDevice(0)->GetObject<LoraNetDevice>()->GetMac();
+  Ptr<EndDeviceLoraMac> edLoraMac = edMac->GetObject<EndDeviceLoraMac>();
+  edLoraMac-> SetDeviceAddress(addr);
+
+  
+  Ptr<LoraPhy> gwPhy = gateways.Get(0)->GetDevice(0)->GetObject<LoraNetDevice>()->GetPhy();
+  
+  NS_LOG_INFO ("\n Creating Packet for Downlink transmission...");
+
+  Ptr<Packet> reply= Create<Packet>(5);
+
+  LoraFrameHeader frameHdr;
+  frameHdr.SetAsDownlink();
+  frameHdr.SetAddress(addr);    // indirizzo ED dst
+  frameHdr.SetAdr(true);        // ADR flag
+  //frameHdr.SetFPort(0);       //FPort=0 when there are only MAC commands It is 0 by default
+  frameHdr.AddLinkAdrReq(0, 0, std::list<int>(1,1), 1);
+  reply->AddHeader(frameHdr);
+  NS_LOG_INFO ("Added frame header of size " << frameHdr.GetSerializedSize () <<
+                   " bytes");
+
+  LoraMacHeader macHdr;
+  macHdr.SetMType(LoraMacHeader::UNCONFIRMED_DATA_DOWN);
+
+  reply->AddHeader(macHdr);
+
+  NS_LOG_INFO ("\n Setting parameters for Downlink Transmission...");
+
+  LoraTxParameters params;
+  params.sf = 7;
+  params.headerDisabled = 1;
+  params.codingRate = 1;
+  params.bandwidthHz =  125000; //125 kHz
+  params.nPreamble = 8;
+  params.crcEnabled = 1;
+  params.lowDataRateOptimizationEnabled = 0;
+
+
+  //gwPhy.Send(reply, params, 868.3, 27); 
+  Simulator::Schedule(Seconds(11.1), &LoraPhy::Send, gwPhy, reply, params, 868.3, 27);
+
 
   /****************
   *  Simulation  *
   ****************/
 
-  Simulator::Stop (Hours (2));
+  Simulator::Stop (Hours (1));
 
   Simulator::Run ();
 

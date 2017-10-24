@@ -80,6 +80,7 @@ EndDeviceLoraMac::EndDeviceLoraMac () :
   m_closeWindow (EventId ()),               // Initialize as the default eventId
   // m_secondReceiveWindow (EventId ()),       // Initialize as the default eventId
   // m_secondReceiveWindowDataRate (0),        // LoraWAN default
+  m_address(LoraDeviceAddress(0)),
   m_rx1DrOffset (0),                         // LoraWAN default
   m_lastKnownLinkMargin (0),
   m_lastKnownGatewayCount (0),
@@ -171,6 +172,7 @@ EndDeviceLoraMac::Send (Ptr<Packet> packet)
       // Wake up PHY layer and directly send the packet
 
       // Make sure we can transmit at the current power on this channel
+      NS_LOG_DEBUG("m_txPower is: " << m_txPower << " GetTxPowerForChannel is " << m_channelHelper.GetTxPowerForChannel (txChannel));
       NS_ASSERT (m_txPower <= m_channelHelper.GetTxPowerForChannel (txChannel));
       m_phy->GetObject<EndDeviceLoraPhy> ()->SwitchToStandby ();
       m_phy->Send (packet, params, txChannel->GetFrequency (), m_txPower);
@@ -674,6 +676,7 @@ EndDeviceLoraMac::OnLinkAdrReq (uint8_t dataRate, uint8_t txPower,
   NS_LOG_DEBUG ("SF: " << unsigned (sf) << ", BW: " << bw);
   if (sf == 0 || bw == 0)
     {
+      NS_LOG_DEBUG ("Data rate non valid");
       dataRateOk = false;
     }
 
@@ -697,6 +700,7 @@ EndDeviceLoraMac::OnLinkAdrReq (uint8_t dataRate, uint8_t txPower,
 
       if (!foundAvailableChannel)
         {
+          NS_LOG_DEBUG ("Available channel not found");
           dataRateOk = false;
         }
     }
@@ -881,7 +885,7 @@ EndDeviceLoraMac::GetSecondReceiveWindowDataRate (void)
 }
 
 void
-EndDeviceLoraMac::SetSecondReceiveWindowFrequency (double frequencyMHz)
+EndDeviceLoraMac::SetSecondReceiveWindowFrequency(double frequencyMHz)
 {
   m_secondReceiveWindowFrequency = frequencyMHz;
 }

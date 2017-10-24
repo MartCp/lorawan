@@ -267,7 +267,7 @@ LoraInterferenceHelper::IsDestroyedByInterference
       // event if it's the same that we want to analyze.
       if (!(interferer->GetFrequency () == frequency) || interferer == event)
         {
-          NS_LOG_DEBUG ("Different channel");
+          NS_LOG_DEBUG ("Different channel or same event");
           it++;
           continue;   // Continues from the first line inside the for cycle
         }
@@ -298,6 +298,7 @@ LoraInterferenceHelper::IsDestroyedByInterference
       double interferenceEnergy = overlap.GetSeconds () * interfererPowerW;
       cumulativeInterferenceEnergy.at (unsigned(interfererSf)-7) += interferenceEnergy;
       NS_LOG_DEBUG ("Interferer power in W: " << interfererPowerW);
+      NS_LOG_DEBUG ("Interferer power in dBm: " << interfererPower);
       NS_LOG_DEBUG ("Interference energy: " << interferenceEnergy);
       it++;
     }
@@ -316,7 +317,7 @@ LoraInterferenceHelper::IsDestroyedByInterference
       NS_LOG_DEBUG ("Signal energy: " << signalEnergy);
 
       // Check whether the packet survives the interference of this SF
-      double snirIsolation = collisionSnir [unsigned(sf)-7][unsigned(currentSf)-7];
+      double snirIsolation = collisionSnir [unsigned(sf)-7][unsigned(currentSf)-7]; /*def at line 155*/
       NS_LOG_DEBUG ("The needed isolation to survive is "
                     << snirIsolation << " dB");
       double snir = 10*log10 (signalEnergy/cumulativeInterferenceEnergy.at (unsigned(currentSf)-7));
@@ -325,18 +326,18 @@ LoraInterferenceHelper::IsDestroyedByInterference
       if (snir >= snirIsolation)
         {
           // Move on and check the rest of the interferers
-          NS_LOG_DEBUG ("Packet survived interference");
+          NS_LOG_DEBUG ("Packet survived interference with SF" << unsigned(currentSf) << "\n");
         }
       else
         {
           NS_LOG_DEBUG ("Packet destroyed by interference with SF" <<
-                        unsigned(currentSf));
+                        unsigned(currentSf) << "\n");
 
           return currentSf;
         }
     }
   // If we get to here, it means that the packet survived all interference
-  NS_LOG_DEBUG ("Packet survived all interference");
+  NS_LOG_DEBUG ("Packet survived all interference \n");
 
   // Since the packet was not destroyed, we return 0.
   return uint8_t (0);

@@ -49,9 +49,10 @@ LoraHelper::Install ( const LoraPhyHelper &phyHelper,
 
       // Create the LoraNetDevice
       Ptr<LoraNetDevice> device = CreateObject<LoraNetDevice> ();
-
+      
       // Create the PHY
       Ptr<LoraPhy> phy = phyHelper.Create (node, device);
+
       NS_ASSERT (phy != 0);
       device->SetPhy (phy);
       NS_LOG_DEBUG ("Done creating the PHY");
@@ -65,7 +66,7 @@ LoraHelper::Install ( const LoraPhyHelper &phyHelper,
 
       node->AddDevice (device);
       devices.Add (device);
-      NS_LOG_DEBUG ("node=" << node << ", mob=" << node->GetObject<MobilityModel> ());
+      NS_LOG_DEBUG ("node=" << node << ", mob=" << node->GetObject<MobilityModel> ()->GetPosition());
     }
   return devices;
 }

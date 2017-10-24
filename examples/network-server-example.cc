@@ -77,14 +77,14 @@ int main (int argc, char *argv[])
   // End Device mobility
   MobilityHelper mobilityEd, mobilityGw;
   Ptr<ListPositionAllocator> positionAllocEd = CreateObject<ListPositionAllocator> ();
+  positionAllocEd->Add (Vector (10, 0.0, 0.0));
   positionAllocEd->Add (Vector (10.0, 0.0, 0.0));
-  positionAllocEd->Add (Vector (2000.0, 0.0, 0.0));
   mobilityEd.SetPositionAllocator (positionAllocEd);
-  // mobilityEd.SetPositionAllocator ("ns3::UniformDiscPositionAllocator",
-  //                                "rho", DoubleValue (7500),
-  //                                "X", DoubleValue (0.0),
-  //                                "Y", DoubleValue (0.0));
-  mobilityEd.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
+  /*mobilityEd.SetPositionAllocator ("ns3::UniformDiscPositionAllocator",
+                                  "rho", DoubleValue (7500),
+                                    "X", DoubleValue (0.0),
+                                  "Y", DoubleValue (0.0));
+  mobilityEd.SetMobilityModel ("ns3::ConstantPositionMobilityModel"); */
 
   // Gateway mobility
   Ptr<ListPositionAllocator> positionAllocGw = CreateObject<ListPositionAllocator> ();
@@ -108,7 +108,7 @@ int main (int argc, char *argv[])
   /////////////
 
   NodeContainer endDevices;
-  endDevices.Create (1);
+  endDevices.Create (2);
   mobilityEd.Install (endDevices);
 
   // Create a LoraDeviceAddressGenerator
@@ -123,16 +123,21 @@ int main (int argc, char *argv[])
   macHelper.SetRegion (LoraMacHelper::EU);
   helper.Install (phyHelper, macHelper, endDevices);
 
+
   // Install applications in EDs
   OneShotSenderHelper oneShotHelper = OneShotSenderHelper ();
   oneShotHelper.SetSendTime (Seconds (4));
   oneShotHelper.Install (endDevices.Get (0));
-  // oneShotHelper.SetSendTime (Seconds (10));
-  // oneShotHelper.Install (endDevices.Get (1));
-  // oneShotHelper.SetSendTime (Seconds (8));
-  // oneShotHelper.Install(endDevices.Get (1));
-  // oneShotHelper.SetSendTime (Seconds (12));
-  // oneShotHelper.Install(endDevices.Get (2));
+  oneShotHelper.SetSendTime (Seconds (12));
+  oneShotHelper.Install (endDevices.Get (1));
+  //oneShotHelper.SetSendTime (Seconds (8));
+  //oneShotHelper.Install(endDevices.Get (2));
+  //oneShotHelper.SetSendTime (Seconds (16));
+  //oneShotHelper.Install(endDevices.Get (2));
+
+  Vector pos= endDevices.Get(0)-> GetObject<MobilityModel>()->GetPosition();
+  NS_LOG_DEBUG("Node Position is: " << pos);
+ 
 
   ////////////////
   // Create GWs //
@@ -147,8 +152,10 @@ int main (int argc, char *argv[])
   macHelper.SetDeviceType (LoraMacHelper::GW);
   helper.Install (phyHelper, macHelper, gateways);
 
-  // Set spreading factors up
-  macHelper.SetSpreadingFactorsUp (endDevices, gateways, channel);
+  // Set spreading factors up: SF set during the configuration, optimized on the distance ED-GW
+  //macHelper.SetSpreadingFactorsUp (endDevices, gateways, channel);
+  
+
 
   ////////////
   // Create NS
@@ -166,6 +173,13 @@ int main (int argc, char *argv[])
   // Install the Forwarder application on the gateways
   ForwarderHelper forwarderHelper;
   forwarderHelper.Install (gateways);
+
+  /*Ptr<EndDeviceLoraPhy> phy= endDevices.Get(0)->GetDevice(0)-> GetObject<LoraNetDevice>()-> GetPhy()->GetObject<EndDeviceLoraPhy>();
+  phy->SetFrequency(868.1);
+  phy->SetSpreadingFactor(7);
+  Ptr<EndDeviceLoraPhy> phy2= endDevices.Get(1)->GetDevice(0)-> GetObject<LoraNetDevice>()-> GetPhy()->GetObject<EndDeviceLoraPhy>();
+  phy2->SetFrequency(868.1);
+  phy2->SetSpreadingFactor(7);*/
 
   // Start simulation
   Simulator::Stop (Seconds (100));

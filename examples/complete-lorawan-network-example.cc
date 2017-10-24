@@ -71,7 +71,7 @@ void
 CheckReceptionByAllGWsComplete (std::map<Ptr<Packet const>, PacketStatus>::iterator it)
 {
   // Check whether this packet is received by all gateways
-  if ((*it).second.outcomeNumber == nGateways)
+  if ((*it).second.outcomeNumber == nGateways)		//select pair Pkt-PktStatus, get the 2° element (PacketStatus) and take its param outcomeNumber.
     {
       // Update the statistics
       PacketStatus status = (*it).second;
@@ -113,7 +113,7 @@ CheckReceptionByAllGWsComplete (std::map<Ptr<Packet const>, PacketStatus>::itera
 void
 TransmissionCallback (Ptr<Packet const> packet, uint32_t systemId)
 {
-  // NS_LOG_INFO ("Transmitted a packet from device " << systemId);
+  NS_LOG_INFO ("Transmitted a packet from device " << systemId);
   // Create a packetStatus
   PacketStatus status;
   status.packet = packet;
@@ -128,7 +128,7 @@ void
 PacketReceptionCallback (Ptr<Packet const> packet, uint32_t systemId)
 {
   // Remove the successfully received packet from the list of sent ones
-  // NS_LOG_INFO ("A packet was successfully received at gateway " << systemId);
+  NS_LOG_INFO ("A packet was successfully received at gateway " << systemId);
 
   std::map<Ptr<Packet const>, PacketStatus>::iterator it = packetTracker.find (packet);
   (*it).second.outcomes.at (systemId - nDevices) = RECEIVED;
@@ -140,7 +140,7 @@ PacketReceptionCallback (Ptr<Packet const> packet, uint32_t systemId)
 void
 InterferenceCallback (Ptr<Packet const> packet, uint32_t systemId)
 {
-  // NS_LOG_INFO ("A packet was lost because of interference at gateway " << systemId);
+  NS_LOG_INFO ("A packet was lost because of interference at gateway " << systemId);
 
   std::map<Ptr<Packet const>, PacketStatus>::iterator it = packetTracker.find (packet);
   (*it).second.outcomes.at (systemId - nDevices) = INTERFERED;
@@ -152,7 +152,7 @@ InterferenceCallback (Ptr<Packet const> packet, uint32_t systemId)
 void
 NoMoreReceiversCallback (Ptr<Packet const> packet, uint32_t systemId)
 {
-  // NS_LOG_INFO ("A packet was lost because there were no more receivers at gateway " << systemId);
+  NS_LOG_INFO ("A packet was lost because there were no more receivers at gateway " << systemId);
 
   std::map<Ptr<Packet const>, PacketStatus>::iterator it = packetTracker.find (packet);
   (*it).second.outcomes.at (systemId - nDevices) = NO_MORE_RECEIVERS;
@@ -164,7 +164,7 @@ NoMoreReceiversCallback (Ptr<Packet const> packet, uint32_t systemId)
 void
 UnderSensitivityCallback (Ptr<Packet const> packet, uint32_t systemId)
 {
-  // NS_LOG_INFO ("A packet arrived at the gateway under sensitivity at gateway " << systemId);
+  NS_LOG_INFO ("A packet arrived at the gateway under sensitivity at gateway " << systemId);
 
   std::map<Ptr<Packet const>, PacketStatus>::iterator it = packetTracker.find (packet);
   (*it).second.outcomes.at (systemId - nDevices) = UNDER_SENSITIVITY;
@@ -215,6 +215,11 @@ PrintEndDevices (NodeContainer endDevices, NodeContainer gateways, std::string f
   spreadingFactorFile.close ();
 }
 
+
+/**************
+ *    MAIN    *
+ **************/
+
 int main (int argc, char *argv[])
 {
 
@@ -249,9 +254,11 @@ int main (int argc, char *argv[])
   // LogComponentEnable("LoraMacHeader", LOG_LEVEL_ALL);
   // LogComponentEnable("LoraFrameHeader", LOG_LEVEL_ALL);
 
-  /***********
+  /**********
   *  Setup  *
   ***********/
+
+  NS_LOG_INFO ("Number of ED " << nDevices);
 
   // Compute the number of gateways
   nGateways = 3*gatewayRings*gatewayRings-3*gatewayRings+1;
@@ -299,6 +306,7 @@ int main (int argc, char *argv[])
   ************************/
 
   // Create a set of nodes
+  NS_LOG_INFO("Creating the EDs ...");
   NodeContainer endDevices;
   endDevices.Create (nDevices);
 
@@ -337,6 +345,7 @@ int main (int argc, char *argv[])
   *  Create Gateways  *
   *********************/
 
+  NS_LOG_INFO("Creating the gateways...");
   // Create the gateway nodes (allocate them uniformely on the disc)
   NodeContainer gateways;
   gateways.Create (nGateways);
@@ -437,6 +446,7 @@ int main (int argc, char *argv[])
   /*************
   *  Results  *
   *************/
+  //Probabilities
   double receivedProb = double(received)/nDevices;
   double interferedProb = double(interfered)/nDevices;
   double noMoreReceiversProb = double(noMoreReceivers)/nDevices;

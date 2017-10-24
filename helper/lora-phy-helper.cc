@@ -40,7 +40,7 @@ void
 LoraPhyHelper::SetDeviceType (enum DeviceType dt)
 {
 
-  NS_LOG_FUNCTION (this << dt);
+  NS_LOG_FUNCTION (this << dt <<  " Device type is " << dt);
   switch (dt)
     {
     case GW:
@@ -61,11 +61,13 @@ LoraPhyHelper::Set (std::string name, const AttributeValue &v)
 Ptr<LoraPhy>
 LoraPhyHelper::Create (Ptr<Node> node, Ptr<NetDevice> device) const
 {
-  NS_LOG_FUNCTION (this << node << device);
+  NS_LOG_FUNCTION (this << node->GetId() << device);
 
   // Create the PHY and set its channel
   Ptr<LoraPhy> phy = m_phy.Create<LoraPhy> ();
   phy->SetChannel (m_channel);
+
+  NS_LOG_FUNCTION (this<< "inside Create --- channel Set");
 
   // Configuration is different based on the kind of device we have to create
   std::string typeId = m_phy.GetTypeId ().GetName ();
@@ -106,7 +108,7 @@ LoraPhyHelper::Create (Ptr<Node> node, Ptr<NetDevice> device) const
       // The line below can be commented to speed up uplink-only simulations.
       // This implies that the LoraChannel instance will only know about
       // Gateways, and it will not lose time delivering packets and interference
-      // information to devices which will never listen.
+      // information to devices which will never listen. 
 
       m_channel->Add (phy);
     }

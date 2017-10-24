@@ -215,6 +215,7 @@ LoraMacHelper::ApplyCommonEuConfigurations (Ptr<LoraMac> loraMac) const
   Ptr<LogicalLoraChannel> lc1 = CreateObject<LogicalLoraChannel> (868.1, 0, 5);
   Ptr<LogicalLoraChannel> lc2 = CreateObject<LogicalLoraChannel> (868.3, 0, 5);
   Ptr<LogicalLoraChannel> lc3 = CreateObject<LogicalLoraChannel> (868.5, 0, 5);
+  NS_LOG_FUNCTION (this<< "LogicalLoraChannel: freq " << lc1->GetFrequency());
   channelHelper.AddChannel (lc1);
   channelHelper.AddChannel (lc2);
   channelHelper.AddChannel (lc3);
@@ -272,7 +273,7 @@ LoraMacHelper::SetSpreadingFactorsUp (NodeContainer endDevices, NodeContainer ga
             }
         }
 
-      // NS_LOG_DEBUG ("Rx Power: " << highestRxPower);
+      
       double rxPower = highestRxPower;
 
       // Get the Gw sensitivity
@@ -280,6 +281,8 @@ LoraMacHelper::SetSpreadingFactorsUp (NodeContainer endDevices, NodeContainer ga
       Ptr<LoraNetDevice> gatewayLoraNetDevice = gatewayNetDevice->GetObject<LoraNetDevice> ();
       Ptr<GatewayLoraPhy> gatewayPhy = gatewayLoraNetDevice->GetPhy ()->GetObject<GatewayLoraPhy> ();
       const double *gwSensitivity = gatewayPhy->sensitivity;
+
+      NS_LOG_FUNCTION ("-------------Rx Power: " << double(rxPower) << "gwSensitivity(0)= " << double(*(gwSensitivity)));
 
       if(rxPower > *gwSensitivity)
         {
