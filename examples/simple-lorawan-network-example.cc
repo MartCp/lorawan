@@ -179,7 +179,8 @@ int main (int argc, char *argv[])
   frameHdr.SetAddress(addr);    // indirizzo ED dst
   frameHdr.SetAdr(true);        // ADR flag
   //frameHdr.SetFPort(0);       //FPort=0 when there are only MAC commands It is 0 by default
-  frameHdr.AddLinkAdrReq(0, 0, std::list<int>(1,1), 1);
+  std::list<int> canali (1,1);
+  frameHdr.AddLinkAdrReq(0, 0, canali, 1);
   reply->AddHeader(frameHdr);
   NS_LOG_INFO ("Added frame header of size " << frameHdr.GetSerializedSize () <<
                    " bytes");

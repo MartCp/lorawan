@@ -541,7 +541,7 @@ EndDeviceLoraMac::GetChannelForTx (void)
 
   // Pick a random channel to transmit on
   std::vector<Ptr<LogicalLoraChannel> > logicalChannels;
-  logicalChannels = m_channelHelper.GetChannelList (); // Use a separate list to do the shuffle
+  logicalChannels = m_channelHelper.GetEnabledChannelList (); // Use a separate list to do the shuffle
   logicalChannels = Shuffle (logicalChannels);
 
   // Try every channel
