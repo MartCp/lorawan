@@ -428,7 +428,14 @@ private:
    * The message type to apply to packets sent with the Send method.
    */
   LoraMacHeader::MType m_mType;
+
+  /**
+   * True if the ED is waiting for an ACK
+   */
+  bool m_waitingAck;
+
 };
+
 
 } /* namespace ns3 */
 
