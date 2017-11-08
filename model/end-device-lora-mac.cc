@@ -85,7 +85,10 @@ EndDeviceLoraMac::EndDeviceLoraMac () :
   m_lastKnownLinkMargin (0),
   m_lastKnownGatewayCount (0),
   m_aggregatedDutyCycle (1),
-  m_mType (LoraMacHeader::UNCONFIRMED_DATA_UP)
+  m_mType (LoraMacHeader::UNCONFIRMED_DATA_UP),
+  m_waitingAck (false)
+
+
 {
   NS_LOG_FUNCTION (this);
 
@@ -261,6 +264,17 @@ void
 EndDeviceLoraMac::ParseCommands (LoraFrameHeader frameHeader)
 {
   NS_LOG_FUNCTION (this << frameHeader);
+
+  bool acked= frameHeader.GetAck();
+  if (acked)
+    {
+      NS_LOG_INFO ("The message is an ACK");
+      m_waitingAck= false;
+    }
+  else
+    {
+      NS_LOG_INFO("The message does not contain an ACK");
+    }
 
   std::list<Ptr<MacCommand> > commands = frameHeader.GetCommands ();
   std::list<Ptr<MacCommand> >::iterator it;

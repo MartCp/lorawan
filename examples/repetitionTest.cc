@@ -152,24 +152,73 @@ int main (int argc, char *argv[])
   *  Install applications on the end devices   *
   **********************************************/
 
-  OneShotSenderHelper oneShotSenderHelper;
+  //OneShotSenderHelper oneShotSenderHelper;
   // Setting the time for the first packet
-  oneShotSenderHelper.SetSendTime (Seconds (2));
-  oneShotSenderHelper.Install (endDevices);
+  //oneShotSenderHelper.SetSendTime (Seconds (2));
+  //oneShotSenderHelper.Install (endDevices);
   // Setting the time for the second packet
-  oneShotSenderHelper.SetSendTime (Seconds (8));
-  oneShotSenderHelper.Install (endDevices);
+  //oneShotSenderHelper.SetSendTime (Seconds (8));
+  //oneShotSenderHelper.Install (endDevices);
 
 
-  /*******************************
-   *   Building downlink packet  *    
-   *******************************/
+
+/***************************************************************************************************************************************
+***************************************************************************************************************************************/
+
+/*******************************
+*   Building uplink packet  *    
+*******************************/
  
+ double frequency= 868.5; // set the frequency of uplink and downlink packets
   // Setting ED's address
   LoraDeviceAddress addr= LoraDeviceAddress(123);   
   Ptr<LoraMac> edMac= endDevices.Get(0)->GetDevice(0)->GetObject<LoraNetDevice>()->GetMac();
   Ptr<EndDeviceLoraMac> edLoraMac = edMac->GetObject<EndDeviceLoraMac>();
   edLoraMac-> SetDeviceAddress(addr);
+
+  // Creating packet for downlink transmussion
+  NS_LOG_INFO ("Creating Packet for Uplink transmission...");
+
+  Ptr<Packet> pkt= Create<Packet>(5);
+
+
+  // Setting frame header
+  LoraFrameHeader frameHdr;
+  frameHdr.SetAsUplink();
+  // frameHdr.SetAddress(addr);    // indirizzo ED dst
+  frameHdr.SetAck(true);
+
+  pkt->AddHeader(frameHdr);
+  NS_LOG_INFO ("Added frame header of size " << frameHdr.GetSerializedSize () << " bytes, with ack value = " << frameHdr.GetAck());
+
+
+  // Setting Mac header
+  LoraMacHeader macHdr;
+  macHdr.SetMType(LoraMacHeader::CONFIRMED_DATA_UP);
+  pkt->AddHeader(macHdr);
+
+  NS_LOG_INFO ("\n Setting parameters for Uplink Transmission...");
+
+  // The spreading factor has been set manually, looking at the results of the previous transmision
+  LoraTxParameters params;
+  params.sf = 7;
+  params.headerDisabled = 1;
+  params.codingRate = 1;
+  params.bandwidthHz =  125000; 
+  params.nPreamble = 8;
+  params.crcEnabled = 1;
+  params.lowDataRateOptimizationEnabled = 0;
+
+
+  Ptr<LoraPhy> edPhy = endDevices.Get(0)->GetDevice(0)->GetObject<LoraNetDevice>()->GetPhy();
+
+  Simulator::Schedule(Seconds(2), &LoraPhy::Send, edPhy, pkt, params, frequency, 27);
+
+
+
+  /*******************************
+   *   Building downlink packet  *    
+   *******************************/
 
   // Creating packet for downlink transmussion
   NS_LOG_INFO ("Creating Packet for Downlink transmission...");
@@ -178,11 +227,11 @@ int main (int argc, char *argv[])
 
 
   // Setting frame header
-  LoraFrameHeader frameHdr;
-  frameHdr.SetAsDownlink();
-  frameHdr.SetAddress(addr);    // indirizzo ED dst
-  frameHdr.SetAdr(true);        // ADR flag
-  frameHdr.SetAck(true);
+  LoraFrameHeader downframeHdr;
+  downframeHdr.SetAsDownlink();
+  downframeHdr.SetAddress(addr);    // indirizzo ED dst
+  downframeHdr.SetAdr(true);        // ADR flag
+  downframeHdr.SetAck(true);
   //frameHdr.SetFPort(0);       // FPort=0 when there are only MAC commands. 
                                 // This instruction not necessary because it is 0 by default
   
@@ -199,27 +248,27 @@ int main (int argc, char *argv[])
   enabled_channels.push_back(1);
   //enabled_channels.push_back(2);
 
-  frameHdr.AddLinkAdrReq(dataRate, txPower, enabled_channels, repetitions);
-  reply->AddHeader(frameHdr);
+  downframeHdr.AddLinkAdrReq(dataRate, txPower, enabled_channels, repetitions);
+  reply->AddHeader(downframeHdr);
   NS_LOG_INFO ("Added frame header of size " << frameHdr.GetSerializedSize () << " bytes");
 
 
   // Setting Mac header
-  LoraMacHeader macHdr;
-  macHdr.SetMType(LoraMacHeader::UNCONFIRMED_DATA_DOWN);
-  reply->AddHeader(macHdr);
+  LoraMacHeader downmacHdr;
+  downmacHdr.SetMType(LoraMacHeader::UNCONFIRMED_DATA_DOWN);
+  reply->AddHeader(downmacHdr);
 
   NS_LOG_INFO ("\n Setting parameters for Downlink Transmission...");
 
   // The spreading factor has been set manually, looking at the results of the previous transmision
-  LoraTxParameters params;
-  params.sf = 7;
-  params.headerDisabled = 1;
-  params.codingRate = 1;
-  params.bandwidthHz =  125000; 
-  params.nPreamble = 8;
-  params.crcEnabled = 1;
-  params.lowDataRateOptimizationEnabled = 0;
+  LoraTxParameters downparams;
+  downparams.sf = 7;
+  downparams.headerDisabled = 1;
+  downparams.codingRate = 1;
+  downparams.bandwidthHz =  125000; 
+  downparams.nPreamble = 8;
+  downparams.crcEnabled = 1;
+  downparams.lowDataRateOptimizationEnabled = 0;
 
 
   Ptr<LoraPhy> gwPhy = gateways.Get(0)->GetDevice(0)->GetObject<LoraNetDevice>()->GetPhy();
@@ -227,7 +276,7 @@ int main (int argc, char *argv[])
   // The end device open its first receive window 1 second after the transmission.
   // Scheduling sending of the reply packet after and giving the inputs for function "Send", The frequency has
   // been set looking at the frequency of the previous uplink transmission.
-  Simulator::Schedule(Seconds(3.1), &LoraPhy::Send, gwPhy, reply, params, 868.3, 27);
+  Simulator::Schedule(Seconds(3.1), &LoraPhy::Send, gwPhy, reply, downparams, frequency, 27);
 
 
   /****************
