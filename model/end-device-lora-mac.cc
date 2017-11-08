@@ -265,16 +265,17 @@ EndDeviceLoraMac::ParseCommands (LoraFrameHeader frameHeader)
 {
   NS_LOG_FUNCTION (this << frameHeader);
 
-  bool acked= frameHeader.GetAck();
-  if (acked)
-    {
-      NS_LOG_INFO ("The message is an ACK");
-      m_waitingAck= false;
-    }
-  else
-    {
-      NS_LOG_INFO("The message does not contain an ACK");
-    }
+  if (m_waitingAck)
+    bool acked= frameHeader.GetAck();
+    if (acked)
+      {
+        NS_LOG_INFO ("The message is an ACK");
+        m_waitingAck= false;
+      }
+    else
+      {
+        NS_LOG_INFO("The message does not contain an ACK but we were waiting for it --> scheduling for another transmission");
+      }
 
   std::list<Ptr<MacCommand> > commands = frameHeader.GetCommands ();
   std::list<Ptr<MacCommand> >::iterator it;
