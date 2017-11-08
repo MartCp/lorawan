@@ -169,7 +169,7 @@ int main (int argc, char *argv[])
 *   Building uplink packet  *    
 *******************************/
  
- double frequency= 868.5; // set the frequency of uplink and downlink packets
+ double frequency= 868.1; // set the frequency of uplink and downlink packets
   // Setting ED's address
   LoraDeviceAddress addr= LoraDeviceAddress(123);   
   Ptr<LoraMac> edMac= endDevices.Get(0)->GetDevice(0)->GetObject<LoraNetDevice>()->GetMac();
