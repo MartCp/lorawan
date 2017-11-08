@@ -435,19 +435,7 @@ int main (int argc, char *argv[])
 
   // those are not probabilities!
 
-  // double receivedAvg = double(received)/nDevices;
-  // double interferedProb = double(interfered)/nDevices;
-  // double noMoreReceiversProb = double(noMoreReceivers)/nDevices;
-  // double underSensitivityProb = double(underSensitivity)/nDevices;
-
-  // double receivedProbGivenAboveSensitivity = double(received)/(nDevices - underSensitivity);
-  // double interferedProbGivenAboveSensitivity = double(interfered)/(nDevices - underSensitivity);
-  // double noMoreReceiversProbGivenAboveSensitivity = double(noMoreReceivers)/(nDevices - underSensitivity);
-  // std::cout << nDevices << " " << double(nDevices)/simulationTime << " " << receivedProb << " " << interferedProb << " " << noMoreReceiversProb << " " << underSensitivityProb <<
-  // " " << receivedProbGivenAboveSensitivity << " " << interferedProbGivenAboveSensitivity << " " << noMoreReceiversProbGivenAboveSensitivity << std::endl;
-  
-  // double receivedProb= double(received)/double(totalPktsSent);
-  std::cout << nDevices << " " << totalPktsSent << " " << received << " " << interfered << " " << noMoreReceivers << " " << underSensitivity << std::endl;
+  std::cout << simulationTime << " " << totalPktsSent << " " << received << " " << interfered << " " << noMoreReceivers << " " << underSensitivity << std::endl;
 
 
   return 0;

@@ -4,13 +4,13 @@
 # i= number of nDevices
 # increment= increment in EDs
 gatewayRings=1
-i=1
-increment=50
-maxEndDevices=2501 #2501
+appPeriod=10801
+increment=3600
+maxAppPeriod=86400 # 15 min
 radius=7500
 #gwrad=$(echo "10000/(2*($gatewayRings - 1)+1)" | bc -l)
-simTime=86400 # simTime= appPeriod
-appPeriod=86400
+# simTime=7201    simTime = appPeriod
+nDevices=2000
 maxRuns=5
 globalrun=1
 
@@ -30,12 +30,12 @@ globalrun=1
 # echo " done."
 
 # Run the script with a fixed period
-while [ $i -le $maxEndDevices ]
+while [ $appPeriod -le $maxAppPeriod ]
 do
     
     # Perform multiple runs
     currentrun=1
-    centraldevicessum=0
+    centraltimesum=0
     centralreceivedsum=0
     centralinterferedsum=0
     centralnomorerxsum=0
@@ -47,16 +47,16 @@ do
         # nGateways=$[3*$gatewayRings*$gatewayRings-$[3*$gatewayRings]+1]
         # echo -n "Simulating a system with $i end devices and a transmission period of $simTime seconds...  "
         # START=$(date +%s)
-        output="$(./waf --run "networkPerf2
-            --nDevices=$i
+        output="$(./waf --run "networkPerfTime
+            --nDevices=$nDevices
             --gatewayRings=$gatewayRings 
             --radius=$radius
             --gatewayRadius=1500
-            --simulationTime=$simTime
+            --simulationTime=$appPeriod
             --appPeriod=$appPeriod 
             --RngRun=$globalrun" | grep -v "build" | tr -d '\n')"
         # echo "$output"
-        centraldevices=$(echo "$output" | awk '{print $1}')             # nDevices
+        centraltime=$(echo "$output" | awk '{print $1}')             # nDevices
         centraltotpacket=$(echo "$output" | awk '{print $2}')             # nDevices
         centralreceived=$(echo "$output" | awk '{print $3}')            # received packets
         centralinterfered=$(echo "$output" | awk '{print $4}')          # interfered packets
@@ -64,7 +64,7 @@ do
         centralundersens=$(echo "$output" | awk '{print $6}')           # packets discarded because under sensitivity
 
         # Sum the results
-        centraldevicessum=$(echo "$centraldevicessum + $centraldevices" | bc -l)
+        centraltimesum=$(echo "$centraltimesum + $centraltime" | bc -l)
         centraltotpacketsum=$(echo "$centraltotpacketsum + $centraltotpacket" | bc -l)
         centralreceivedsum=$(echo "$centralreceivedsum + $centralreceived" | bc -l)
         centralinterferedsum=$(echo "$centralinterferedsum + $centralinterfered" | bc -l)
@@ -77,7 +77,7 @@ do
     
     # Average in runs
     #echo "Central averaged results centraldevicessum= $centraldevicessum , maxRuns= $maxRuns"
-    echo -n " $(echo "$centraldevicessum/$maxRuns" | bc -l)"
+    echo -n " $(echo "$centraltimesum/$maxRuns" | bc -l)"
     echo -n " $(echo "$centraltotpacketsum/$maxRuns" | bc -l)"
     echo -n " $(echo "$centralreceivedsum/$maxRuns" | bc -l)"
     echo -n " $(echo "$centralinterferedsum/$maxRuns" | bc -l)"
@@ -85,5 +85,5 @@ do
     echo " $(echo "$centralundersenssum/$maxRuns" | bc -l)"
 
 
-    i=$(( $i+$increment ))
+    appPeriod=$(( $appPeriod+$increment ))
 done
