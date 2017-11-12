@@ -212,6 +212,10 @@ EndDeviceLoraMac::Send (Ptr<Packet> packet)
     }
 }
 
+// New method Send that also takes as input the frameHeader, so we can modify the behaviour of the ED
+// according to the type of packet we are sending (ex ACK packet will lead to possible retx)
+
+
 void
 EndDeviceLoraMac::Receive (Ptr<Packet const> packet)
 {
@@ -265,18 +269,18 @@ EndDeviceLoraMac::ParseCommands (LoraFrameHeader frameHeader)
 {
   NS_LOG_FUNCTION (this << frameHeader);
 
-// if (m_waitingAck)
-//  {
-    if(frameHeader.GetAck())
+  if (m_waitingAck)
+  {
+    if (frameHeader.GetAck())
     {
-      NS_LOG_INFO ("The message is an ACK");
+      NS_LOG_INFO ("The message is an ACK, not waiting for it anymore");
       m_waitingAck= false;
     }
     else
     {
-      NS_LOG_INFO("The message does not contain an ACK but we were waiting for it --> scheduling for another transmission");
+      NS_LOG_INFO("The message does not contain an ACK but we were waiting for it --> need to schedule another transmission");
     }
-//  }
+  }
 
   std::list<Ptr<MacCommand> > commands = frameHeader.GetCommands ();
   std::list<Ptr<MacCommand> >::iterator it;
@@ -394,7 +398,14 @@ EndDeviceLoraMac::ApplyNecessaryOptions (LoraFrameHeader& frameHeader)
   frameHeader.SetAddress (m_address);
   frameHeader.SetAdr (0); // TODO Set ADR if a member variable is true
   frameHeader.SetAdrAckReq (0); // TODO Set ADRACKREQ if a member variable is true
-  frameHeader.SetAck (0); // TODO Set ACK if a member variable is true
+  if (m_mType == LoraMacHeader::CONFIRMED_DATA_UP)
+  {
+    frameHeader.SetAck (1);
+  }
+  else
+  {
+    frameHeader.SetAck (0);
+  }
   // FPending does not exist in uplink messages
   frameHeader.SetFCnt (0); // TODO Set this based on the counters
 

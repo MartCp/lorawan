@@ -430,9 +430,11 @@ private:
   LoraMacHeader::MType m_mType;
 
   /**
-   * True if the ED is waiting for an ACK
+   * It is true if the device is waiting for an Ack.
    */
   bool m_waitingAck;
+
+
 
 };
 
