@@ -429,11 +429,18 @@ private:
    */
   LoraMacHeader::MType m_mType;
 
-  /**
-   * It is true if the device is waiting for an Ack.
-   */
+  /* Structure 
+  * 
+  struct LoraRetxParameters
+  {
+    Ptr<Packet> packet;
+    bool waitingAck;
+    uint8_t retxLeft;
+  };
+*/
+  Ptr<Packet> m_packet;
   bool m_waitingAck;
-
+  uint8_t m_retxLeft;
 
 
 };

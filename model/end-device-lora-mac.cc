@@ -86,7 +86,9 @@ EndDeviceLoraMac::EndDeviceLoraMac () :
   m_lastKnownGatewayCount (0),
   m_aggregatedDutyCycle (1),
   m_mType (LoraMacHeader::UNCONFIRMED_DATA_UP),
-  m_waitingAck (false)
+  m_packet (0),
+  m_waitingAck (false),
+  m_retxLeft (8)
 
 
 {
@@ -101,6 +103,10 @@ EndDeviceLoraMac::EndDeviceLoraMac () :
   m_closeWindow.Cancel ();
   m_secondReceiveWindow = EventId ();
   m_secondReceiveWindow.Cancel ();
+/*  LoraRetxParameters retxParams;
+  retxParams.packet = 0;
+  */
+  
 }
 
 EndDeviceLoraMac::~EndDeviceLoraMac ()
@@ -142,8 +148,19 @@ EndDeviceLoraMac::Send (Ptr<Packet> packet)
   // Pick a channel on which to transmit the packet
   Ptr<LogicalLoraChannel> txChannel = GetChannelForTx ();
 
-  if (txChannel) // Proceed with transmission
+  bool canTx= (( m_waitingAck && ( m_packet == packet) && m_retxLeft > 0 )||  // retx ok
+              ( !m_waitingAck && !(m_packet == packet) && m_retxLeft > 0 )||  // new transmission
+              ( !m_waitingAck && !(m_packet == packet) && m_retxLeft <= 0 )); // new transmission but error because retxLeft = 0
+  
+  if (!txChannel)
+  {
+    m_cannotSendBecauseDutyCycle (packet);
+  }
+  else // the transmitting channel is available
+  {
+    if (canTx)  // Proceed with transmission
     {
+
       /////////////////////////////////////////////////////////
       // Add headers, prepare TX parameters and send the packet
       /////////////////////////////////////////////////////////
@@ -152,6 +169,10 @@ EndDeviceLoraMac::Send (Ptr<Packet> packet)
       LoraFrameHeader frameHdr;
       ApplyNecessaryOptions (frameHdr);
       packet->AddHeader (frameHdr);
+      if (frameHdr.GetAck ()) 
+      {
+        m_waitingAck = true;
+      }
       NS_LOG_INFO ("Added frame header of size " << frameHdr.GetSerializedSize () <<
                    " bytes");
 
@@ -177,7 +198,25 @@ EndDeviceLoraMac::Send (Ptr<Packet> packet)
       // Make sure we can transmit at the current power on this channel
       NS_ASSERT_MSG (m_txPower <= m_channelHelper.GetTxPowerForChannel (txChannel), 
                 " The selected power is too hight to be supported by this channel ");
+
+      if (m_waitingAck)
+      {
+        m_retxLeft = m_retxLeft -1; // decreasing the number of retransmissions
+        m_packet= packet;           // dentro l'if ?
+        NS_LOG_DEBUG ("Sending a confirmed packet");
+      }
+      else if (!m_waitingAck && (m_retxLeft > 0))
+      {
+        NS_LOG_DEBUG ("New transmission");
+      }
+      else
+      {
+        NS_LOG_DEBUG ("Transmitting but error: m_waitingAck= " << m_waitingAck 
+          << " m_packet=packet = " << (m_packet==packet) << " m_retxLeft= " << m_retxLeft);
+      }
+
       m_phy->Send (packet, params, txChannel->GetFrequency (), m_txPower);
+
 
       //////////////////////////////////////////////
       // Register packet transmission for duty cycle
@@ -204,16 +243,24 @@ EndDeviceLoraMac::Send (Ptr<Packet> packet)
 
       m_phy->GetObject<EndDeviceLoraPhy> ()->SetSpreadingFactor
         (GetSfFromDataRate (replyDataRate));
-
     }
-  else // Transmission cannot be performed
+    else // can not transmit because of some error
     {
-      m_cannotSendBecauseDutyCycle (packet);
+      if (m_waitingAck)
+      {
+        NS_LOG_INFO ("Max number of transmission achieved: packet not transmitted");
+      }
+      else if (m_waitingAck && !(packet == m_packet))
+      {
+        NS_LOG_INFO ("Trying to send a packet from the application but we are waiting for an ACK: packet dropped");
+      }
+      else
+      {
+        NS_LOG_INFO ("Trying to send the same packet of the previous transmission but we are not retransmitting: packet not sent");
+      }
     }
+  }
 }
-
-// New method Send that also takes as input the frameHeader, so we can modify the behaviour of the ED
-// according to the type of packet we are sending (ex ACK packet will lead to possible retx)
 
 
 void
@@ -558,6 +605,25 @@ EndDeviceLoraMac::CloseSecondReceiveWindow (void)
       phy->SwitchToSleep ();
       break;
     }
+
+    if (m_waitingAck)
+    {
+      if (m_retxLeft > 0 )
+      {
+        Send(m_packet);
+        NS_LOG_INFO ("Number of retx left:" << m_retxLeft << "Sending the packet for retransmission");
+      }
+      else
+      {
+        NS_LOG_INFO ("We are still waiting for an ACK, but we have achieved the maximum number of transmission");
+      }
+    }
+    else
+    {
+      m_packet= 0;    // Reset to default values
+      m_retxLeft= 8;
+    }
+    
 }
 
 Ptr<LogicalLoraChannel>
