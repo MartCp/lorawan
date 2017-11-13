@@ -85,11 +85,7 @@ EndDeviceLoraMac::EndDeviceLoraMac () :
   m_lastKnownLinkMargin (0),
   m_lastKnownGatewayCount (0),
   m_aggregatedDutyCycle (1),
-  m_mType (LoraMacHeader::UNCONFIRMED_DATA_UP),
-  m_packet (0),
-  m_waitingAck (false),
-  m_retxLeft (8)
-
+  m_mType (LoraMacHeader::UNCONFIRMED_DATA_UP)
 
 {
   NS_LOG_FUNCTION (this);
@@ -103,9 +99,9 @@ EndDeviceLoraMac::EndDeviceLoraMac () :
   m_closeWindow.Cancel ();
   m_secondReceiveWindow = EventId ();
   m_secondReceiveWindow.Cancel ();
-/*  LoraRetxParameters retxParams;
-  retxParams.packet = 0;
-  */
+
+  // Initialize structure for retransmission parameters
+  m_retxParams = EndDeviceLoraMac::LoraRetxParameters ();
   
 }
 
@@ -148,9 +144,9 @@ EndDeviceLoraMac::Send (Ptr<Packet> packet)
   // Pick a channel on which to transmit the packet
   Ptr<LogicalLoraChannel> txChannel = GetChannelForTx ();
 
-  bool canTx= (( m_waitingAck && ( m_packet == packet) && m_retxLeft > 0 )||  // retx ok
-              ( !m_waitingAck && !(m_packet == packet) && m_retxLeft > 0 )||  // new transmission
-              ( !m_waitingAck && !(m_packet == packet) && m_retxLeft <= 0 )); // new transmission but error because retxLeft = 0
+  bool canTx= (( m_retxParams.waitingAck && ( m_retxParams.packet == packet) && m_retxParams.retxLeft > 0 )||  // retx ok
+              ( !m_retxParams.waitingAck && !(m_retxParams.packet == packet) && m_retxParams.retxLeft > 0 )||  // new transmission
+              ( !m_retxParams.waitingAck && !(m_retxParams.packet == packet) && m_retxParams.retxLeft <= 0 )); // new transmission but error because retxLeft = 0
   
   if (!txChannel)
   {
@@ -171,7 +167,7 @@ EndDeviceLoraMac::Send (Ptr<Packet> packet)
       packet->AddHeader (frameHdr);
       if (frameHdr.GetAck ()) 
       {
-        m_waitingAck = true;
+        m_retxParams.waitingAck = true;
       }
       NS_LOG_INFO ("Added frame header of size " << frameHdr.GetSerializedSize () <<
                    " bytes");
@@ -199,20 +195,20 @@ EndDeviceLoraMac::Send (Ptr<Packet> packet)
       NS_ASSERT_MSG (m_txPower <= m_channelHelper.GetTxPowerForChannel (txChannel), 
                 " The selected power is too hight to be supported by this channel ");
 
-      if (m_waitingAck)
+      if (m_retxParams.waitingAck)
       {
-        m_retxLeft = m_retxLeft -1; // decreasing the number of retransmissions
-        m_packet= packet;           // dentro l'if ?
+        m_retxParams.retxLeft = m_retxParams.retxLeft -1; // decreasing the number of retransmissions
+        m_retxParams.packet= packet;           // dentro l'if ?
         NS_LOG_DEBUG ("Sending a confirmed packet");
       }
-      else if (!m_waitingAck && (m_retxLeft > 0))
+      else if (!m_retxParams.waitingAck && (m_retxParams.retxLeft > 0))
       {
         NS_LOG_DEBUG ("New transmission: Sending packet");
       }
       else
       {
-        NS_LOG_DEBUG ("Transmitting but error: m_waitingAck= " << m_waitingAck 
-          << " m_packet=packet = " << (m_packet==packet) << " m_retxLeft= " << m_retxLeft);
+        NS_LOG_DEBUG ("Transmitting but error: m_retxParams.waitingAck= " << m_retxParams.waitingAck 
+          << " m_retxParams.packet=packet = " << (m_retxParams.packet==packet) << " m_retxParams.retxLeft= " << m_retxParams.retxLeft);
       }
 
       m_phy->Send (packet, params, txChannel->GetFrequency (), m_txPower);
@@ -246,11 +242,11 @@ EndDeviceLoraMac::Send (Ptr<Packet> packet)
     }
     else // can not transmit because of some error
     {
-      if (m_waitingAck)
+      if (m_retxParams.waitingAck)
       {
         NS_LOG_INFO ("Max number of transmission achieved: packet not transmitted");
       }
-      else if (m_waitingAck && !(packet == m_packet))
+      else if (m_retxParams.waitingAck && !(packet == m_retxParams.packet))
       {
         NS_LOG_INFO ("Trying to send a packet from the application but we are waiting for an ACK: packet dropped");
       }
@@ -316,14 +312,14 @@ EndDeviceLoraMac::ParseCommands (LoraFrameHeader frameHeader)
 {
   NS_LOG_FUNCTION (this << frameHeader);
 
-  if (m_waitingAck)
+  if (m_retxParams.waitingAck)
   {
     if (frameHeader.GetAck())
     {
       NS_LOG_INFO ("The message is an ACK, not waiting for it anymore");
-      m_waitingAck= false;
-      m_packet= 0;    // Reset to default values
-      m_retxLeft= 8;
+      m_retxParams.waitingAck= false;
+      m_retxParams.packet= 0;    // Reset to default values
+      m_retxParams.retxLeft= 8;
       NS_LOG_DEBUG ("Reset retransmission variables to default values");
     }
     else
@@ -609,12 +605,12 @@ EndDeviceLoraMac::CloseSecondReceiveWindow (void)
       break;
     }
 
-    if (m_waitingAck)
+    if (m_retxParams.waitingAck)
     {
-      if (m_retxLeft > 0 )
+      if (m_retxParams.retxLeft > 0 )
       {
-        Send(m_packet);
-        NS_LOG_INFO ("Number of retx left:" << m_retxLeft << "Sending the packet for retransmission");
+        Send(m_retxParams.packet);
+        NS_LOG_INFO ("Number of retx left:" << m_retxParams.retxLeft << "Sending the packet for retransmission");
       }
       else
       {
@@ -623,8 +619,8 @@ EndDeviceLoraMac::CloseSecondReceiveWindow (void)
     }
     else
     {
-      m_packet= 0;    // Reset to default values
-      m_retxLeft= 8;
+      m_retxParams.packet= 0;    // Reset to default values
+      m_retxParams.retxLeft= 8;
       NS_LOG_DEBUG ("Reset retransmission variables to default values");
     }
     

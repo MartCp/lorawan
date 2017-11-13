@@ -39,6 +39,17 @@ public:
 
   static TypeId GetTypeId (void);
 
+  /** 
+  * Structure representing the parameters that will be used in the 
+  * retransmission procedure.
+  */
+  struct LoraRetxParameters
+  {
+    Ptr<Packet> packet = 0;
+    bool waitingAck= false;
+    uint8_t retxLeft = 8;
+  };
+
   EndDeviceLoraMac();
   virtual ~EndDeviceLoraMac();
 
@@ -429,19 +440,10 @@ private:
    */
   LoraMacHeader::MType m_mType;
 
-  /* Structure 
-  * 
-  struct LoraRetxParameters
-  {
-    Ptr<Packet> packet;
-    bool waitingAck;
-    uint8_t retxLeft;
-  };
-*/
-  Ptr<Packet> m_packet;
-  bool m_waitingAck;
-  uint8_t m_retxLeft;
-
+  /* Structure containing the retransmission parameters
+   * for this device.
+   */
+  struct LoraRetxParameters m_retxParams;
 
 };
 
