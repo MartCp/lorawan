@@ -234,7 +234,7 @@ int main (int argc, char *argv[])
 
   // The spreading factor has been set manually, looking at the results of the previous transmision
   LoraTxParameters downparams;
-  downparams.sf = 7;
+  downparams.sf = 12;
   downparams.headerDisabled = 1;
   downparams.codingRate = 1;
   downparams.bandwidthHz =  125000; 
@@ -248,7 +248,7 @@ int main (int argc, char *argv[])
   // The end device open its first receive window 1 second after the transmission.
   // Scheduling sending of the reply packet after and giving the inputs for function "Send", The frequency has
   // been set looking at the frequency of the previous uplink transmission.
-  Simulator::Schedule(Seconds(4.05), &LoraPhy::Send, gwPhy, reply, downparams, 869.525, 27); // 2nd rx window
+  Simulator::Schedule(Seconds(4.05), &LoraPhy::Send, gwPhy, reply, downparams, 869.525, 27); // 2nd rx window: freq= 869.525 MHz, SF=12
 
 
   /****************
