@@ -207,7 +207,7 @@ EndDeviceLoraMac::Send (Ptr<Packet> packet)
       }
       else if (!m_waitingAck && (m_retxLeft > 0))
       {
-        NS_LOG_DEBUG ("New transmission");
+        NS_LOG_DEBUG ("New transmission: Sending packet");
       }
       else
       {
@@ -322,6 +322,9 @@ EndDeviceLoraMac::ParseCommands (LoraFrameHeader frameHeader)
     {
       NS_LOG_INFO ("The message is an ACK, not waiting for it anymore");
       m_waitingAck= false;
+      m_packet= 0;    // Reset to default values
+      m_retxLeft= 8;
+      NS_LOG_DEBUG ("Reset retransmission variables to default values");
     }
     else
     {
@@ -622,6 +625,7 @@ EndDeviceLoraMac::CloseSecondReceiveWindow (void)
     {
       m_packet= 0;    // Reset to default values
       m_retxLeft= 8;
+      NS_LOG_DEBUG ("Reset retransmission variables to default values");
     }
     
 }
