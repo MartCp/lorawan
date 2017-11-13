@@ -328,7 +328,7 @@ EndDeviceLoraMac::ParseCommands (LoraFrameHeader frameHeader)
     }
     else
     {
-      NS_LOG_INFO("The message does not contain an ACK but we were waiting for it --> need to schedule another transmission");
+      NS_LOG_INFO("!!! ERROR >>> Received message but it does not contain an ACK but we were waiting for it!! <<< ERROR");
     }
   }
 

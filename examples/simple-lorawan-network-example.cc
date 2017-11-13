@@ -125,7 +125,7 @@ int main (int argc, char *argv[])
   *********************************************/
 
   OneShotSenderHelper oneShotSenderHelper;
-  oneShotSenderHelper.SetSendTime (Seconds (10));
+  oneShotSenderHelper.SetSendTime (Seconds (2));
 
   oneShotSenderHelper.Install (endDevices);
 
