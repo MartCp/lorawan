@@ -102,6 +102,10 @@ EndDeviceLoraMac::EndDeviceLoraMac () :
   m_secondReceiveWindow = EventId ();
   m_secondReceiveWindow.Cancel ();
 
+  // Void the retransmission event
+  m_retransmission= EventId ();
+  m_retransmission.Cancel();
+
   // Initialize structure for retransmission parameters
   m_retxParams = EndDeviceLoraMac::LoraRetxParameters ();
   m_retxParams.retxLeft = MAX_TX_NUMBER;
@@ -323,7 +327,9 @@ EndDeviceLoraMac::ParseCommands (LoraFrameHeader frameHeader)
       m_retxParams.waitingAck= false;
       m_retxParams.packet= 0;    // Reset to default values
       m_retxParams.retxLeft= MAX_TX_NUMBER;
-      NS_LOG_DEBUG ("Reset retransmission variables to default values");
+      NS_LOG_DEBUG ("Reset retransmission variables to default values and cancel retransmission if already scheduled");
+      // If it exists, cancel the retransmission event
+      Simulator::Cancel (m_retransmission);
     }
     else
     {
@@ -613,7 +619,7 @@ EndDeviceLoraMac::CloseSecondReceiveWindow (void)
       if (m_retxParams.retxLeft > 0 )
       {
         Time waitingTime = GetNextTransmissionDelay ();
-        Simulator::Schedule(waitingTime, &LoraMac::Send, this, m_retxParams.packet);
+        m_retransmission= Simulator::Schedule(waitingTime, &LoraMac::Send, this, m_retxParams.packet);
         //Time waitingTime = m_channelHelper.GetWaitingTime (logicalChannel);
         //Send(m_retxParams.packet);
         NS_LOG_INFO ("Next transmission delay " << waitingTime.GetSeconds() );

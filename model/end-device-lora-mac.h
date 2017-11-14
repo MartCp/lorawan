@@ -395,6 +395,13 @@ private:
   EventId m_secondReceiveWindow;
 
   /**
+   * The event of retransmitting a packet if an ACK is not received.
+   *
+   * This Event is used to cancel the retransmission if the ACK is found in ParseCommand function.
+   */
+  EventId m_retransmission;
+
+  /**
    * The address of this device.
    */
   LoraDeviceAddress m_address;
