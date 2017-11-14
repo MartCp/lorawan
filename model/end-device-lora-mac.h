@@ -323,6 +323,12 @@ private:
   std::vector<Ptr<LogicalLoraChannel> > Shuffle
     (std::vector<Ptr<LogicalLoraChannel> > vector);
 
+ /**
+   * Find the minimum waiting time before the next possible transmission.
+   */
+  Time GetNextTransmissionDelay (void);
+
+
   /**
    * Find a suitable channel for transmission. The channel is chosen among the
    * ones that are available in the ED's LogicalLoraChannel, based on their duty

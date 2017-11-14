@@ -35,7 +35,7 @@ int main (int argc, char *argv[])
   LogComponentEnable ("LoraPhy", LOG_LEVEL_ALL);
   LogComponentEnable ("EndDeviceLoraPhy", LOG_LEVEL_ALL);
   LogComponentEnable ("GatewayLoraPhy", LOG_LEVEL_ALL);
-  LogComponentEnable ("LoraInterferenceHelper", LOG_LEVEL_ALL);
+  //LogComponentEnable ("LoraInterferenceHelper", LOG_LEVEL_ALL);
   LogComponentEnable ("LoraMac", LOG_LEVEL_ALL);
   LogComponentEnable ("EndDeviceLoraMac", LOG_LEVEL_ALL);
   LogComponentEnable ("GatewayLoraMac", LOG_LEVEL_ALL);
@@ -203,7 +203,7 @@ int main (int argc, char *argv[])
   downframeHdr.SetAsDownlink();
   downframeHdr.SetAddress(addr);    // indirizzo ED dst
   downframeHdr.SetAdr(true);        // ADR flag
-  //downframeHdr.SetAck(true);
+  downframeHdr.SetAck(true);
   //frameHdr.SetFPort(0);       // FPort=0 when there are only MAC commands. 
                                 // This instruction not necessary because it is 0 by default
   
@@ -248,7 +248,7 @@ int main (int argc, char *argv[])
   // The end device open its first receive window 1 second after the transmission.
   // Scheduling sending of the reply packet after and giving the inputs for function "Send", The frequency has
   // been set looking at the frequency of the previous uplink transmission.
-  Simulator::Schedule(Seconds(4.05), &LoraPhy::Send, gwPhy, reply, downparams, 869.525, 27); // 2nd rx window: freq= 869.525 MHz, SF=12
+  Simulator::Schedule(Seconds(14.78), &LoraPhy::Send, gwPhy, reply, downparams, 869.525, 27); // 2nd rx window: freq= 869.525 MHz, SF=12
 
 
   /****************
