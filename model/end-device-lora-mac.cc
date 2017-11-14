@@ -24,6 +24,8 @@
 #include "ns3/log.h"
 #include <algorithm>
 
+const int MAX_TX_NUMBER= 8;
+
 namespace ns3 {
 
 NS_LOG_COMPONENT_DEFINE ("EndDeviceLoraMac");
@@ -102,6 +104,7 @@ EndDeviceLoraMac::EndDeviceLoraMac () :
 
   // Initialize structure for retransmission parameters
   m_retxParams = EndDeviceLoraMac::LoraRetxParameters ();
+  m_retxParams.retxLeft = MAX_TX_NUMBER;
   
 }
 
@@ -319,7 +322,7 @@ EndDeviceLoraMac::ParseCommands (LoraFrameHeader frameHeader)
       NS_LOG_INFO ("The message is an ACK, not waiting for it anymore");
       m_retxParams.waitingAck= false;
       m_retxParams.packet= 0;    // Reset to default values
-      m_retxParams.retxLeft= 8;
+      m_retxParams.retxLeft= MAX_TX_NUMBER;
       NS_LOG_DEBUG ("Reset retransmission variables to default values");
     }
     else
@@ -609,8 +612,14 @@ EndDeviceLoraMac::CloseSecondReceiveWindow (void)
     {
       if (m_retxParams.retxLeft > 0 )
       {
-        Send(m_retxParams.packet);
-        NS_LOG_INFO ("Number of retx left:" << m_retxParams.retxLeft << "Sending the packet for retransmission");
+        Time waitingTime = GetNextTransmissionDelay ();
+        Simulator::Schedule(waitingTime, &LoraMac::Send, this, m_retxParams.packet);
+        //Time waitingTime = m_channelHelper.GetWaitingTime (logicalChannel);
+        //Send(m_retxParams.packet);
+        NS_LOG_INFO ("Next transmission delay " << waitingTime.GetSeconds() );
+        //Ptr<SubBand> sub= LogicalLoraChannelHelper::GetSubBandFromFrequency (868.3);
+        //NS_LOG_INFO ("Subband get next transmission time" <<  sub ->SubBand::GetNextTransmissionTime ());
+        NS_LOG_INFO ("Number of retx left: " << unsigned(m_retxParams.retxLeft) << "... Sending the packet for retransmission");
       }
       else
       {
@@ -624,6 +633,34 @@ EndDeviceLoraMac::CloseSecondReceiveWindow (void)
       NS_LOG_DEBUG ("Reset retransmission variables to default values");
     }
     
+}
+
+Time
+EndDeviceLoraMac::GetNextTransmissionDelay (void)
+{
+  NS_LOG_FUNCTION_NOARGS ();
+
+  // Pick a random channel to transmit on
+  std::vector<Ptr<LogicalLoraChannel> > logicalChannels;
+  logicalChannels = m_channelHelper.GetEnabledChannelList (); // Use a separate list to do the shuffle
+  //logicalChannels = Shuffle (logicalChannels);
+
+  Time waitingTime= Seconds(0);
+
+  // Try every channel
+  std::vector<Ptr<LogicalLoraChannel> >::iterator it;
+  for (it = logicalChannels.begin (); it != logicalChannels.end (); ++it)
+    {
+      // Pointer to the current channel
+      Ptr<LogicalLoraChannel> logicalChannel = *it;
+      double frequency = logicalChannel->GetFrequency ();
+
+      waitingTime = m_channelHelper.GetWaitingTime (logicalChannel);
+
+      NS_LOG_DEBUG ("Waiting time before the next transmission in channel with frequecy " << frequency << " is = " <<
+                    waitingTime.GetSeconds ());
+    }
+  return waitingTime; // In this case, no suitable channel was found
 }
 
 Ptr<LogicalLoraChannel>
@@ -665,6 +702,7 @@ EndDeviceLoraMac::GetChannelForTx (void)
     }
   return 0; // In this case, no suitable channel was found
 }
+
 
 std::vector<Ptr<LogicalLoraChannel> >
 EndDeviceLoraMac::Shuffle (std::vector<Ptr<LogicalLoraChannel> > vector)
