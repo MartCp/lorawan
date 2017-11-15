@@ -78,7 +78,7 @@ int main (int argc, char *argv[])
   MobilityHelper mobility;
   Ptr<ListPositionAllocator> allocator = CreateObject<ListPositionAllocator> ();
   // Position of the end device
-  allocator->Add (Vector (5,0,0)); 
+  allocator->Add (Vector (7500,0,0)); 
   // Position of the gateway 
   allocator->Add (Vector (0,0,0));
   mobility.SetPositionAllocator (allocator);
@@ -248,7 +248,7 @@ int main (int argc, char *argv[])
   // The end device open its first receive window 1 second after the transmission.
   // Scheduling sending of the reply packet after and giving the inputs for function "Send", The frequency has
   // been set looking at the frequency of the previous uplink transmission.
-  Simulator::Schedule(Seconds(14.78), &LoraPhy::Send, gwPhy, reply, downparams, 869.525, 27); // 2nd rx window: freq= 869.525 MHz, SF=12
+  // Simulator::Schedule(Seconds(14.78), &LoraPhy::Send, gwPhy, reply, downparams, 869.525, 27); // 2nd rx window: freq= 869.525 MHz, SF=12
 
 
   /****************

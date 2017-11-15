@@ -168,6 +168,13 @@ EndDeviceLoraMac::Send (Ptr<Packet> packet)
       // Add headers, prepare TX parameters and send the packet
       /////////////////////////////////////////////////////////
 
+      // if this is the first time that I send the ACKed packet, 
+      // I save a copy of the packet (without headers) in the retransmission structure.
+      if (m_mType== LoraMacHeader::CONFIRMED_DATA_UP && m_retxParams.retxLeft==MAX_TX_NUMBER)
+      {
+        m_retxParams.packet = packet -> Copy();
+      }
+
       // Add the Lora Frame Header to the packet
       LoraFrameHeader frameHdr;
       ApplyNecessaryOptions (frameHdr);
@@ -205,7 +212,6 @@ EndDeviceLoraMac::Send (Ptr<Packet> packet)
       if (m_retxParams.waitingAck)
       {
         m_retxParams.retxLeft = m_retxParams.retxLeft -1; // decreasing the number of retransmissions
-        m_retxParams.packet= packet;           // dentro l'if ?
         NS_LOG_DEBUG ("Sending a confirmed packet");
       }
       else if (!m_retxParams.waitingAck && (m_retxParams.retxLeft > 0))
@@ -215,7 +221,9 @@ EndDeviceLoraMac::Send (Ptr<Packet> packet)
       else
       {
         NS_LOG_DEBUG ("Transmitting but error: m_retxParams.waitingAck= " << m_retxParams.waitingAck 
-          << " m_retxParams.packet=packet = " << (m_retxParams.packet==packet) << " m_retxParams.retxLeft= " << m_retxParams.retxLeft);
+          << " m_retxParams.packet=packet = 1"
+          // << (m_retxParams.packet==packet )      // !! this is not verified because we have added the header to packet !!
+          << " m_retxParams.retxLeft= " << m_retxParams.retxLeft);
       }
 
       m_phy->Send (packet, params, txChannel->GetFrequency (), m_txPower);
@@ -620,11 +628,8 @@ EndDeviceLoraMac::CloseSecondReceiveWindow (void)
       {
         Time waitingTime = GetNextTransmissionDelay ();
         m_retransmission= Simulator::Schedule(waitingTime, &LoraMac::Send, this, m_retxParams.packet);
-        //Time waitingTime = m_channelHelper.GetWaitingTime (logicalChannel);
-        //Send(m_retxParams.packet);
+
         NS_LOG_INFO ("Next transmission delay " << waitingTime.GetSeconds() );
-        //Ptr<SubBand> sub= LogicalLoraChannelHelper::GetSubBandFromFrequency (868.3);
-        //NS_LOG_INFO ("Subband get next transmission time" <<  sub ->SubBand::GetNextTransmissionTime ());
         NS_LOG_INFO ("Number of retx left: " << unsigned(m_retxParams.retxLeft) << "... Sending the packet for retransmission");
       }
       else
