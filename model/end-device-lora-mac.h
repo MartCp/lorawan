@@ -221,6 +221,11 @@ public:
    */
   void SetMType (LoraMacHeader::MType mType);
 
+    /**
+   * Get the message type to send when the Send method is called.
+   */
+  LoraMacHeader::MType GetMType (void);
+
   /**
    * Parse and take action on the commands contained on this FrameHeader.
    */
@@ -346,6 +351,11 @@ private:
    * The DataRate this device is using to transmit.
    */
   TracedValue<uint8_t> m_dataRate;
+
+  /**
+   * Enable DataRate adaptation.
+   */
+  bool m_enableDRAdapt;
 
   /**
    * The transmission power this device is using to transmit.

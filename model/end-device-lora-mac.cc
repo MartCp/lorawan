@@ -73,6 +73,7 @@ EndDeviceLoraMac::GetTypeId (void)
 
 EndDeviceLoraMac::EndDeviceLoraMac () :
   m_dataRate (0),
+  m_enableDRAdapt (false),
   m_txPower (14),
   m_codingRate (1),                         // LoraWAN default
   m_headerDisabled (0),                     // LoraWAN default
@@ -141,23 +142,41 @@ EndDeviceLoraMac::Send (Ptr<Packet> packet)
       return;
     }
 
+  // check if we are performing the transmission of a new packet reset retransmission values
+  if (m_retxParams.packet != packet)
+  {
+    m_retxParams.packet = 0;
+    m_retxParams.retxLeft = MAX_TX_NUMBER;
+    m_retxParams.waitingAck = false;
+    Simulator::Cancel (m_retransmission);
+    NS_LOG_INFO ("Received a new packet from the application while we were retransmitting. Delete retransmissions.");
+  }
+
+  // Time aggrWaitingTime = m_channelHelper.GetAggregatedWaitingTime ();
+  // NS_LOG_INFO ("aggrWaitingTime is  " << aggrWaitingTime.GetSeconds() );
+  
+  Time netxTxDelay= GetNextTransmissionDelay();
+
   // Check that we can transmit according to the aggregate duty cycle timer
-  if (m_channelHelper.GetAggregatedWaitingTime () != Seconds (0))
+  if (netxTxDelay != Seconds (0))
     {
-      NS_LOG_WARN ("Attempting to send, but the aggregate duty cycle won't allow it");
-      return;
+      Simulator::Schedule(netxTxDelay, &LoraMac::Send, this, packet);
+      NS_LOG_WARN ("Attempting to send, but the aggregate duty cycle won't allow it. Scheduling a tx at a delay " << netxTxDelay.GetSeconds());
     }
 
   // Pick a channel on which to transmit the packet
   Ptr<LogicalLoraChannel> txChannel = GetChannelForTx ();
 
-  bool canTx= (( m_retxParams.waitingAck && ( m_retxParams.packet == packet) && m_retxParams.retxLeft > 0 )||  // retx ok
-              ( !m_retxParams.waitingAck && !(m_retxParams.packet == packet) && m_retxParams.retxLeft > 0 )||  // new transmission
-              ( !m_retxParams.waitingAck && !(m_retxParams.packet == packet) && m_retxParams.retxLeft <= 0 )); // new transmission but error because retxLeft = 0
-  
+  bool canTx= (txChannel && m_retxParams.retxLeft > 0);
+
   if (!txChannel)
   {
     m_cannotSendBecauseDutyCycle (packet);
+  }
+  else if ((packet== m_retxParams.packet) && !(m_retxParams.waitingAck))
+  {
+    NS_LOG_WARN ("Attempting to send the same packet as before but we are not in a retransmission procedure: ERROR!");
+    return;
   }
   else // the transmitting channel is available
   {
@@ -170,9 +189,15 @@ EndDeviceLoraMac::Send (Ptr<Packet> packet)
 
       // if this is the first time that I send the ACKed packet, 
       // I save a copy of the packet (without headers) in the retransmission structure.
+      bool a = (m_mType== LoraMacHeader::CONFIRMED_DATA_UP);
+      bool b= (m_retxParams.retxLeft==MAX_TX_NUMBER);
+      NS_LOG_DEBUG ("m_mType== LoraMacHeader::CONFIRMED_DATA_UP " << a << 
+        "m_retxParams.retxLeft==MAX_TX_NUMBER" << b);
+
       if (m_mType== LoraMacHeader::CONFIRMED_DATA_UP && m_retxParams.retxLeft==MAX_TX_NUMBER)
       {
         m_retxParams.packet = packet -> Copy();
+        NS_LOG_DEBUG ("Updated variable of retx packet");
       }
 
       // Add the Lora Frame Header to the packet
@@ -182,6 +207,7 @@ EndDeviceLoraMac::Send (Ptr<Packet> packet)
       if (frameHdr.GetAck ()) 
       {
         m_retxParams.waitingAck = true;
+        NS_LOG_DEBUG ("Assigned waitingAck= " << m_retxParams.waitingAck);
       }
       NS_LOG_INFO ("Added frame header of size " << frameHdr.GetSerializedSize () <<
                    " bytes");
@@ -214,17 +240,11 @@ EndDeviceLoraMac::Send (Ptr<Packet> packet)
         m_retxParams.retxLeft = m_retxParams.retxLeft -1; // decreasing the number of retransmissions
         NS_LOG_DEBUG ("Sending a confirmed packet");
       }
-      else if (!m_retxParams.waitingAck && (m_retxParams.retxLeft > 0))
+      else
       {
         NS_LOG_DEBUG ("New transmission: Sending packet");
       }
-      else
-      {
-        NS_LOG_DEBUG ("Transmitting but error: m_retxParams.waitingAck= " << m_retxParams.waitingAck 
-          << " m_retxParams.packet=packet = 1"
-          // << (m_retxParams.packet==packet )      // !! this is not verified because we have added the header to packet !!
-          << " m_retxParams.retxLeft= " << m_retxParams.retxLeft);
-      }
+      
 
       m_phy->Send (packet, params, txChannel->GetFrequency (), m_txPower);
 
@@ -260,10 +280,6 @@ EndDeviceLoraMac::Send (Ptr<Packet> packet)
       if (m_retxParams.waitingAck)
       {
         NS_LOG_INFO ("Max number of transmission achieved: packet not transmitted");
-      }
-      else if (m_retxParams.waitingAck && !(packet == m_retxParams.packet))
-      {
-        NS_LOG_INFO ("Trying to send a packet from the application but we are waiting for an ACK: packet dropped");
       }
       else
       {
@@ -482,7 +498,6 @@ EndDeviceLoraMac::ApplyNecessaryOptions (LoraFrameHeader& frameHeader)
       frameHeader.AddCommand (command);
     }
 
-  m_macCommandList.clear ();
 }
 
 void
@@ -498,6 +513,12 @@ void
 EndDeviceLoraMac::SetMType (LoraMacHeader::MType mType)
 {
   m_mType = mType;
+}
+
+LoraMacHeader::MType
+EndDeviceLoraMac::GetMType (void)
+{
+  return m_mType;
 }
 
 void
@@ -627,7 +648,8 @@ EndDeviceLoraMac::CloseSecondReceiveWindow (void)
       if (m_retxParams.retxLeft > 0 )
       {
         Time waitingTime = GetNextTransmissionDelay ();
-        m_retransmission= Simulator::Schedule(waitingTime, &LoraMac::Send, this, m_retxParams.packet);
+        //m_retransmission= 
+        this -> Send(m_retxParams.packet); //Simulator::Schedule(waitingTime, &LoraMac::Send, this, m_retxParams.packet);
 
         NS_LOG_INFO ("Next transmission delay " << waitingTime.GetSeconds() );
         NS_LOG_INFO ("Number of retx left: " << unsigned(m_retxParams.retxLeft) << "... Sending the packet for retransmission");
@@ -656,7 +678,7 @@ EndDeviceLoraMac::GetNextTransmissionDelay (void)
   logicalChannels = m_channelHelper.GetEnabledChannelList (); // Use a separate list to do the shuffle
   //logicalChannels = Shuffle (logicalChannels);
 
-  Time waitingTime= Seconds(0);
+  Time waitingTime= Time::Max();
 
   // Try every channel
   std::vector<Ptr<LogicalLoraChannel> >::iterator it;
@@ -666,7 +688,7 @@ EndDeviceLoraMac::GetNextTransmissionDelay (void)
       Ptr<LogicalLoraChannel> logicalChannel = *it;
       double frequency = logicalChannel->GetFrequency ();
 
-      waitingTime = m_channelHelper.GetWaitingTime (logicalChannel);
+      waitingTime = std::min(waitingTime, m_channelHelper.GetWaitingTime (logicalChannel));
 
       NS_LOG_DEBUG ("Waiting time before the next transmission in channel with frequecy " << frequency << " is = " <<
                     waitingTime.GetSeconds ());
