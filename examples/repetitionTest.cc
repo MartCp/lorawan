@@ -190,7 +190,7 @@ int main (int argc, char *argv[])
 // Second packet
   edLoraMac->SetMType(LoraMacHeader::CONFIRMED_DATA_UP);  // this device will send packets requiring Ack
   Ptr<Packet> pkt2= Create<Packet>(8);
-  Simulator::Schedule(Seconds(62), &LoraMac::Send, edMac, pkt2);
+  Simulator::Schedule(Seconds(62.8), &LoraMac::Send, edMac, pkt2);
   NS_LOG_DEBUG (" ******************** Sent second packet - Mtype is ************ " << edLoraMac -> GetMType());
 
   /*******************************
@@ -208,7 +208,7 @@ int main (int argc, char *argv[])
   downframeHdr.SetAsDownlink();
   downframeHdr.SetAddress(addr);    // indirizzo ED dst
   downframeHdr.SetAdr(true);        // ADR flag
-  // downframeHdr.SetAck(true);
+  downframeHdr.SetAck(true);
   //frameHdr.SetFPort(0);       // FPort=0 when there are only MAC commands. 
                                 // This instruction not necessary because it is 0 by default
   

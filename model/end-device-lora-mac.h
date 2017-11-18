@@ -47,7 +47,7 @@ public:
   {
     Ptr<Packet> packet = 0;
     bool waitingAck= false;
-    uint8_t retxLeft = 8;
+    uint8_t retxLeft;
   };
 
   EndDeviceLoraMac();
@@ -405,12 +405,19 @@ private:
   EventId m_secondReceiveWindow;
 
   /**
-   * The event of retransmitting a packet if an ACK is not received.
+   * The event of retransmitting a packet in a consecutive moment if an ACK is not received.
    *
-   * This Event is used to cancel the retransmission if the ACK is found in ParseCommand function.
+   * This Event is used to cancel the retransmission if the ACK is found in ParseCommand function and
+   * if a newer packet is delivered from the application to be sent.
    */
-  EventId m_retransmission;
+  EventId m_nextTx;
 
+  /**
+   * The event of transmitting a packet in a consecutive moment, when the duty cycle let us transmit.
+   *
+   * This Event is used to cancel the transmission of this packet if a newer packet is delivered from the application to be sent.
+   */
+  EventId m_nextRetx;
   /**
    * The address of this device.
    */
