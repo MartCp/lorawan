@@ -78,7 +78,7 @@ int main (int argc, char *argv[])
   MobilityHelper mobility;
   Ptr<ListPositionAllocator> allocator = CreateObject<ListPositionAllocator> ();
   // Position of the end device
-  allocator->Add (Vector (7500,0,0)); 
+  allocator->Add (Vector (500,0,0)); 
   // Position of the gateway 
   allocator->Add (Vector (0,0,0));
   mobility.SetPositionAllocator (allocator);
@@ -181,6 +181,7 @@ int main (int argc, char *argv[])
   Ptr<EndDeviceLoraMac> edLoraMac = edMac->GetObject<EndDeviceLoraMac>();
   edLoraMac-> SetDeviceAddress(addr);
   edLoraMac->SetMType(LoraMacHeader::CONFIRMED_DATA_UP);  // this device will send packets requiring Ack
+  edLoraMac->EnableDataRateAdaptation(true);
 
   Ptr<Packet> pkt= Create<Packet>(5);
 
@@ -190,7 +191,7 @@ int main (int argc, char *argv[])
 // Second packet
   edLoraMac->SetMType(LoraMacHeader::CONFIRMED_DATA_UP);  // this device will send packets requiring Ack
   Ptr<Packet> pkt2= Create<Packet>(8);
-  Simulator::Schedule(Seconds(62.8), &LoraMac::Send, edMac, pkt2);
+  //Simulator::Schedule(Seconds(62.8), &LoraMac::Send, edMac, pkt2);
   NS_LOG_DEBUG (" ******************** Sent second packet - Mtype is ************ " << edLoraMac -> GetMType());
 
   /*******************************

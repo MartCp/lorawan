@@ -50,6 +50,12 @@ public:
     uint8_t retxLeft;
   };
 
+  /**
+   * Enable Data Rate adaptation during the retransmission procedure
+   */
+  bool m_enableDRAdapt;
+
+
   EndDeviceLoraMac();
   virtual ~EndDeviceLoraMac();
 
@@ -106,6 +112,13 @@ public:
   /////////////////////////
   // Getters and Setters //
   /////////////////////////
+
+  /**
+   * Enable data rate adaptation in the retransmitting procedure.
+   *
+   * \param adapt If the data rate adaptation is enabled or not.
+   */
+  void EnableDataRateAdaptation (bool adapt);
 
   /**
    * Set the data rate this end device will use when transmitting. For End
@@ -351,11 +364,6 @@ private:
    * The DataRate this device is using to transmit.
    */
   TracedValue<uint8_t> m_dataRate;
-
-  /**
-   * Enable DataRate adaptation.
-   */
-  bool m_enableDRAdapt;
 
   /**
    * The transmission power this device is using to transmit.

@@ -72,8 +72,8 @@ EndDeviceLoraMac::GetTypeId (void)
 }
 
 EndDeviceLoraMac::EndDeviceLoraMac () :
-  m_dataRate (0),
   m_enableDRAdapt (false),
+  m_dataRate (0),
   m_txPower (14),
   m_codingRate (1),                         // LoraWAN default
   m_headerDisabled (0),                     // LoraWAN default
@@ -230,6 +230,11 @@ EndDeviceLoraMac::Send (Ptr<Packet> packet)
     packetToSend->AddHeader (macHdr);
     NS_LOG_INFO ("Added MAC header of size " << macHdr.GetSerializedSize () <<
                    " bytes");
+
+    if (m_enableDRAdapt && (m_dataRate > 0) && (m_retxParams.retxLeft < MAX_TX_NUMBER) && (m_retxParams.retxLeft % 2 == 0) )
+    {
+      m_dataRate = m_dataRate -1;
+    }
 
     // Craft LoraTxParameters object
     LoraTxParameters params;
@@ -755,6 +760,14 @@ EndDeviceLoraMac::Shuffle (std::vector<Ptr<LogicalLoraChannel> > vector)
 /////////////////////////
 // Setters and Getters //
 /////////////////////////
+
+void
+EndDeviceLoraMac::EnableDataRateAdaptation (bool adapt)
+{
+  NS_LOG_FUNCTION (this << adapt);
+  m_enableDRAdapt = adapt;
+}
+
 
 void
 EndDeviceLoraMac::SetDataRate (uint8_t dataRate)
