@@ -51,9 +51,14 @@ public:
   };
 
   /**
-   * Enable Data Rate adaptation during the retransmission procedure
+   * Enable Data Rate adaptation during the retransmission procedure.
    */
   bool m_enableDRAdapt;
+
+  /**
+   * Maximum number of transmission allowed.
+   */
+  uint8_t m_maxNumbTx; 
 
 
   EndDeviceLoraMac();
@@ -119,6 +124,13 @@ public:
    * \param adapt If the data rate adaptation is enabled or not.
    */
   void EnableDataRateAdaptation (bool adapt);
+
+  /**
+   * Set the maximum number of transmissions allowed.
+   *
+   * \param maxNumbTx The maximum number of transmissions allowed
+   */
+  void SetMaxNumberOfTransmissions (uint8_t maxNumbTx);
 
   /**
    * Set the data rate this end device will use when transmitting. For End

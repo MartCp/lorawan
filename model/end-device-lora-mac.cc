@@ -73,6 +73,7 @@ EndDeviceLoraMac::GetTypeId (void)
 
 EndDeviceLoraMac::EndDeviceLoraMac () :
   m_enableDRAdapt (false),
+  m_maxNumbTx (8),
   m_dataRate (0),
   m_txPower (14),
   m_codingRate (1),                         // LoraWAN default
@@ -766,6 +767,12 @@ EndDeviceLoraMac::EnableDataRateAdaptation (bool adapt)
 {
   NS_LOG_FUNCTION (this << adapt);
   m_enableDRAdapt = adapt;
+}
+
+void
+EndDeviceLoraMac::SetMaxNumberOfTransmissions (uint8_t maxNumbTx)
+{
+  m_maxNumbTx = maxNumbTx;
 }
 
 
