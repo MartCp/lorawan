@@ -38,6 +38,11 @@ EndDeviceLoraMac::GetTypeId (void)
   static TypeId tid = TypeId ("ns3::EndDeviceLoraMac")
     .SetParent<LoraMac> ()
     .SetGroupName ("lorawan")
+    .AddTraceSource ("RequiredTransmissions",
+                     "Total number of transmissions required to deliver this packet",
+                     MakeTraceSourceAccessor
+                       (&EndDeviceLoraMac::m_requiredTxCallback),
+                     "ns3::TracedValueCallback::uint8_t")
     .AddTraceSource ("DataRate",
                      "Data Rate currently employed by this end device",
                      MakeTraceSourceAccessor
@@ -355,8 +360,8 @@ EndDeviceLoraMac::ParseCommands (LoraFrameHeader frameHeader)
       m_retxParams.retxLeft= m_maxNumbTx;
       // If it exists, cancel the retransmission event
       Simulator::Cancel (m_nextRetx);
-
       NS_LOG_DEBUG ("Reset retransmission variables to default values and cancel retransmission if already scheduled");
+      m_requiredTxCallback (m_maxNumbTx - m_retxParams.retxLeft);
     }
     else
     {
@@ -656,6 +661,7 @@ EndDeviceLoraMac::CloseSecondReceiveWindow (void)
       else
       {
         NS_LOG_INFO ("We are still waiting for an ACK, but we have achieved the maximum number of transmission");
+        m_requiredTxCallback (m_maxNumbTx);
       }
     }
     else

@@ -39,28 +39,6 @@ public:
 
   static TypeId GetTypeId (void);
 
-  /** 
-  * Structure representing the parameters that will be used in the 
-  * retransmission procedure.
-  */
-  struct LoraRetxParameters
-  {
-    Ptr<Packet> packet = 0;
-    bool waitingAck= false;
-    uint8_t retxLeft;
-  };
-
-  /**
-   * Enable Data Rate adaptation during the retransmission procedure.
-   */
-  bool m_enableDRAdapt;
-
-  /**
-   * Maximum number of transmission allowed.
-   */
-  uint8_t m_maxNumbTx; 
-
-
   EndDeviceLoraMac();
   virtual ~EndDeviceLoraMac();
 
@@ -345,6 +323,27 @@ public:
 
 private:
 
+  /** 
+  * Structure representing the parameters that will be used in the 
+  * retransmission procedure.
+  */
+  struct LoraRetxParameters
+  {
+    Ptr<Packet> packet = 0;
+    bool waitingAck= false;
+    uint8_t retxLeft;
+  };
+
+  /**
+   * Enable Data Rate adaptation during the retransmission procedure.
+   */
+  bool m_enableDRAdapt;
+
+  /**
+   * Maximum number of transmission allowed.
+   */
+  uint8_t m_maxNumbTx; 
+
   /**
    * Randomly shuffle a Ptr<LogicalLoraChannel> vector.
    *
@@ -371,6 +370,14 @@ private:
    * the channel list.
    */
   Ptr<UniformRandomVariable> m_uniformRV;
+
+
+/**
+   * The total number of transmissions required.
+   */
+  /*
+  TracedValue<uint8_t> m_requiredTx;
+*/
 
   /**
    * The DataRate this device is using to transmit.
@@ -494,6 +501,17 @@ private:
    * for this device.
    */
   struct LoraRetxParameters m_retxParams;
+
+  /////////////////
+  //  Callbacks  //
+  /////////////////
+
+  /**
+   * The trace source fired when the transmission procedure is finished.
+   *
+   * \see class CallBackTraceSource
+   */
+  TracedCallback<uint8_t> m_requiredTxCallback;
 
 };
 
