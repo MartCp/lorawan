@@ -144,6 +144,8 @@ EndDeviceLoraMac::Send (Ptr<Packet> packet)
   // or because wwe are receiving, schedule a tx/retx later
   Time netxTxDelay= GetNextTransmissionDelay();
 
+  NS_LOG_DEBUG ("next tx delay " << netxTxDelay.GetSeconds());
+
   // Check that there are no scheduled receive windows.
   // We cannot send a packet if we are in the process of transmitting or waiting
   // for reception.
@@ -153,6 +155,11 @@ EndDeviceLoraMac::Send (Ptr<Packet> packet)
                    " Transmission postponed");
       Time endSecondRxWindow= (m_receiveDelay2 + m_receiveWindowDuration);
       netxTxDelay = std::max(netxTxDelay, endSecondRxWindow);
+      /*
+      NS_LOG_WARN ("Attempting to send when there are receive windows" <<
+                   " Transmission canceled");
+      return;*/
+
     }
 
   // Check that we can transmit according to the aggregate duty cycle timer
@@ -254,7 +261,7 @@ EndDeviceLoraMac::Send (Ptr<Packet> packet)
     NS_ASSERT_MSG (m_txPower <= m_channelHelper.GetTxPowerForChannel (txChannel), 
                 " The selected power is too hight to be supported by this channel ");
 
-    if (m_retxParams.waitingAck)
+    if (m_retxParams.waitingAck || m_retxParams.retxLeft == m_maxNumbTx)
     {
       m_retxParams.retxLeft = m_retxParams.retxLeft -1; // decreasing the number of retransmissions
       NS_LOG_DEBUG ("Sending a confirmed packet");
@@ -361,7 +368,8 @@ EndDeviceLoraMac::ParseCommands (LoraFrameHeader frameHeader)
       // If it exists, cancel the retransmission event
       Simulator::Cancel (m_nextRetx);
       NS_LOG_DEBUG ("Reset retransmission variables to default values and cancel retransmission if already scheduled");
-      m_requiredTxCallback (m_maxNumbTx - m_retxParams.retxLeft);
+      uint8_t txs = m_maxNumbTx - m_retxParams.retxLeft;
+      m_requiredTxCallback (txs);
     }
     else
     {
@@ -666,6 +674,10 @@ EndDeviceLoraMac::CloseSecondReceiveWindow (void)
     }
     else
     {
+      NS_LOG_DEBUG (" m_maxNumbTx " << unsigned(m_maxNumbTx) << " m_retxParams.retxLeft " << unsigned(m_retxParams.retxLeft));
+      uint8_t txs = m_maxNumbTx - m_retxParams.retxLeft;
+      m_requiredTxCallback (txs);
+
       m_retxParams.packet= 0;    // Reset to default values
       m_retxParams.retxLeft= 8;
       NS_LOG_DEBUG ("Reset retransmission variables to default values");
@@ -682,6 +694,8 @@ EndDeviceLoraMac::GetNextTransmissionDelay (void)
   std::vector<Ptr<LogicalLoraChannel> > logicalChannels;
   logicalChannels = m_channelHelper.GetEnabledChannelList (); // Use a separate list to do the shuffle
   //logicalChannels = Shuffle (logicalChannels);
+
+  NS_LOG_DEBUG ("lungh lista " << logicalChannels.size());
 
   Time waitingTime= Time::Max();
 

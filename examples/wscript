@@ -37,5 +37,5 @@ def build(bld):
     obj = bld.create_ns3_program('repetitionTest', ['lorawan'])
     obj.source = 'repetitionTest.cc'
 
-    obj = bld.create_ns3_program('packetTest', ['lorawan'])
-    obj.source = 'packetTest.cc'
+    obj = bld.create_ns3_program('networkPerf', ['lorawan'])
+    obj.source = 'networkPerf.cc'
