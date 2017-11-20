@@ -24,7 +24,7 @@
 #include "ns3/log.h"
 #include <algorithm>
 
-const int MAX_TX_NUMBER= 8;
+//const int MAX_TX_NUMBER= 8;
 
 namespace ns3 {
 
@@ -112,8 +112,8 @@ EndDeviceLoraMac::EndDeviceLoraMac () :
 
   // Initialize structure for retransmission parameters
   m_retxParams = EndDeviceLoraMac::LoraRetxParameters ();
-  m_retxParams.retxLeft = MAX_TX_NUMBER;
-  
+  //m_retxParams.retxLeft = MAX_TX_NUMBER;
+  m_retxParams.retxLeft= m_maxNumbTx;
 }
 
 EndDeviceLoraMac::~EndDeviceLoraMac ()
@@ -126,22 +126,6 @@ EndDeviceLoraMac::Send (Ptr<Packet> packet)
 {
   NS_LOG_FUNCTION (this << packet);
 
-  // Check that there are no scheduled receive windows.
-  // We cannot send a packet if we are in the process of transmitting or waiting
-  // for reception.
-  if (!m_closeWindow.IsExpired () || !m_secondReceiveWindow.IsExpired ())
-    {
-      NS_LOG_WARN ("Attempting to send when there are receive windows" <<
-                   " Transmission canceled");
-      /*
-      NS_LOG_WARN ("Attempting to send when there are receive windows" <<
-              " Transmission postponed");
-      // TODO: togliere return e far andare avanti il programma facendogli fare uno schedule per quando può tx --> modificare il log
-      */
-
-      return;
-    }
-
   // Check that payload length is below the allowed maximum
   if (packet->GetSize () > m_maxAppPayloadForDataRate.at (m_dataRate))
     {
@@ -151,13 +135,25 @@ EndDeviceLoraMac::Send (Ptr<Packet> packet)
       return;
     }
 
-  // If it is not possible to transmit now because of the duty cycle, schedule a tx/retx later
+  // If it is not possible to transmit now because of the duty cycle, 
+  // or because wwe are receiving, schedule a tx/retx later
   Time netxTxDelay= GetNextTransmissionDelay();
+
+  // Check that there are no scheduled receive windows.
+  // We cannot send a packet if we are in the process of transmitting or waiting
+  // for reception.
+  if (!m_closeWindow.IsExpired () || !m_secondReceiveWindow.IsExpired ())
+    {
+      NS_LOG_WARN ("Attempting to send when there are receive windows" <<
+                   " Transmission postponed");
+      Time endSecondRxWindow= (m_receiveDelay2 + m_receiveWindowDuration);
+      netxTxDelay = std::max(netxTxDelay, endSecondRxWindow);
+    }
 
   // Check that we can transmit according to the aggregate duty cycle timer
   if (netxTxDelay != Seconds (0))
   {
-    if (m_retxParams.retxLeft == MAX_TX_NUMBER)
+    if (m_retxParams.retxLeft == m_maxNumbTx)
     {
       // if other transmissions have already been scheduled (by the previous packet) I delete them
       Simulator::Cancel (m_nextTx);
@@ -180,10 +176,10 @@ EndDeviceLoraMac::Send (Ptr<Packet> packet)
   }
 
   // If this is the first transmission of a confirmed packet, save parameters for the (possible) next retransmissions. 
-  if (m_mType == LoraMacHeader::CONFIRMED_DATA_UP && m_retxParams.retxLeft == MAX_TX_NUMBER)
+  if (m_mType == LoraMacHeader::CONFIRMED_DATA_UP && m_retxParams.retxLeft == m_maxNumbTx)
   {
     m_retxParams.packet = packet -> Copy();
-    m_retxParams.retxLeft = MAX_TX_NUMBER;
+    m_retxParams.retxLeft = m_maxNumbTx;
     m_retxParams.waitingAck = true;
     NS_LOG_DEBUG ("Setting retransmission parameters");
   }
@@ -232,7 +228,7 @@ EndDeviceLoraMac::Send (Ptr<Packet> packet)
     NS_LOG_INFO ("Added MAC header of size " << macHdr.GetSerializedSize () <<
                    " bytes");
 
-    if (m_enableDRAdapt && (m_dataRate > 0) && (m_retxParams.retxLeft < MAX_TX_NUMBER) && (m_retxParams.retxLeft % 2 == 0) )
+    if (m_enableDRAdapt && (m_dataRate > 0) && (m_retxParams.retxLeft < m_maxNumbTx) && (m_retxParams.retxLeft % 2 == 0) )
     {
       m_dataRate = m_dataRate -1;
     }
@@ -356,7 +352,7 @@ EndDeviceLoraMac::ParseCommands (LoraFrameHeader frameHeader)
       // Reset to default values
       m_retxParams.waitingAck= false;
       m_retxParams.packet= 0;
-      m_retxParams.retxLeft= MAX_TX_NUMBER;
+      m_retxParams.retxLeft= m_maxNumbTx;
       // If it exists, cancel the retransmission event
       Simulator::Cancel (m_nextRetx);
 
