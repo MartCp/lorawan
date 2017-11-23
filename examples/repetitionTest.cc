@@ -181,7 +181,7 @@ int main (int argc, char *argv[])
   Ptr<EndDeviceLoraMac> edLoraMac = edMac->GetObject<EndDeviceLoraMac>();
   edLoraMac-> SetDeviceAddress(addr);
   edLoraMac->SetMType(LoraMacHeader::CONFIRMED_DATA_UP);  // this device will send packets requiring Ack
-  edLoraMac->EnableDataRateAdaptation(true);
+  edLoraMac->SetDataRateAdaptation(true);
 
   Ptr<Packet> pkt= Create<Packet>(5);
 

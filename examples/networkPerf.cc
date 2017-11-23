@@ -34,7 +34,7 @@ int gatewayRings = 1;
 int nGateways = 3*gatewayRings*gatewayRings-3*gatewayRings+1;
 double radius = 7500;
 double gatewayRadius = 7500/((gatewayRings-1)*2+1);
-double simulationTime = 600;
+double simulationTime = 601;
 int appPeriodSeconds = 600;
 int run=1;
 std::vector<int> sfQuantity (6);
@@ -134,8 +134,7 @@ TransmissionCallback (Ptr<Packet const> packet, uint32_t systemId)
 void
 RequiredTransmissionsCallback(uint8_t reqTx)
 {
-  NS_LOG_INFO ("ReqTx " << unsigned(reqTx));
-
+  // NS_LOG_DEBUG ("ReqTx " << unsigned(reqTx));
   v[reqTx-1]= v[reqTx-1] + 1;
 }
 
@@ -251,15 +250,15 @@ int main (int argc, char *argv[])
   // LogComponentEnable("LoraPhy", LOG_LEVEL_ALL);
   // LogComponentEnable("EndDeviceLoraPhy", LOG_LEVEL_ALL);
   // LogComponentEnable("GatewayLoraPhy", LOG_LEVEL_ALL);
-   LogComponentEnable("LoraInterferenceHelper", LOG_LEVEL_ALL);
+  // LogComponentEnable("LoraInterferenceHelper", LOG_LEVEL_ALL);
   // LogComponentEnable("LoraMac", LOG_LEVEL_ALL);
-  LogComponentEnable("EndDeviceLoraMac", LOG_LEVEL_ALL);
+  // LogComponentEnable("EndDeviceLoraMac", LOG_LEVEL_ALL);
   // LogComponentEnable("GatewayLoraMac", LOG_LEVEL_ALL);
   // LogComponentEnable("LogicalLoraChannelHelper", LOG_LEVEL_ALL);
   // LogComponentEnable("LogicalLoraChannel", LOG_LEVEL_ALL);
   // LogComponentEnable("LoraHelper", LOG_LEVEL_ALL);
   // LogComponentEnable("LoraPhyHelper", LOG_LEVEL_ALL);
-  LogComponentEnable("LoraMacHelper", LOG_LEVEL_ALL);
+  // LogComponentEnable("LoraMacHelper", LOG_LEVEL_ALL);
   // LogComponentEnable("PeriodicSenderHelper", LOG_LEVEL_ALL);
   // LogComponentEnable("PeriodicSender", LOG_LEVEL_ALL);
   // LogComponentEnable("LoraMacHeader", LOG_LEVEL_ALL);

@@ -101,7 +101,12 @@ public:
    *
    * \param adapt If the data rate adaptation is enabled or not.
    */
-  void EnableDataRateAdaptation (bool adapt);
+  void SetDataRateAdaptation (bool adapt);
+
+  /**
+   * Get if data rate adaptation is enabled or not.
+   */
+  bool GetDataRateAdaptation (void);
 
   /**
    * Set the maximum number of transmissions allowed.

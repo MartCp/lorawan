@@ -72,6 +72,14 @@ EndDeviceLoraMac::GetTypeId (void)
                      MakeTraceSourceAccessor
                        (&EndDeviceLoraMac::m_aggregatedDutyCycle),
                      "ns3::TracedValueCallback::Double")
+    /*
+    .AddAttribute ("EnableDRAdaptation",
+                 "Enable Data Rate adaptation in retransmission procedure.",
+                  BooleanValue (false),    // transmit at 0dBm = 28mA
+                  MakeBooleanAccessor (&EndDeviceLoraMac::SetDataRateAdaptation,
+                                      &EndDeviceLoraMac::GetDataRateAdaptation),
+                  MakeBooleanChecker<bool> ())
+                  */
     .AddConstructor<EndDeviceLoraMac> ();
   return tid;
 }
@@ -779,11 +787,16 @@ EndDeviceLoraMac::Shuffle (std::vector<Ptr<LogicalLoraChannel> > vector)
 /////////////////////////
 
 void
-EndDeviceLoraMac::EnableDataRateAdaptation (bool adapt)
+EndDeviceLoraMac::SetDataRateAdaptation (bool adapt)
 {
   NS_LOG_FUNCTION (this << adapt);
   m_enableDRAdapt = adapt;
 }
+
+bool
+EndDeviceLoraMac::GetDataRateAdaptation (void)
+{
+  return m_enableDRAdapt;}
 
 void
 EndDeviceLoraMac::SetMaxNumberOfTransmissions (uint8_t maxNumbTx)
