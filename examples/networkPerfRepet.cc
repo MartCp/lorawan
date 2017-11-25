@@ -4,6 +4,21 @@
  * network.
  */
 
+
+#include "ns3/point-to-point-module.h"
+#include "ns3/lora-channel.h"
+#include "ns3/forwarder-helper.h"
+#include "ns3/network-server-helper.h"
+#include "ns3/lora-phy-helper.h"
+#include "ns3/lora-mac-helper.h"
+#include "ns3/lora-helper.h"
+#include "ns3/lora-device-address-generator.h"
+#include "ns3/log.h"
+#include "ns3/string.h"
+#include "ns3/command-line.h"
+#include "ns3/core-module.h"
+#include "ns3/network-module.h"
+
 #include "ns3/end-device-lora-phy.h"
 #include "ns3/gateway-lora-phy.h"
 #include "ns3/end-device-lora-mac.h"
@@ -26,7 +41,7 @@
 
 using namespace ns3;
 
-NS_LOG_COMPONENT_DEFINE ("ComplexLorawanNetworkExample");
+NS_LOG_COMPONENT_DEFINE ("NetworkPerformanceRepetitions");
 
 // Network settings
 int nDevices = 2000;
@@ -245,14 +260,16 @@ int main (int argc, char *argv[])
   cmd.Parse (argc, argv);
 
   // Set up logging
-  LogComponentEnable ("ComplexLorawanNetworkExample", LOG_LEVEL_ALL);
+  LogComponentEnable ("NetworkPerformanceRepetitions", LOG_LEVEL_ALL);
+  LogComponentEnable ("SimpleNetworkServer", LOG_LEVEL_ALL);
+  LogComponentEnable ("Forwarder", LOG_LEVEL_ALL);
   // LogComponentEnable("LoraChannel", LOG_LEVEL_INFO);
   // LogComponentEnable("LoraPhy", LOG_LEVEL_ALL);
   // LogComponentEnable("EndDeviceLoraPhy", LOG_LEVEL_ALL);
   // LogComponentEnable("GatewayLoraPhy", LOG_LEVEL_ALL);
   // LogComponentEnable("LoraInterferenceHelper", LOG_LEVEL_ALL);
   // LogComponentEnable("LoraMac", LOG_LEVEL_ALL);
-  // LogComponentEnable("EndDeviceLoraMac", LOG_LEVEL_ALL);
+   LogComponentEnable("EndDeviceLoraMac", LOG_LEVEL_ALL);
   // LogComponentEnable("GatewayLoraMac", LOG_LEVEL_ALL);
   // LogComponentEnable("LogicalLoraChannelHelper", LOG_LEVEL_ALL);
   // LogComponentEnable("LogicalLoraChannel", LOG_LEVEL_ALL);
@@ -263,6 +280,9 @@ int main (int argc, char *argv[])
   // LogComponentEnable("PeriodicSender", LOG_LEVEL_ALL);
   // LogComponentEnable("LoraMacHeader", LOG_LEVEL_ALL);
   // LogComponentEnable("LoraFrameHeader", LOG_LEVEL_ALL);
+  LogComponentEnableAll (LOG_PREFIX_FUNC);
+  LogComponentEnableAll (LOG_PREFIX_NODE);
+  LogComponentEnableAll (LOG_PREFIX_TIME);
 
   /***********
   *  Setup  *
@@ -331,9 +351,17 @@ int main (int argc, char *argv[])
       mobility->SetPosition (position);
     }
 
+  // Create a LoraDeviceAddressGenerator
+  uint8_t nwkId = 54;
+  uint32_t nwkAddr = 1864;
+  Ptr<LoraDeviceAddressGenerator> addrGen = CreateObject<LoraDeviceAddressGenerator> (nwkId,nwkAddr);
+
   // Create the LoraNetDevices of the end devices
   phyHelper.SetDeviceType (LoraPhyHelper::ED);
   macHelper.SetDeviceType (LoraMacHelper::ED);
+  macHelper.SetAddressGenerator (addrGen);
+  macHelper.SetRegion (LoraMacHelper::EU);
+
   helper.Install (phyHelper, macHelper, endDevices);
 
   // Now end devices are connected to the channel
@@ -351,9 +379,11 @@ int main (int argc, char *argv[])
       Ptr<EndDeviceLoraMac> mac= loraNetDevice->GetMac()-> GetObject<EndDeviceLoraMac>();
       mac->TraceConnectWithoutContext("RequiredTransmissions",
                                         MakeCallback (&RequiredTransmissionsCallback));
+      mac-> SetMType(LoraMacHeader::CONFIRMED_DATA_UP);
+
     }
 
-  /*********************
+  /********************
   *  Create Gateways  *
   *********************/
 
@@ -406,15 +436,33 @@ int main (int argc, char *argv[])
 
   macHelper.SetSpreadingFactorsUp (endDevices, gateways, channel);
 
+  /**********************************************
+  *            Create Network Server            *
+  **********************************************/
+
+  NodeContainer networkServers;
+  networkServers.Create (1);
+
+  // Install the SimpleNetworkServer application on the network server
+  NetworkServerHelper networkServerHelper;
+  networkServerHelper.SetGateways (gateways);
+  networkServerHelper.SetEndDevices (endDevices);
+  networkServerHelper.Install (networkServers);
+
+  // Install the Forwarder application on the gateways
+  ForwarderHelper forwarderHelper;
+  forwarderHelper.Install (gateways);
+
+
   NS_LOG_DEBUG ("Completed configuration");
 
   /*********************************************
   *  Install applications on the end devices  *
   *********************************************/
 
-  Time appStopTime = Seconds (simulationTime);
+  Time appStopTime = appPeriod;
   PeriodicSenderHelper appHelper = PeriodicSenderHelper ();
-  appHelper.SetPeriod (Seconds (appPeriodSeconds));
+  appHelper.SetPeriod (appPeriod);
   ApplicationContainer appContainer = appHelper.Install (endDevices);
 
   appContainer.Start (Seconds (0));
@@ -445,19 +493,8 @@ int main (int argc, char *argv[])
   *  Results  *
   *************/
 
-  // double receivedAvg = double(received)/nDevices;
-  // double interferedProb = double(interfered)/nDevices;
-  // double noMoreReceiversProb = double(noMoreReceivers)/nDevices;
-  // double underSensitivityProb = double(underSensitivity)/nDevices;
-
-  // double receivedProbGivenAboveSensitivity = double(received)/(nDevices - underSensitivity);
-  // double interferedProbGivenAboveSensitivity = double(interfered)/(nDevices - underSensitivity);
-  // double noMoreReceiversProbGivenAboveSensitivity = double(noMoreReceivers)/(nDevices - underSensitivity);
-  // std::cout << nDevices << " " << double(nDevices)/simulationTime << " " << receivedProb << " " << interferedProb << " " << noMoreReceiversProb << " " << underSensitivityProb <<
-  // " " << receivedProbGivenAboveSensitivity << " " << interferedProbGivenAboveSensitivity << " " << noMoreReceiversProbGivenAboveSensitivity << std::endl;
-  
-  // double receivedProb= double(received)/double(totalPktsSent);
   std::cout << nDevices << " " << totalPktsSent << " " << received << " " << interfered << " " << noMoreReceivers << " " << underSensitivity 
+    << " " << v[0] << " " << v[1] << " " << v[2] << " " << v[3] << " " << v[4] << " " << v[5] << " " << v[6] << " " << v[7] 
     << std::endl;
 
 

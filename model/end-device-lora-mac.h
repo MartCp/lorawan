@@ -333,7 +333,6 @@ public:
 
 private:
 
-
   /** 
   * Structure representing the parameters that will be used in the 
   * retransmission procedure.

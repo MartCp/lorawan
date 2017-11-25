@@ -157,7 +157,7 @@ EndDeviceLoraMac::Send (Ptr<Packet> packet)
   // Check that there are no scheduled receive windows.
   // We cannot send a packet if we are in the process of transmitting or waiting
   // for reception.
-  if (!m_closeWindow.IsExpired () || !m_secondReceiveWindow.IsExpired ())
+  if (!m_closeWindow.IsExpired () || !m_secondReceiveWindow.IsExpired () )
     {
       NS_LOG_WARN ("Attempting to send when there are receive windows" <<
                    " Transmission postponed");
