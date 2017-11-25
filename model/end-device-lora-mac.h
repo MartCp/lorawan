@@ -116,6 +116,11 @@ public:
   void SetMaxNumberOfTransmissions (uint8_t maxNumbTx);
 
   /**
+   * Set the maximum number of transmissions allowed.
+   */
+  uint8_t GetMaxNumberOfTransmissions (void);
+
+  /**
    * Set the data rate this end device will use when transmitting. For End
    * Devices, this value is assumed to be fixed, and can be modified via MAC
    * commands issued by the GW.
@@ -327,6 +332,7 @@ public:
                    double maxTxPowerDbm);
 
 private:
+
 
   /** 
   * Structure representing the parameters that will be used in the 

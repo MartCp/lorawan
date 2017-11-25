@@ -158,7 +158,7 @@ int main (int argc, char *argv[])
   oneShotSenderHelper.Install (endDevices);
   // Setting the time for the second packet
   oneShotSenderHelper.SetSendTime (Seconds (8));
-  oneShotSenderHelper.Install (endDevices);
+  //oneShotSenderHelper.Install (endDevices);
 
 
   /*******************************

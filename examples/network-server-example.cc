@@ -52,7 +52,7 @@ int main (int argc, char *argv[])
   LogComponentEnable ("EndDeviceLoraMac", LOG_LEVEL_ALL);
   LogComponentEnable ("OneShotSender", LOG_LEVEL_ALL);
   // LogComponentEnable("PointToPointNetDevice", LOG_LEVEL_ALL);
-  LogComponentEnable ("Forwarder", LOG_LEVEL_ALL);
+  LogComponentEnable ("Forwarder", LOG_LEVEL_ALL);LogComponentEnable ("Forwarder", LOG_LEVEL_ALL);
   LogComponentEnable ("OneShotSender", LOG_LEVEL_ALL);
   LogComponentEnable ("DeviceStatus", LOG_LEVEL_ALL);
   LogComponentEnable ("GatewayStatus", LOG_LEVEL_ALL);

@@ -801,7 +801,16 @@ EndDeviceLoraMac::GetDataRateAdaptation (void)
 void
 EndDeviceLoraMac::SetMaxNumberOfTransmissions (uint8_t maxNumbTx)
 {
+  NS_LOG_FUNCTION (this << unsigned(maxNumbTx));
   m_maxNumbTx = maxNumbTx;
+  m_retxParams.retxLeft= maxNumbTx;
+}
+
+uint8_t
+EndDeviceLoraMac::GetMaxNumberOfTransmissions (void)
+{
+  NS_LOG_FUNCTION (this );
+  return m_maxNumbTx;
 }
 
 
