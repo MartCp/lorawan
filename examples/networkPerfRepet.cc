@@ -453,7 +453,6 @@ int main (int argc, char *argv[])
   ForwarderHelper forwarderHelper;
   forwarderHelper.Install (gateways);
 
-
   NS_LOG_DEBUG ("Completed configuration");
 
   /*********************************************

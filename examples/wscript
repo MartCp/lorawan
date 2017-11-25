@@ -42,3 +42,6 @@ def build(bld):
 
     obj = bld.create_ns3_program('networkPerfRepet', ['lorawan'])
     obj.source = 'networkPerfRepet.cc'
+
+    obj = bld.create_ns3_program('server2', ['lorawan'])
+    obj.source = 'server2.cc'
