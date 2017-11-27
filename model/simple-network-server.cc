@@ -239,7 +239,9 @@ SimpleNetworkServer::SendOnFirstWindow (LoraDeviceAddress address)
 
       replyPacket->AddPacketTag (replyPacketTag);
 
-      NS_LOG_INFO ("Sending reply through the gateway with address " << gatewayForReply);
+      NS_LOG_INFO ("Sending reply through the gateway with address " << gatewayForReply << " and initialize the reply.");
+
+      InitializeReply (address, false);
 
       // Inform the gateway of the transmission
       m_gatewayStatuses.find (gatewayForReply)->second.GetNetDevice ()->
@@ -283,7 +285,9 @@ SimpleNetworkServer::SendOnSecondWindow (LoraDeviceAddress address)
       replyPacket->AddPacketTag (replyPacketTag);
 
       NS_LOG_INFO ("Sending reply through the gateway with address " <<
-                   gatewayForReply);
+                   gatewayForReply << " and initialize reply.");
+
+      InitializeReply (address, false);
 
       // Inform the gateway of the transmission
       m_gatewayStatuses.find (gatewayForReply)->second.GetNetDevice ()->
@@ -318,4 +322,14 @@ SimpleNetworkServer::GetGatewayForReply (LoraDeviceAddress deviceAddress,
 
   return Address ();
 }
+
+void
+SimpleNetworkServer::InitializeReply (LoraDeviceAddress addr, bool hasRep)
+{
+      DeviceStatus::Reply reply;
+      reply.hasReply = hasRep;
+
+      m_deviceStatuses.at (addr).SetReply (reply);
+}
+
 }

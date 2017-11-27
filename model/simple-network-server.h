@@ -115,6 +115,16 @@ public:
    */
   Address GetGatewayForReply (LoraDeviceAddress deviceAddress, double frequency);
 
+  /**
+   * Initialize the hasReply value of the device to the given value, so that the
+   * Reply can be overwritten.
+   *
+   * \param addr The address oh the device 
+   * \param hasRep The new value of the hasReply field,
+   */
+  void InitializeReply (LoraDeviceAddress addr, bool hasRep);
+
+
 protected:
   std::map<LoraDeviceAddress,DeviceStatus> m_deviceStatuses;
 
