@@ -683,7 +683,7 @@ EndDeviceLoraMac::CloseSecondReceiveWindow (void)
     else
     {
       NS_LOG_DEBUG (" m_maxNumbTx " << unsigned(m_maxNumbTx) << " m_retxParams.retxLeft " << unsigned(m_retxParams.retxLeft));
-      uint8_t txs = m_maxNumbTx - m_retxParams.retxLeft;
+      uint8_t txs = m_maxNumbTx - (m_retxParams.retxLeft +1);   // +1 because retxLeft has already been decremented by 1
       m_requiredTxCallback (txs);
 
       m_retxParams.packet= 0;    // Reset to default values

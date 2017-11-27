@@ -20,6 +20,7 @@
 
 #include "ns3/lora-mac-helper.h"
 #include "ns3/gateway-lora-phy.h"
+#include "ns3/end-device-lora-phy.h"
 #include "ns3/lora-net-device.h"
 #include "ns3/log.h"
 
@@ -275,6 +276,41 @@ LoraMacHelper::SetSpreadingFactorsUp (NodeContainer endDevices, NodeContainer ga
       // NS_LOG_DEBUG ("Rx Power: " << highestRxPower);
       double rxPower = highestRxPower;
 
+      // Get the ED sensitivity
+      Ptr<EndDeviceLoraPhy> edPhy = loraNetDevice->GetPhy ()->GetObject<EndDeviceLoraPhy> ();
+      const double *edSensitivity = edPhy->sensitivity;
+    
+
+      if(rxPower > *edSensitivity)
+        {
+          mac->SetDataRate (5);
+        }
+      else if (rxPower > *(edSensitivity+1))
+        {
+          mac->SetDataRate (4);
+        }
+      else if (rxPower > *(edSensitivity+2))
+        {
+          mac->SetDataRate (3);
+        }
+      else if (rxPower > *(edSensitivity+3))
+        {
+          mac->SetDataRate (2);
+        }
+      else if (rxPower > *(edSensitivity+4))
+        {
+          mac->SetDataRate (1);
+        }
+      else if (rxPower > *(edSensitivity+5))
+        {
+          mac->SetDataRate (0);
+        }
+      else // Device is out of range. Assign SF12.
+        {
+          mac->SetDataRate (0);
+        }
+
+/*
       // Get the Gw sensitivity
       Ptr<NetDevice> gatewayNetDevice = bestGateway->GetDevice (0);
       Ptr<LoraNetDevice> gatewayLoraNetDevice = gatewayNetDevice->GetObject<LoraNetDevice> ();
@@ -309,6 +345,7 @@ LoraMacHelper::SetSpreadingFactorsUp (NodeContainer endDevices, NodeContainer ga
         {
           mac->SetDataRate (0);
         }
+        */
     }
 }
 }

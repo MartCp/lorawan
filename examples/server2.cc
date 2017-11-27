@@ -132,11 +132,13 @@ int main (int argc, char *argv[])
   oneShotHelper.Install (endDevices.Get (1));
   */
 
-  oneShotHelper.SetSendTime (Seconds (2));
-  oneShotHelper.Install(endDevices.Get (2));
+
 
   oneShotHelper.SetSendTime (Seconds (3));
   oneShotHelper.Install(endDevices.Get (3));
+
+  oneShotHelper.SetSendTime (Seconds (6));
+  oneShotHelper.Install(endDevices.Get (2));
 
   ////////////////
   // Create GWs //
