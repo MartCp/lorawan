@@ -376,7 +376,7 @@ EndDeviceLoraMac::ParseCommands (LoraFrameHeader frameHeader)
       // If it exists, cancel the retransmission event
       Simulator::Cancel (m_nextRetx);
       NS_LOG_DEBUG ("Reset retransmission variables to default values and cancel retransmission if already scheduled");
-      uint8_t txs = m_maxNumbTx - m_retxParams.retxLeft;
+      uint8_t txs = m_maxNumbTx - (m_retxParams.retxLeft +1);   // +1 because retxLeft has already been decremented by 1
       m_requiredTxCallback (txs);
     }
     else

@@ -3,45 +3,42 @@
  * devices. The metric of interest for this script is the throughput of the
  * network.
  */
-
-
 #include "ns3/point-to-point-module.h"
-#include "ns3/lora-channel.h"
 #include "ns3/forwarder-helper.h"
 #include "ns3/network-server-helper.h"
+#include "ns3/lora-channel.h"
+#include "ns3/mobility-helper.h"
 #include "ns3/lora-phy-helper.h"
 #include "ns3/lora-mac-helper.h"
 #include "ns3/lora-helper.h"
-#include "ns3/lora-device-address-generator.h"
+#include "ns3/gateway-lora-phy.h"
+#include "ns3/periodic-sender.h"
+#include "ns3/periodic-sender-helper.h"
 #include "ns3/log.h"
 #include "ns3/string.h"
 #include "ns3/command-line.h"
 #include "ns3/core-module.h"
 #include "ns3/network-module.h"
+#include "ns3/lora-device-address-generator.h"
+#include "ns3/one-shot-sender-helper.h"
 
 #include "ns3/end-device-lora-phy.h"
-#include "ns3/gateway-lora-phy.h"
 #include "ns3/end-device-lora-mac.h"
 #include "ns3/gateway-lora-mac.h"
 #include "ns3/simulator.h"
-#include "ns3/log.h"
 #include "ns3/pointer.h"
 #include "ns3/constant-position-mobility-model.h"
-#include "ns3/lora-helper.h"
 #include "ns3/node-container.h"
-#include "ns3/mobility-helper.h"
 #include "ns3/position-allocator.h"
 #include "ns3/double.h"
 #include "ns3/random-variable-stream.h"
-#include "ns3/periodic-sender-helper.h"
-#include "ns3/command-line.h"
 #include "ns3/rng-seed-manager.h"
 #include <algorithm>
 #include <ctime>
 
 using namespace ns3;
 
-NS_LOG_COMPONENT_DEFINE ("NetworkPerformanceRepetitions");
+NS_LOG_COMPONENT_DEFINE ("NetworkPerformanceRepetition");
 
 // Network settings
 int nDevices = 2000;
@@ -255,31 +252,34 @@ int main (int argc, char *argv[])
   cmd.AddValue ("simulationTime", "The time for which to simulate", simulationTime);
   cmd.AddValue ("appPeriod", "The period in seconds to be used by periodically transmitting applications", appPeriodSeconds);
   cmd.AddValue ("printEDs", "Whether or not to print a file containing the ED's positions", printEDs);
-  // cmd.AddValue ("RngRun", "Set run of the RngSeedManager", run);
 
   cmd.Parse (argc, argv);
 
   // Set up logging
-  LogComponentEnable ("NetworkPerformanceRepetitions", LOG_LEVEL_ALL);
-  LogComponentEnable ("SimpleNetworkServer", LOG_LEVEL_ALL);
-  LogComponentEnable ("Forwarder", LOG_LEVEL_ALL);
-  // LogComponentEnable("LoraChannel", LOG_LEVEL_INFO);
-  // LogComponentEnable("LoraPhy", LOG_LEVEL_ALL);
-  // LogComponentEnable("EndDeviceLoraPhy", LOG_LEVEL_ALL);
-  // LogComponentEnable("GatewayLoraPhy", LOG_LEVEL_ALL);
+  LogComponentEnable ("NetworkPerformanceRepetition", LOG_LEVEL_ALL);
   // LogComponentEnable("LoraInterferenceHelper", LOG_LEVEL_ALL);
   // LogComponentEnable("LoraMac", LOG_LEVEL_ALL);
-   LogComponentEnable("EndDeviceLoraMac", LOG_LEVEL_ALL);
-  // LogComponentEnable("GatewayLoraMac", LOG_LEVEL_ALL);
-  // LogComponentEnable("LogicalLoraChannelHelper", LOG_LEVEL_ALL);
   // LogComponentEnable("LogicalLoraChannel", LOG_LEVEL_ALL);
   // LogComponentEnable("LoraHelper", LOG_LEVEL_ALL);
   // LogComponentEnable("LoraPhyHelper", LOG_LEVEL_ALL);
   // LogComponentEnable("LoraMacHelper", LOG_LEVEL_ALL);
+  // LogComponentEnable("LoraFrameHeader", LOG_LEVEL_ALL);
+  // LogComponentEnable("LoraMacHeader", LOG_LEVEL_ALL);
+  // LogComponentEnable("MacCommand", LOG_LEVEL_ALL);
+  // LogComponentEnable("GatewayLoraPhy", LOG_LEVEL_ALL);
+  // LogComponentEnable("LoraPhy", LOG_LEVEL_ALL);
+  // LogComponentEnable("LoraChannel", LOG_LEVEL_ALL);
+  // LogComponentEnable("EndDeviceLoraPhy", LOG_LEVEL_ALL);
+  // LogComponentEnable("LogicalLoraChannelHelper", LOG_LEVEL_ALL);
+   LogComponentEnable ("EndDeviceLoraMac", LOG_LEVEL_ALL);
+  // LogComponentEnable("PointToPointNetDevice", LOG_LEVEL_ALL);
   // LogComponentEnable("PeriodicSenderHelper", LOG_LEVEL_ALL);
   // LogComponentEnable("PeriodicSender", LOG_LEVEL_ALL);
-  // LogComponentEnable("LoraMacHeader", LOG_LEVEL_ALL);
-  // LogComponentEnable("LoraFrameHeader", LOG_LEVEL_ALL);
+  LogComponentEnable ("SimpleNetworkServer", LOG_LEVEL_ALL);
+  LogComponentEnable ("GatewayLoraMac", LOG_LEVEL_ALL);
+  LogComponentEnable ("Forwarder", LOG_LEVEL_ALL);
+   LogComponentEnable ("DeviceStatus", LOG_LEVEL_ALL);
+   LogComponentEnable ("GatewayStatus", LOG_LEVEL_ALL);
   LogComponentEnableAll (LOG_PREFIX_FUNC);
   LogComponentEnableAll (LOG_PREFIX_NODE);
   LogComponentEnableAll (LOG_PREFIX_TIME);
@@ -360,8 +360,6 @@ int main (int argc, char *argv[])
   phyHelper.SetDeviceType (LoraPhyHelper::ED);
   macHelper.SetDeviceType (LoraMacHelper::ED);
   macHelper.SetAddressGenerator (addrGen);
-  macHelper.SetRegion (LoraMacHelper::EU);
-
   helper.Install (phyHelper, macHelper, endDevices);
 
   // Now end devices are connected to the channel
@@ -379,11 +377,11 @@ int main (int argc, char *argv[])
       Ptr<EndDeviceLoraMac> mac= loraNetDevice->GetMac()-> GetObject<EndDeviceLoraMac>();
       mac->TraceConnectWithoutContext("RequiredTransmissions",
                                         MakeCallback (&RequiredTransmissionsCallback));
-      mac-> SetMType(LoraMacHeader::CONFIRMED_DATA_UP);
-
+      // Set message type, otherwise the NS does not send ACKs
+      mac -> SetMType(LoraMacHeader::CONFIRMED_DATA_UP);
     }
 
-  /********************
+  /*********************
   *  Create Gateways  *
   *********************/
 
@@ -437,7 +435,7 @@ int main (int argc, char *argv[])
   macHelper.SetSpreadingFactorsUp (endDevices, gateways, channel);
 
   /**********************************************
-  *            Create Network Server            *
+  *              Create Network Server          *
   **********************************************/
 
   NodeContainer networkServers;
@@ -453,13 +451,14 @@ int main (int argc, char *argv[])
   ForwarderHelper forwarderHelper;
   forwarderHelper.Install (gateways);
 
+
   NS_LOG_DEBUG ("Completed configuration");
 
   /*********************************************
   *  Install applications on the end devices  *
   *********************************************/
 
-  Time appStopTime = appPeriod;
+  Time appStopTime = appPeriod;     // The application stops exactly after one period
   PeriodicSenderHelper appHelper = PeriodicSenderHelper ();
   appHelper.SetPeriod (appPeriod);
   ApplicationContainer appContainer = appHelper.Install (endDevices);
@@ -480,7 +479,7 @@ int main (int argc, char *argv[])
   *  Simulation  *
   ****************/
 
-  Simulator::Stop (appStopTime + Hours (2));
+  Simulator::Stop (appStopTime + Hours (4));    // Stop later to permit the retransmission procedure
 
   // PrintSimulationTime ();
 
@@ -492,8 +491,9 @@ int main (int argc, char *argv[])
   *  Results  *
   *************/
 
-  std::cout << nDevices << " " << totalPktsSent << " " << received << " " << interfered << " " << noMoreReceivers << " " << underSensitivity 
-    << " " << v[0] << " " << v[1] << " " << v[2] << " " << v[3] << " " << v[4] << " " << v[5] << " " << v[6] << " " << v[7] 
+std::cout << nDevices << " " << totalPktsSent << " " << received << " " << interfered << " " << noMoreReceivers << " " << underSensitivity << " "
+    << v[0] << " " << v[1] << " " << v[2] << " " << v[3] << " "
+    << v[4] << " " << v[5] << " " << v[6] << " " << v[7] << " "
     << std::endl;
 
 
