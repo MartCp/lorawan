@@ -46,7 +46,7 @@ int gatewayRings = 1;
 int nGateways = 3*gatewayRings*gatewayRings-3*gatewayRings+1;
 double radius = 7500;
 double gatewayRadius = 7500/((gatewayRings-1)*2+1);
-double simulationTime = 601;
+double simulationTime = 600;
 int appPeriodSeconds = 600;
 int run=1;
 std::vector<int> sfQuantity (6);
@@ -270,17 +270,17 @@ int main (int argc, char *argv[])
   // LogComponentEnable("LoraPhy", LOG_LEVEL_ALL);
   // LogComponentEnable("LoraChannel", LOG_LEVEL_ALL);
   // LogComponentEnable("EndDeviceLoraPhy", LOG_LEVEL_ALL);
-  LogComponentEnable("SimpleEndDeviceLoraPhy", LOG_LEVEL_ALL);
+  // LogComponentEnable("SimpleEndDeviceLoraPhy", LOG_LEVEL_ALL);
   // LogComponentEnable("LogicalLoraChannelHelper", LOG_LEVEL_ALL);
    LogComponentEnable ("EndDeviceLoraMac", LOG_LEVEL_ALL);
   // LogComponentEnable("PointToPointNetDevice", LOG_LEVEL_ALL);
   // LogComponentEnable("PeriodicSenderHelper", LOG_LEVEL_ALL);
   // LogComponentEnable("PeriodicSender", LOG_LEVEL_ALL);
-  LogComponentEnable ("SimpleNetworkServer", LOG_LEVEL_ALL);
-  LogComponentEnable ("GatewayLoraMac", LOG_LEVEL_ALL);
-  LogComponentEnable ("Forwarder", LOG_LEVEL_ALL);
-   LogComponentEnable ("DeviceStatus", LOG_LEVEL_ALL);
-   LogComponentEnable ("GatewayStatus", LOG_LEVEL_ALL);
+  // LogComponentEnable ("SimpleNetworkServer", LOG_LEVEL_ALL);
+  // LogComponentEnable ("GatewayLoraMac", LOG_LEVEL_ALL);
+  // LogComponentEnable ("Forwarder", LOG_LEVEL_ALL);
+  // LogComponentEnable ("DeviceStatus", LOG_LEVEL_ALL);
+  // LogComponentEnable ("GatewayStatus", LOG_LEVEL_ALL);
   LogComponentEnableAll (LOG_PREFIX_FUNC);
   LogComponentEnableAll (LOG_PREFIX_NODE);
   LogComponentEnableAll (LOG_PREFIX_TIME);
@@ -496,7 +496,8 @@ std::cout << nDevices << " " << totalPktsSent << " " << received << " " << inter
     << v[0] << " " << v[1] << " " << v[2] << " " << v[3] << " "
     << v[4] << " " << v[5] << " " << v[6] << " " << v[7] << " "
     << std::endl;
-
+std::cout << v[0] + v[1]*2 +v[2]*3 +v[3]*4 + v[4]*5 + v[5]*6 + v[6]*7 + v[7]*8
+    << std::endl;
 
 
   return 0;

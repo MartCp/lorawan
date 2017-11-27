@@ -369,16 +369,21 @@ EndDeviceLoraMac::ParseCommands (LoraFrameHeader frameHeader)
     if (frameHeader.GetAck())
     {
       NS_LOG_INFO ("The message is an ACK, not waiting for it anymore");
+
+      NS_LOG_DEBUG ("Reset retransmission variables to default values and cancel retransmission if already scheduled");
+      uint8_t txs = m_maxNumbTx - (m_retxParams.retxLeft);
+      m_requiredTxCallback (txs);
+      NS_LOG_DEBUG(" ************* ********************txs= " << unsigned(txs) << " maxNumbTx= " 
+        << unsigned(m_maxNumbTx) << " retxLeft= " << unsigned (m_retxParams.retxLeft));
+
       // Reset to default values
       m_retxParams.waitingAck= false;
       m_retxParams.packet= 0;
       m_retxParams.retxLeft= m_maxNumbTx;
       // If it exists, cancel the retransmission event
       Simulator::Cancel (m_nextRetx);
-      NS_LOG_DEBUG ("Reset retransmission variables to default values and cancel retransmission if already scheduled");
-      uint8_t txs = m_maxNumbTx - (m_retxParams.retxLeft +1);   // +1 because retxLeft has already been decremented by 1
-      m_requiredTxCallback (txs);
-    }
+
+    } 
     else
     {
       NS_LOG_INFO("!!! ERROR >>> Received message but it does not contain an ACK but we were waiting for it!! <<< ERROR");
@@ -683,11 +688,14 @@ EndDeviceLoraMac::CloseSecondReceiveWindow (void)
     else
     {
       NS_LOG_DEBUG (" m_maxNumbTx " << unsigned(m_maxNumbTx) << " m_retxParams.retxLeft " << unsigned(m_retxParams.retxLeft));
-      uint8_t txs = m_maxNumbTx - (m_retxParams.retxLeft +1);   // +1 because retxLeft has already been decremented by 1
+      uint8_t txs = m_maxNumbTx - (m_retxParams.retxLeft );
       m_requiredTxCallback (txs);
+      NS_LOG_DEBUG(" ************ ************ txs = " << unsigned(txs) << " maxNumbTx= " 
+        << unsigned(m_maxNumbTx) << " retxLeft= " << unsigned (m_retxParams.retxLeft));
+
 
       m_retxParams.packet= 0;    // Reset to default values
-      m_retxParams.retxLeft= 8;
+      m_retxParams.retxLeft= m_maxNumbTx;
       NS_LOG_DEBUG ("Reset retransmission variables to default values");
     }
     
