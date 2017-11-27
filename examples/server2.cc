@@ -125,18 +125,18 @@ int main (int argc, char *argv[])
 
   // Install applications in EDs
   OneShotSenderHelper oneShotHelper = OneShotSenderHelper ();
-  oneShotHelper.SetSendTime (Seconds (4));
-  oneShotHelper.Install (endDevices.Get (0));
+  oneShotHelper.SetSendTime (Seconds (1));
+  oneShotHelper.Install (endDevices.Get (1));
 
-  oneShotHelper.SetSendTime (Seconds (10));
-  oneShotHelper.Install (endDevices.Get (0));
-/*
-  oneShotHelper.SetSendTime (Seconds (8));
+ /* oneShotHelper.SetSendTime (Seconds (10));
+  oneShotHelper.Install (endDevices.Get (1));
+  */
+
+  oneShotHelper.SetSendTime (Seconds (2));
   oneShotHelper.Install(endDevices.Get (2));
 
-  oneShotHelper.SetSendTime (Seconds (11));
+  oneShotHelper.SetSendTime (Seconds (3));
   oneShotHelper.Install(endDevices.Get (3));
-  */
 
   ////////////////
   // Create GWs //
