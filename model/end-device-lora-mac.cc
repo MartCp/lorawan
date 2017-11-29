@@ -94,7 +94,8 @@ EndDeviceLoraMac::EndDeviceLoraMac () :
   m_receiveDelay1 (Seconds (1)),            // LoraWAN default
   m_receiveDelay2 (Seconds (2)),            // LoraWAN default
   m_receiveWindowDuration (Seconds (0.2)),
-  m_closeWindow (EventId ()),               // Initialize as the default eventId
+  m_closeFirstWindow (EventId ()),               // Initialize as the default eventId
+  m_closeSecondWindow (EventId ()),               // Initialize as the default eventId
   // m_secondReceiveWindow (EventId ()),       // Initialize as the default eventId
   // m_secondReceiveWindowDataRate (0),        // LoraWAN default
   m_address (LoraDeviceAddress (0)),
@@ -112,8 +113,10 @@ EndDeviceLoraMac::EndDeviceLoraMac () :
   m_uniformRV = CreateObject<UniformRandomVariable> ();
 
   // Void the two receiveWindow events
-  m_closeWindow = EventId ();
-  m_closeWindow.Cancel ();
+  m_closeFirstWindow = EventId ();
+  m_closeFirstWindow.Cancel ();
+  m_closeSecondWindow = EventId ();
+  m_closeSecondWindow.Cancel ();
   m_secondReceiveWindow = EventId ();
   m_secondReceiveWindow.Cancel ();
 
@@ -157,7 +160,7 @@ EndDeviceLoraMac::Send (Ptr<Packet> packet)
   // Check that there are no scheduled receive windows.
   // We cannot send a packet if we are in the process of transmitting or waiting
   // for reception.
-  if (!m_closeWindow.IsExpired () || !m_secondReceiveWindow.IsExpired () )
+  if (!m_closeFirstWindow.IsExpired () || !m_closeSecondWindow.IsExpired () || !m_secondReceiveWindow.IsExpired () )
     {
       NS_LOG_WARN ("Attempting to send when there are receive windows" <<
                    " Transmission postponed");
@@ -371,10 +374,17 @@ EndDeviceLoraMac::ParseCommands (LoraFrameHeader frameHeader)
       NS_LOG_INFO ("The message is an ACK, not waiting for it anymore");
 
       NS_LOG_DEBUG ("Reset retransmission variables to default values and cancel retransmission if already scheduled");
-      uint8_t txs = m_maxNumbTx - (m_retxParams.retxLeft);
-      m_requiredTxCallback (txs);
-      NS_LOG_DEBUG(" ************* ********************txs= " << unsigned(txs) << " maxNumbTx= " 
+
+      // This check because if this is the ACK obtainted by sendind the message m_maxNumbTx times, 
+      // m_requiredTxCallback has already been called in CloseSecondReceiveWindow
+      if (m_retxParams.retxLeft != 0)
+      {
+        uint8_t txs = m_maxNumbTx - (m_retxParams.retxLeft);
+        m_requiredTxCallback (txs);
+        NS_LOG_DEBUG(" ************* ********************txs = " << unsigned(txs) << " maxNumbTx= " 
         << unsigned(m_maxNumbTx) << " retxLeft= " << unsigned (m_retxParams.retxLeft));
+      }
+
 
       // Reset to default values
       m_retxParams.waitingAck= false;
@@ -579,7 +589,7 @@ EndDeviceLoraMac::OpenFirstReceiveWindow (void)
   // Schedule return to sleep after "at least the time required by the end
   // device's radio transceiver to effectively detect a downlink preamble"
   // (LoraWAN specification)
-  m_closeWindow = Simulator::Schedule (m_receiveWindowDuration,
+  m_closeFirstWindow = Simulator::Schedule (m_receiveWindowDuration,
                                        &EndDeviceLoraMac::CloseFirstReceiveWindow, this);
 }
 
@@ -640,7 +650,7 @@ EndDeviceLoraMac::OpenSecondReceiveWindow (void)
   // Schedule return to sleep after "at least the time required by the end
   // device's radio transceiver to effectively detect a downlink preamble"
   // (LoraWAN specification)
-  m_closeWindow = Simulator::Schedule (m_receiveWindowDuration,
+  m_closeSecondWindow = Simulator::Schedule (m_receiveWindowDuration,
                                        &EndDeviceLoraMac::CloseSecondReceiveWindow, this);
 }
 
@@ -679,10 +689,17 @@ EndDeviceLoraMac::CloseSecondReceiveWindow (void)
         this -> Send(m_retxParams.packet); //Simulator::Schedule(waitingTime, &LoraMac::Send, this, m_retxParams.packet);
         NS_LOG_INFO ("Number of retx left: " << unsigned(m_retxParams.retxLeft) << "... Sending the packet for retransmission");
       }
-      else
+      else if (m_retxParams.retxLeft == 0)
       {
         NS_LOG_INFO ("We are still waiting for an ACK, but we have achieved the maximum number of transmission");
         m_requiredTxCallback (m_maxNumbTx);
+        NS_LOG_DEBUG(" ************ ************ txs = " << unsigned(m_maxNumbTx) << " maxNumbTx= " 
+        << unsigned(m_maxNumbTx) << " retxLeft= " << unsigned (m_retxParams.retxLeft));
+
+      }
+      else 
+      {
+        NS_LOG_ERROR ("The number of retransmissions left is negative !!! ");
       }
     }
     else

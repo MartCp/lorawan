@@ -427,11 +427,18 @@ private:
   Time m_receiveWindowDuration;
 
   /**
-   * The event of the closing of a receive window.
+   * The event of the closing the first receive window.
    *
    * This Event will be canceled if there's a successful reception of a packet.
    */
-  EventId m_closeWindow;
+  EventId m_closeFirstWindow;
+
+  /**
+   * The event of the closing the second receive window.
+   *
+   * This Event will be canceled if there's a successful reception of a packet.
+   */
+  EventId m_closeSecondWindow;
 
   /**
    * The event of the second receive window opening.

@@ -146,7 +146,7 @@ TransmissionCallback (Ptr<Packet const> packet, uint32_t systemId)
 void
 RequiredTransmissionsCallback(uint8_t reqTx)
 {
-  // NS_LOG_DEBUG ("ReqTx " << unsigned(reqTx));
+  NS_LOG_DEBUG ("ReqTx " << unsigned(reqTx));
   v[reqTx-1]= v[reqTx-1] + 1;
 }
 
