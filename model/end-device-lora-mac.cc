@@ -383,6 +383,25 @@ EndDeviceLoraMac::Receive (Ptr<Packet const> packet)
             }
         }
     }
+  else if (m_retxParams.waitingAck && m_secondReceiveWindow.IsExpired ())
+    {
+      if (m_retxParams.retxLeft > 0)
+        {
+          NS_LOG_INFO ("The packet we are receiving is in uplink, rescheduling transmission.");
+          this->Send (m_retxParams.packet);
+          NS_LOG_INFO ("Number of retx left: " << unsigned (m_retxParams.retxLeft) << "... Sending the packet for retransmission");
+        }
+      else
+        {
+          // TODO Make event fail
+          uint8_t txs = m_maxNumbTx - (m_retxParams.retxLeft);
+          // TODO Use different callback because here we failed
+          m_requiredTxCallback (txs);
+          NS_LOG_DEBUG (" ************* ********************txs = " << unsigned(txs) << " maxNumbTx= "
+                                                                    << unsigned(m_maxNumbTx) << " retxLeft= " << unsigned (m_retxParams.retxLeft));
+        }
+    }
+
   m_phy->GetObject<EndDeviceLoraPhy> ()->SwitchToSleep ();
 }
 
@@ -725,7 +744,7 @@ EndDeviceLoraMac::CloseSecondReceiveWindow (void)
           this->Send (m_retxParams.packet);           //Simulator::Schedule(waitingTime, &LoraMac::Send, this, m_retxParams.packet);
           NS_LOG_INFO ("Number of retx left: " << unsigned(m_retxParams.retxLeft) << "... Sending the packet for retransmission");
         }
-      else if (m_retxParams.retxLeft == 0 && m_phy->GetObject<EndDeviceLoraPhy> ()->GetState () == EndDeviceLoraPhy::RX)
+      else if (m_retxParams.retxLeft == 0 && m_phy->GetObject<EndDeviceLoraPhy> ()->GetState () != EndDeviceLoraPhy::RX)
         {
           uint8_t txs = m_maxNumbTx - (m_retxParams.retxLeft);
           // TODO Use different callback because here we failed
