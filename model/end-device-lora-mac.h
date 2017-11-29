@@ -65,6 +65,8 @@ public:
    */
   virtual void Receive (Ptr<Packet const> packet);
 
+  virtual void FailedReception (Ptr<Packet const> packet);
+
   /**
    * Perform the actions that are required after a packet send.
    *
@@ -234,9 +236,9 @@ public:
    */
   void SetMType (LoraMacHeader::MType mType);
 
-    /**
-   * Get the message type to send when the Send method is called.
-   */
+  /**
+ * Get the message type to send when the Send method is called.
+ */
   LoraMacHeader::MType GetMType (void);
 
   /**
@@ -333,8 +335,8 @@ public:
 
 private:
 
-  /** 
-  * Structure representing the parameters that will be used in the 
+  /**
+  * Structure representing the parameters that will be used in the
   * retransmission procedure.
   */
   struct LoraRetxParameters
@@ -352,7 +354,7 @@ private:
   /**
    * Maximum number of transmission allowed.
    */
-  uint8_t m_maxNumbTx; 
+  uint8_t m_maxNumbTx;
 
   /**
    * Randomly shuffle a Ptr<LogicalLoraChannel> vector.
@@ -362,9 +364,9 @@ private:
   std::vector<Ptr<LogicalLoraChannel> > Shuffle
     (std::vector<Ptr<LogicalLoraChannel> > vector);
 
- /**
-   * Find the minimum waiting time before the next possible transmission.
-   */
+  /**
+    * Find the minimum waiting time before the next possible transmission.
+    */
   Time GetNextTransmissionDelay (void);
 
 
@@ -385,8 +387,8 @@ private:
 /**
    * The total number of transmissions required.
    */
-  /*
-  TracedValue<uint8_t> m_requiredTx;
+/*
+TracedValue<uint8_t> m_requiredTx;
 */
 
   /**

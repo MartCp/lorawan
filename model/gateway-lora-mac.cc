@@ -122,6 +122,12 @@ GatewayLoraMac::Receive (Ptr<Packet const> packet)
 }
 
 void
+GatewayLoraMac::FailedReception (Ptr<Packet const> packet)
+{
+  NS_LOG_FUNCTION (this << packet);
+}
+
+void
 GatewayLoraMac::TxFinished (Ptr<const Packet> packet)
 {
   NS_LOG_FUNCTION_NOARGS ();

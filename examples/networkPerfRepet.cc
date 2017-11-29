@@ -144,7 +144,7 @@ TransmissionCallback (Ptr<Packet const> packet, uint32_t systemId)
 }
 
 void
-RequiredTransmissionsCallback(uint8_t reqTx)
+RequiredTransmissionsCallback (uint8_t reqTx)
 {
   NS_LOG_DEBUG ("ReqTx " << unsigned(reqTx));
   v[reqTx-1]= v[reqTx-1] + 1;
@@ -269,10 +269,10 @@ int main (int argc, char *argv[])
   // LogComponentEnable("GatewayLoraPhy", LOG_LEVEL_ALL);
   // LogComponentEnable("LoraPhy", LOG_LEVEL_ALL);
   // LogComponentEnable("LoraChannel", LOG_LEVEL_ALL);
-  // LogComponentEnable("EndDeviceLoraPhy", LOG_LEVEL_ALL);
-  // LogComponentEnable("SimpleEndDeviceLoraPhy", LOG_LEVEL_ALL);
+  // LogComponentEnable ("EndDeviceLoraPhy", LOG_LEVEL_ALL);
+  LogComponentEnable ("SimpleEndDeviceLoraPhy", LOG_LEVEL_ALL);
   // LogComponentEnable("LogicalLoraChannelHelper", LOG_LEVEL_ALL);
-   LogComponentEnable ("EndDeviceLoraMac", LOG_LEVEL_ALL);
+  LogComponentEnable ("EndDeviceLoraMac", LOG_LEVEL_ALL);
   // LogComponentEnable("PointToPointNetDevice", LOG_LEVEL_ALL);
   // LogComponentEnable("PeriodicSenderHelper", LOG_LEVEL_ALL);
   // LogComponentEnable("PeriodicSender", LOG_LEVEL_ALL);
@@ -374,12 +374,12 @@ int main (int argc, char *argv[])
       Ptr<LoraPhy> phy = loraNetDevice->GetPhy ();
       phy->TraceConnectWithoutContext ("StartSending",
                                        MakeCallback (&TransmissionCallback));
-      
-      Ptr<EndDeviceLoraMac> mac= loraNetDevice->GetMac()-> GetObject<EndDeviceLoraMac>();
-      mac->TraceConnectWithoutContext("RequiredTransmissions",
-                                        MakeCallback (&RequiredTransmissionsCallback));
+
+      Ptr<EndDeviceLoraMac> mac= loraNetDevice->GetMac ()->GetObject<EndDeviceLoraMac>();
+      mac->TraceConnectWithoutContext ("RequiredTransmissions",
+                                       MakeCallback (&RequiredTransmissionsCallback));
       // Set message type, otherwise the NS does not send ACKs
-      mac -> SetMType(LoraMacHeader::CONFIRMED_DATA_UP);
+      mac->SetMType (LoraMacHeader::CONFIRMED_DATA_UP);
     }
 
   /*********************
@@ -392,7 +392,7 @@ int main (int argc, char *argv[])
 
   Ptr<ListPositionAllocator> allocator = CreateObject<ListPositionAllocator> ();
   // Make it so that nodes are at a certain height > 0
-  allocator->Add (Vector (0.0, 0.0, 15.0));    
+  allocator->Add (Vector (0.0, 0.0, 15.0));
   mobility.SetPositionAllocator (allocator);
   mobility.Install (gateways);
 
@@ -492,12 +492,12 @@ int main (int argc, char *argv[])
   *  Results  *
   *************/
 
-std::cout << nDevices << " " << totalPktsSent << " " << received << " " << interfered << " " << noMoreReceivers << " " << underSensitivity << " "
-    << v[0] << " " << v[1] << " " << v[2] << " " << v[3] << " "
-    << v[4] << " " << v[5] << " " << v[6] << " " << v[7] << " "
-    << std::endl;
-std::cout << v[0] + v[1]*2 +v[2]*3 +v[3]*4 + v[4]*5 + v[5]*6 + v[6]*7 + v[7]*8
-    << std::endl;
+  std::cout << nDevices << " " << totalPktsSent << " " << received << " " << interfered << " " << noMoreReceivers << " " << underSensitivity << " "
+            << v[0] << " " << v[1] << " " << v[2] << " " << v[3] << " "
+            << v[4] << " " << v[5] << " " << v[6] << " " << v[7] << " "
+            << std::endl;
+  std::cout << v[0] + v[1]*2 +v[2]*3 +v[3]*4 + v[4]*5 + v[5]*6 + v[6]*7 + v[7]*8
+            << std::endl;
 
 
   return 0;

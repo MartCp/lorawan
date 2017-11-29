@@ -81,6 +81,7 @@ LoraMac::SetPhy (Ptr<LoraPhy> phy)
 
   // Connect the receive callbacks
   m_phy->SetReceiveOkCallback (MakeCallback (&LoraMac::Receive, this));
+  m_phy->SetReceiveFailedCallback (MakeCallback (&LoraMac::FailedReception, this));
   m_phy->SetTxFinishedCallback (MakeCallback (&LoraMac::TxFinished, this));
 }
 

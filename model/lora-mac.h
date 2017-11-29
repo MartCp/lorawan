@@ -78,6 +78,14 @@ public:
   virtual void Receive (Ptr<Packet const> packet) = 0;
 
   /**
+   * Function called by lower layers to inform this layer that reception of a
+   * packet we were locked on failed.
+   *
+   * \param packet the packet we failed to receive
+  */
+  virtual void FailedReception (Ptr<Packet const> packet) = 0;
+
+  /**
    * Perform actions after sending a packet.
    *
    * \param packet The packet that just finished transmission.
