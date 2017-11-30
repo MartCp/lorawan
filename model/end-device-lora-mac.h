@@ -356,6 +356,14 @@ private:
    */
   uint8_t m_maxNumbTx;
 
+
+
+
+bool m_temporaryBool; 
+
+
+
+
   /**
    * Randomly shuffle a Ptr<LogicalLoraChannel> vector.
    *

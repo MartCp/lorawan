@@ -356,7 +356,7 @@ EndDeviceLoraMac::Receive (Ptr<Packet const> packet)
           m_receivedPacket (packet);
         }
       else
-        {
+        { 
           NS_LOG_DEBUG ("The message is intended for another recipient.");
 
           // In this case, we are either receiving in the first receive window
@@ -364,9 +364,15 @@ EndDeviceLoraMac::Receive (Ptr<Packet const> packet)
           // packet in the second receive window and finding out, after the
           // fact, that the packet is not for us. In either case, since we no
           // longer have any retransmissions left, we declare failure.
-          if (m_retxParams.waitingAck && m_secondReceiveWindow.IsExpired ())
+          if (m_retxParams.waitingAck && m_closeFirstWindow.IsExpired() && m_secondReceiveWindow.IsExpired ())
             {
-              if (m_retxParams.retxLeft == 0)
+              if (m_retxParams.retxLeft > 0)
+                {
+                  NS_LOG_INFO ("The packet we are receiving is in uplink, rescheduling retransmission.");
+                  this->Send (m_retxParams.packet);
+                  NS_LOG_INFO ("Number of retx left: " << unsigned (m_retxParams.retxLeft) << "... Sending the packet for retransmission");
+                }
+              else
                 {
                   // TODO Make event fail
                   uint8_t txs = m_maxNumbTx - (m_retxParams.retxLeft);
@@ -375,19 +381,16 @@ EndDeviceLoraMac::Receive (Ptr<Packet const> packet)
                   NS_LOG_DEBUG (" ************* ********************txs = " << unsigned(txs) << " maxNumbTx= "
                                                                             << unsigned(m_maxNumbTx) << " retxLeft= " << unsigned (m_retxParams.retxLeft));
                 }
-              else // Reschedule
-                {
-                  this->Send (m_retxParams.packet);
-                  NS_LOG_INFO ("Number of retx left: " << unsigned(m_retxParams.retxLeft) << "... Sending the packet for retransmission");
-                }
             }
-        }
-    }
-  else if (m_retxParams.waitingAck && m_secondReceiveWindow.IsExpired ())
+        }   // End message for another recipient
+    }       // End downlink message
+
+  // Else if the message is uplink and the second window is not open because the device was receiving
+  else if (mHdr.IsUplink () && m_retxParams.waitingAck && m_temporaryBool)
     {
       if (m_retxParams.retxLeft > 0)
         {
-          NS_LOG_INFO ("The packet we are receiving is in uplink, rescheduling transmission.");
+          NS_LOG_INFO ("The packet we are receiving is in uplink, rescheduling retransmission.");
           this->Send (m_retxParams.packet);
           NS_LOG_INFO ("Number of retx left: " << unsigned (m_retxParams.retxLeft) << "... Sending the packet for retransmission");
         }
@@ -401,6 +404,14 @@ EndDeviceLoraMac::Receive (Ptr<Packet const> packet)
                                                                     << unsigned(m_maxNumbTx) << " retxLeft= " << unsigned (m_retxParams.retxLeft));
         }
     }
+  
+  /*else
+  {
+    NS_LOG_DEBUG (" m_retxParams.waitingAck " << m_retxParams.waitingAck <<
+     " m_closeFirstWindow.IsExpired() " << m_closeFirstWindow.IsExpired() <<
+     "m_secondReceiveWindow.IsExpired () " << m_secondReceiveWindow.IsExpired () <<
+     "m_closeSecondWindow.IsExpired () " << m_closeSecondWindow.IsExpired () );
+  }*/
 
   m_phy->GetObject<EndDeviceLoraPhy> ()->SwitchToSleep ();
 }
@@ -413,11 +424,22 @@ EndDeviceLoraMac::FailedReception (Ptr<Packet const> packet)
   // Switch to sleep after a failed reception
   m_phy->GetObject<EndDeviceLoraPhy> ()->SwitchToSleep ();
 
-  if (m_secondReceiveWindow.IsExpired () && m_retxParams.retxLeft > 0)
+  //if (m_secondReceiveWindow.IsExpired () && m_retxParams.retxLeft > 0)
+  if (m_retxParams.retxLeft > 0)
     {
       this->Send (m_retxParams.packet);
       NS_LOG_INFO ("Number of retx left: " << unsigned(m_retxParams.retxLeft) << "... Sending the packet for retransmission");
     }
+  else
+    {
+      // TODO Make event fail
+      uint8_t txs = m_maxNumbTx - (m_retxParams.retxLeft);
+      // TODO Use different callback because here we failed
+      m_requiredTxCallback (txs);
+      NS_LOG_DEBUG (" ************* ********************txs = " << unsigned(txs) << " maxNumbTx= "
+                                                                << unsigned(m_maxNumbTx) << " retxLeft= " << unsigned (m_retxParams.retxLeft));
+    }
+
 }
 
 void
@@ -430,7 +452,6 @@ EndDeviceLoraMac::ParseCommands (LoraFrameHeader frameHeader)
       if (frameHeader.GetAck ())
         {
           NS_LOG_INFO ("The message is an ACK, not waiting for it anymore");
-
           NS_LOG_DEBUG ("Reset retransmission variables to default values and cancel retransmission if already scheduled");
 
           uint8_t txs = m_maxNumbTx - (m_retxParams.retxLeft);
@@ -685,7 +706,8 @@ EndDeviceLoraMac::OpenSecondReceiveWindow (void)
   // window at all.
   if (m_phy->GetObject<EndDeviceLoraPhy> ()->GetState () == EndDeviceLoraPhy::RX)
     {
-      NS_LOG_INFO ("Won't open second receive window since we are in RX mode");
+      NS_LOG_INFO ("Won't open second receive window since we are in RX mode close is expired? " << m_closeSecondWindow.IsExpired());
+      m_temporaryBool = true;
 
       return;
     }
@@ -743,6 +765,7 @@ EndDeviceLoraMac::CloseSecondReceiveWindow (void)
         {
           this->Send (m_retxParams.packet);           //Simulator::Schedule(waitingTime, &LoraMac::Send, this, m_retxParams.packet);
           NS_LOG_INFO ("Number of retx left: " << unsigned(m_retxParams.retxLeft) << "... Sending the packet for retransmission");
+
         }
       else if (m_retxParams.retxLeft == 0 && m_phy->GetObject<EndDeviceLoraPhy> ()->GetState () != EndDeviceLoraPhy::RX)
         {
@@ -751,6 +774,7 @@ EndDeviceLoraMac::CloseSecondReceiveWindow (void)
           m_requiredTxCallback (txs);
           NS_LOG_DEBUG (" ************* ********************txs = " << unsigned(txs) << " maxNumbTx= "
                                                                     << unsigned(m_maxNumbTx) << " retxLeft= " << unsigned (m_retxParams.retxLeft));
+
         }
       else
         {
@@ -759,11 +783,11 @@ EndDeviceLoraMac::CloseSecondReceiveWindow (void)
     }
   else
     {
-      NS_LOG_DEBUG (" m_maxNumbTx " << unsigned(m_maxNumbTx) << " m_retxParams.retxLeft " << unsigned(m_retxParams.retxLeft));
       uint8_t txs = m_maxNumbTx - (m_retxParams.retxLeft );
       m_requiredTxCallback (txs);
       NS_LOG_DEBUG (" ************ ************ txs = " << unsigned(txs) << " maxNumbTx= "
                                                         << unsigned(m_maxNumbTx) << " retxLeft= " << unsigned (m_retxParams.retxLeft));
+      NS_LOG_DEBUG (" Finished retransmission procedure");
 
 
       m_retxParams.packet= 0;           // Reset to default values
