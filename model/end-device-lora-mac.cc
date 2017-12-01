@@ -93,7 +93,7 @@ EndDeviceLoraMac::EndDeviceLoraMac () :
   m_headerDisabled (0),                     // LoraWAN default
   m_receiveDelay1 (Seconds (1)),            // LoraWAN default
   m_receiveDelay2 (Seconds (2)),            // LoraWAN default
-  m_receiveWindowDuration (Seconds (0.2)),
+  m_receiveWindowDuration (Seconds (0.01)),
   m_closeFirstWindow (EventId ()),               // Initialize as the default eventId
   m_closeSecondWindow (EventId ()),               // Initialize as the default eventId
   // m_secondReceiveWindow (EventId ()),       // Initialize as the default eventId
@@ -413,10 +413,22 @@ EndDeviceLoraMac::FailedReception (Ptr<Packet const> packet)
   // Switch to sleep after a failed reception
   m_phy->GetObject<EndDeviceLoraPhy> ()->SwitchToSleep ();
 
-  if (m_secondReceiveWindow.IsExpired () && m_retxParams.retxLeft > 0)
+  if (m_secondReceiveWindow.IsExpired ())
     {
-      this->Send (m_retxParams.packet);
-      NS_LOG_INFO ("Number of retx left: " << unsigned(m_retxParams.retxLeft) << "... Sending the packet for retransmission");
+      if (m_retxParams.retxLeft > 0)
+        {
+          this->Send (m_retxParams.packet);
+          NS_LOG_INFO ("Number of retx left: " << unsigned(m_retxParams.retxLeft) << "... Sending the packet for retransmission");
+        }
+      else
+        {
+          // TODO Make event fail
+          uint8_t txs = m_maxNumbTx - (m_retxParams.retxLeft);
+          // TODO Use different callback because here we failed
+          m_requiredTxCallback (txs);
+          NS_LOG_DEBUG (" ************* ********************txs = " << unsigned(txs) << " maxNumbTx= "
+                                                                    << unsigned(m_maxNumbTx) << " retxLeft= " << unsigned (m_retxParams.retxLeft));
+        }
     }
 }
 
