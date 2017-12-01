@@ -56,6 +56,27 @@ public:
   virtual void Send (Ptr<Packet> packet);
 
   /**
+   * Checking if we are performing the transmission of a new packet or a retransmission, and call SendToPhy function.
+   *
+   * \param packet the packet to send
+   */
+  virtual void DoSend (Ptr<Packet> packet);
+
+   /**
+   * Add headers and send a packet with the sending function of the physical layer.
+   *
+   * \param packet the packet to send
+   */
+  virtual void SendToPhy (Ptr<Packet> packet);
+
+  /**
+   * Postpone transmission to the specified time and delete previously scheduled transmissions if present.
+   *
+   * \param nextTxDelay Delay at which the transmission will be performed.
+   */
+  virtual void postponeTransmission (Time nextTxDelay, Ptr<Packet>);
+
+  /**
    * Receive a packet.
    *
    * This method is typically registered as a callback in the underlying PHY
