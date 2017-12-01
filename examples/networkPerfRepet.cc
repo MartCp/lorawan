@@ -48,6 +48,8 @@ double radius = 7500;
 double gatewayRadius = 7500/((gatewayRings-1)*2+1);
 double simulationTime = 600;
 int appPeriodSeconds = 600;
+int periodsToSimulate = 4;
+int transientPeriods = 1;
 int run=1;
 std::vector<int> sfQuantity (6);
 
@@ -56,7 +58,6 @@ int interfered = 0;
 int received = 0;
 int underSensitivity = 0;
 int totalPktsSent = 0;
-std::vector<int> v (8, 0);
 
 // Output control
 bool printEDs = true;
@@ -82,6 +83,8 @@ struct PacketStatus {
 };
 
 std::map<Ptr<Packet const>, PacketStatus> packetTracker;
+
+std::list<std::pair<Time, uint8_t> > reTransmissionTracker;
 
 void
 CheckReceptionByAllGWsComplete (std::map<Ptr<Packet const>, PacketStatus>::iterator it)
@@ -126,6 +129,23 @@ CheckReceptionByAllGWsComplete (std::map<Ptr<Packet const>, PacketStatus>::itera
     }
 }
 
+std::vector<int>
+CountRetransmissions (Time transient)
+{
+
+  std::vector<int> reTxAmounts (8, 0);
+
+  for (auto it = reTransmissionTracker.begin (); it != reTransmissionTracker.end (); ++it)
+    {
+      if ((*it).first > transient)
+        {
+          reTxAmounts [(*it).second-1]++;
+        }
+    }
+
+  return reTxAmounts;
+}
+
 void
 TransmissionCallback (Ptr<Packet const> packet, uint32_t systemId)
 {
@@ -147,7 +167,9 @@ void
 RequiredTransmissionsCallback (uint8_t reqTx)
 {
   NS_LOG_DEBUG ("ReqTx " << unsigned(reqTx));
-  v[reqTx-1]= v[reqTx-1] + 1;
+
+  std::pair<Time, uint8_t> entry (Simulator::Now (), reqTx);
+  reTransmissionTracker.push_back (entry);
 }
 
 void
@@ -251,6 +273,8 @@ int main (int argc, char *argv[])
   cmd.AddValue ("gatewayRadius", "The distance between two gateways", gatewayRadius);
   cmd.AddValue ("simulationTime", "The time for which to simulate", simulationTime);
   cmd.AddValue ("appPeriod", "The period in seconds to be used by periodically transmitting applications", appPeriodSeconds);
+  cmd.AddValue ("periodsToSimulate", "The number of application periods to simulate", periodsToSimulate);
+  cmd.AddValue ("transientPeriods", "The number of periods we consider as a transient", transientPeriods);
   cmd.AddValue ("printEDs", "Whether or not to print a file containing the ED's positions", printEDs);
 
   cmd.Parse (argc, argv);
@@ -459,7 +483,9 @@ int main (int argc, char *argv[])
   *  Install applications on the end devices  *
   *********************************************/
 
-  Time appStopTime = appPeriod;     // The application stops exactly after one period
+  Time appStopTime = appPeriod * periodsToSimulate; // The application stops
+                                                    // exactly after one period
+
   PeriodicSenderHelper appHelper = PeriodicSenderHelper ();
   appHelper.SetPeriod (appPeriod);
   ApplicationContainer appContainer = appHelper.Install (endDevices);
@@ -492,13 +518,26 @@ int main (int argc, char *argv[])
   *  Results  *
   *************/
 
-  std::cout << nDevices << " " << totalPktsSent << " " << received << " " << interfered << " " << noMoreReceivers << " " << underSensitivity << " "
-            << v[0] << " " << v[1] << " " << v[2] << " " << v[3] << " "
-            << v[4] << " " << v[5] << " " << v[6] << " " << v[7] << " "
-            << std::endl;
-  std::cout << v[0] + v[1]*2 +v[2]*3 +v[3]*4 + v[4]*5 + v[5]*6 + v[6]*7 + v[7]*8
-            << std::endl;
+  std::cout << nDevices << " " << totalPktsSent << " " << received << " " << interfered << " " << noMoreReceivers << " " << underSensitivity << " " << std::endl;
 
+  std::vector<int> reTxAmounts = CountRetransmissions (transientPeriods * appPeriod);
+
+  std::cout << "Retransmission amounts (without transient): " << reTxAmounts[0]
+            << " " << reTxAmounts[1] << " " << reTxAmounts[2] << " "
+            << reTxAmounts[3] << " " << reTxAmounts[4] << " " << reTxAmounts[5]
+            << " " << reTxAmounts[6] << " " << reTxAmounts[7] << " " << std::endl;
+
+  std::vector<int> totalReTxAmounts = CountRetransmissions (Seconds (0));
+
+  std::cout << "Retransmission amounts (total):             " << totalReTxAmounts[0] << " "
+            << totalReTxAmounts[1] << " " << totalReTxAmounts[2] << " " << totalReTxAmounts[3]
+            << " " << totalReTxAmounts[4] << " " << totalReTxAmounts[5] << " "
+            << totalReTxAmounts[6] << " " << totalReTxAmounts[7] << " " << std::endl;
+
+  std::cout << "Total (re)transmissions: "<< totalReTxAmounts[0] + totalReTxAmounts[1]*2 +
+  totalReTxAmounts[2]*3 + totalReTxAmounts[3]*4 + totalReTxAmounts[4]*5 +
+  totalReTxAmounts[5]*6 + totalReTxAmounts[6]*7 + totalReTxAmounts[7]*8
+  << std::endl;
 
   return 0;
 }
