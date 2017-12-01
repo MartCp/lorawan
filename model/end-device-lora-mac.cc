@@ -142,6 +142,28 @@ EndDeviceLoraMac::Send (Ptr<Packet> packet)
 {
   NS_LOG_FUNCTION (this << packet);
 
+  // Determine whether this packet is from the APP layer or if it's one of our
+  // retransmissions
+  bool newPacketFromAppLayer;
+  newPacketFromAppLayer = (packet != m_retxParams.packet);
+  if (m_retxParams.waitingAck)
+    {
+      if (newPacketFromAppLayer)
+        {
+          NS_LOG_DEBUG ("Received a new packet from application. Resetting retransmission parameters.");
+
+          m_retxParams.packet = packet->Copy ();           // Reset to default values
+          m_retxParams.retxLeft= m_maxNumbTx;
+          m_retxParams.waitingAck = true;
+          NS_LOG_DEBUG ("Setting retransmission parameters");
+          NS_LOG_DEBUG ("Reset retransmission variables to default values");
+        }
+      else
+        {
+          NS_LOG_DEBUG ("Retransmitting an old packet");
+        }
+    }
+
   // Check that payload length is below the allowed maximum
   if (packet->GetSize () > m_maxAppPayloadForDataRate.at (m_dataRate))
     {
@@ -374,6 +396,10 @@ EndDeviceLoraMac::Receive (Ptr<Packet const> packet)
                   m_requiredTxCallback (txs);
                   NS_LOG_DEBUG (" ************* ********************txs = " << unsigned(txs) << " maxNumbTx= "
                                                                             << unsigned(m_maxNumbTx) << " retxLeft= " << unsigned (m_retxParams.retxLeft));
+
+                  m_retxParams.packet= 0;           // Reset to default values
+                  m_retxParams.retxLeft= m_maxNumbTx;
+                  NS_LOG_DEBUG ("Reset retransmission variables to default values");
                 }
               else // Reschedule
                 {
@@ -399,6 +425,10 @@ EndDeviceLoraMac::Receive (Ptr<Packet const> packet)
           m_requiredTxCallback (txs);
           NS_LOG_DEBUG (" ************* ********************txs = " << unsigned(txs) << " maxNumbTx= "
                                                                     << unsigned(m_maxNumbTx) << " retxLeft= " << unsigned (m_retxParams.retxLeft));
+
+          m_retxParams.packet= 0;           // Reset to default values
+          m_retxParams.retxLeft= m_maxNumbTx;
+          NS_LOG_DEBUG ("Reset retransmission variables to default values");
         }
     }
 
@@ -428,6 +458,10 @@ EndDeviceLoraMac::FailedReception (Ptr<Packet const> packet)
           m_requiredTxCallback (txs);
           NS_LOG_DEBUG (" ************* ********************txs = " << unsigned(txs) << " maxNumbTx= "
                                                                     << unsigned(m_maxNumbTx) << " retxLeft= " << unsigned (m_retxParams.retxLeft));
+
+          m_retxParams.packet= 0;           // Reset to default values
+          m_retxParams.retxLeft= m_maxNumbTx;
+          NS_LOG_DEBUG ("Reset retransmission variables to default values");
         }
     }
 }
@@ -763,6 +797,10 @@ EndDeviceLoraMac::CloseSecondReceiveWindow (void)
           m_requiredTxCallback (txs);
           NS_LOG_DEBUG (" ************* ********************txs = " << unsigned(txs) << " maxNumbTx= "
                                                                     << unsigned(m_maxNumbTx) << " retxLeft= " << unsigned (m_retxParams.retxLeft));
+
+          m_retxParams.packet= 0;           // Reset to default values
+          m_retxParams.retxLeft= m_maxNumbTx;
+          NS_LOG_DEBUG ("Reset retransmission variables to default values");
         }
       else
         {
