@@ -341,6 +341,7 @@ private:
   */
   struct LoraRetxParameters
   {
+    Time firstAttempt;
     Ptr<Packet> packet = 0;
     bool waitingAck= false;
     uint8_t retxLeft;
@@ -530,7 +531,7 @@ TracedValue<uint8_t> m_requiredTx;
    *
    * \see class CallBackTraceSource
    */
-  TracedCallback<uint8_t, bool> m_requiredTxCallback;
+  TracedCallback<uint8_t, bool, Time> m_requiredTxCallback;
 
 };
 
