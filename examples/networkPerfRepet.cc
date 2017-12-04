@@ -139,11 +139,11 @@ CheckReceptionByAllGWsComplete (std::map<Ptr<Packet const>, PacketStatus>::itera
 void
 PrintRetransmissions (std::vector<int> reTxVector)
 {
-  NS_LOG_INFO ("PrintRetransmissions");
+  // NS_LOG_INFO ("PrintRetransmissions");
 
   for (int i = 0; i < int(reTxVector.size ()); i++)
     {
-      NS_LOG_INFO ("i: " << i);
+      // NS_LOG_INFO ("i: " << i);
       std::cout << reTxVector.at (i) << " ";
     }
   std::cout << std::endl;
@@ -152,12 +152,12 @@ PrintRetransmissions (std::vector<int> reTxVector)
 int
 SumRetransmissions (std::vector<int> reTxVector)
 {
-  NS_LOG_INFO ("SumRetransmissions");
+  // NS_LOG_INFO ("SumRetransmissions");
 
   int total = 0;
   for (int i = 0; i < int(reTxVector.size ()); i++)
     {
-      NS_LOG_INFO ("i: " << i);
+      // NS_LOG_INFO ("i: " << i);
       total += reTxVector[i] * (i + 1);
     }
   return total;
@@ -174,13 +174,13 @@ CountRetransmissions (Time transient, Time simulationTime, std::list<Retransmiss
 
   for (auto it = reTransmissionTracker.begin (); it != reTransmissionTracker.end (); ++it)
     {
-      NS_LOG_INFO ("Current retransmission info:");
-      NS_LOG_INFO ("First attempt at sending: " << (*it).firstAttempt.GetSeconds ());
-      NS_LOG_INFO ("Number of reTx: " << unsigned((*it).reTxAttempts));
+      // NS_LOG_INFO ("Current retransmission info:");
+      // NS_LOG_INFO ("First attempt at sending: " << (*it).firstAttempt.GetSeconds ());
+      // NS_LOG_INFO ("Number of reTx: " << unsigned((*it).reTxAttempts));
 
       if ((*it).firstAttempt >= transient && (*it).firstAttempt <= simulationTime - transient)
         {
-          NS_LOG_INFO ("ReTx fits requirements");
+          // NS_LOG_INFO ("ReTx fits requirements");
           totalReTxAmounts.at ((*it).reTxAttempts - 1)++;
 
           if ((*it).successful)
@@ -207,7 +207,7 @@ CountRetransmissions (Time transient, Time simulationTime, std::list<Retransmiss
 void
 TransmissionCallback (Ptr<Packet const> packet, uint32_t systemId)
 {
-  NS_LOG_INFO ("Transmitted a packet from device " << systemId);
+  // NS_LOG_INFO ("Transmitted a packet from device " << systemId);
   // Create a packetStatus
   PacketStatus status;
   status.packet = packet;
@@ -224,7 +224,7 @@ TransmissionCallback (Ptr<Packet const> packet, uint32_t systemId)
 void
 RequiredTransmissionsCallback (uint8_t reqTx, bool success, Time firstAttempt)
 {
-  NS_LOG_DEBUG ("ReqTx " << unsigned(reqTx) << ", succ: " << success << ", firstAttempt: " << firstAttempt.GetSeconds ());
+  // NS_LOG_DEBUG ("ReqTx " << unsigned(reqTx) << ", succ: " << success << ", firstAttempt: " << firstAttempt.GetSeconds ());
 
   RetransmissionStatus entry;
   entry.firstAttempt = firstAttempt;
@@ -359,7 +359,7 @@ int main (int argc, char *argv[])
   // LogComponentEnable ("EndDeviceLoraPhy", LOG_LEVEL_ALL);
   // LogComponentEnable ("SimpleEndDeviceLoraPhy", LOG_LEVEL_ALL);
   // LogComponentEnable("LogicalLoraChannelHelper", LOG_LEVEL_ALL);
-  LogComponentEnable ("EndDeviceLoraMac", LOG_LEVEL_ALL);
+  // LogComponentEnable ("EndDeviceLoraMac", LOG_LEVEL_ALL);
   // LogComponentEnable("PointToPointNetDevice", LOG_LEVEL_ALL);
   // LogComponentEnable("PeriodicSenderHelper", LOG_LEVEL_ALL);
   // LogComponentEnable ("PeriodicSender", LOG_LEVEL_ALL);

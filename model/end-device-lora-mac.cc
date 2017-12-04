@@ -137,6 +137,10 @@ EndDeviceLoraMac::~EndDeviceLoraMac ()
   NS_LOG_FUNCTION_NOARGS ();
 }
 
+////////////////////////
+//  Sending methods   //
+////////////////////////
+
 void
 EndDeviceLoraMac::Send (Ptr<Packet> packet)
 {
@@ -215,10 +219,7 @@ EndDeviceLoraMac::DoSend (Ptr<Packet> packet)
         }
 
       // Reset retransmission parameters
-      m_retxParams.waitingAck = false;
-      m_retxParams.retxLeft= m_maxNumbTx;
-      m_retxParams.packet = 0;
-      m_retxParams.firstAttempt = Seconds (0);
+      resetRetransmissionParameters();
 
       // If this is the first transmission of a confirmed packet, save parameters for the (possible) next retransmissions.
       if (m_mType == LoraMacHeader::CONFIRMED_DATA_UP)
@@ -315,6 +316,9 @@ EndDeviceLoraMac::SendToPhy (Ptr<Packet> packetToSend)
     (GetSfFromDataRate (replyDataRate));
 }
 
+//////////////////////////
+//  Receiving methods   //
+//////////////////////////
 
 void
 EndDeviceLoraMac::Receive (Ptr<Packet const> packet)
@@ -375,9 +379,8 @@ EndDeviceLoraMac::Receive (Ptr<Packet const> packet)
                   NS_LOG_DEBUG (" ************* ********************txs = " << unsigned(txs) << " maxNumbTx= "
                                                                             << unsigned(m_maxNumbTx) << " retxLeft= " << unsigned (m_retxParams.retxLeft));
 
-                  m_retxParams.packet= 0;           // Reset to default values
-                  m_retxParams.retxLeft= m_maxNumbTx;
-                  NS_LOG_DEBUG ("Reset retransmission variables to default values");
+                  // Reset retransmission parameters
+                  resetRetransmissionParameters();
                 }
               else // Reschedule
                 {
@@ -402,9 +405,8 @@ EndDeviceLoraMac::Receive (Ptr<Packet const> packet)
           NS_LOG_DEBUG (" ************* ********************txs = " << unsigned(txs) << " maxNumbTx= "
                                                                     << unsigned(m_maxNumbTx) << " retxLeft= " << unsigned (m_retxParams.retxLeft));
 
-          m_retxParams.packet= 0;           // Reset to default values
-          m_retxParams.retxLeft= m_maxNumbTx;
-          NS_LOG_DEBUG ("Reset retransmission variables to default values");
+        // Reset retransmission parameters
+        resetRetransmissionParameters();
         }
     }
 
@@ -433,9 +435,8 @@ EndDeviceLoraMac::FailedReception (Ptr<Packet const> packet)
           NS_LOG_DEBUG (" ************* ********************txs = " << unsigned(txs) << " maxNumbTx= "
                                                                     << unsigned(m_maxNumbTx) << " retxLeft= " << unsigned (m_retxParams.retxLeft));
 
-          m_retxParams.packet= 0;           // Reset to default values
-          m_retxParams.retxLeft= m_maxNumbTx;
-          NS_LOG_DEBUG ("Reset retransmission variables to default values");
+          // Reset retransmission parameters
+          resetRetransmissionParameters();
         }
     }
 }
@@ -458,10 +459,8 @@ EndDeviceLoraMac::ParseCommands (LoraFrameHeader frameHeader)
           NS_LOG_DEBUG (" ************* ********************txs = " << unsigned(txs) << " maxNumbTx= "
                                                                     << unsigned(m_maxNumbTx) << " retxLeft= " << unsigned (m_retxParams.retxLeft));
 
-          // Reset to default values
-          m_retxParams.waitingAck= false;
-          m_retxParams.packet= 0;
-          m_retxParams.retxLeft= m_maxNumbTx;
+          // Reset retransmission parameters
+          resetRetransmissionParameters();
           // If it exists, cancel the retransmission event
           Simulator::Cancel (m_nextRetx);
 
@@ -773,10 +772,8 @@ EndDeviceLoraMac::CloseSecondReceiveWindow (void)
           NS_LOG_DEBUG (" ************* ********************txs = " << unsigned(txs) << " maxNumbTx= "
                                                                     << unsigned(m_maxNumbTx) << " retxLeft= " << unsigned (m_retxParams.retxLeft));
 
-          m_retxParams.packet= 0;           // Reset to default values
-          m_retxParams.retxLeft= m_maxNumbTx;
-          m_retxParams.waitingAck = false;
-          NS_LOG_DEBUG ("Reset retransmission variables to default values");
+          // Reset retransmission parameters
+          resetRetransmissionParameters();
           NS_LOG_DEBUG ("ReTxLeft = " << unsigned(m_retxParams.retxLeft));
         }
       else
@@ -792,10 +789,8 @@ EndDeviceLoraMac::CloseSecondReceiveWindow (void)
       NS_LOG_DEBUG (" ************ ************ txs = " << unsigned(txs) << " maxNumbTx= "
                                                         << unsigned(m_maxNumbTx) << " retxLeft= " << unsigned (m_retxParams.retxLeft));
 
-
-      m_retxParams.packet= 0;           // Reset to default values
-      m_retxParams.retxLeft= m_maxNumbTx;
-      NS_LOG_DEBUG ("Reset retransmission variables to default values");
+      // Reset retransmission parameters
+      resetRetransmissionParameters();
     }
 }
 
@@ -804,9 +799,7 @@ EndDeviceLoraMac::GetNextTransmissionDelay (void)
 {
   NS_LOG_FUNCTION_NOARGS ();
 
-  ////////////////////////////
-  //    Check duty cycle    //
-  ////////////////////////////
+    //    Check duty cycle    //
 
   // Pick a random channel to transmit on
   std::vector<Ptr<LogicalLoraChannel> > logicalChannels;
@@ -831,9 +824,8 @@ EndDeviceLoraMac::GetNextTransmissionDelay (void)
                     waitingTime.GetSeconds ());
     }
 
-  ////////////////////////////////////////////////
+
   //    Check if there are receiving windows    //
-  ////////////////////////////////////////////////
 
   if (!m_closeFirstWindow.IsExpired () || !m_closeSecondWindow.IsExpired () || !m_secondReceiveWindow.IsExpired () )
     {
@@ -908,6 +900,15 @@ EndDeviceLoraMac::Shuffle (std::vector<Ptr<LogicalLoraChannel> > vector)
 /////////////////////////
 // Setters and Getters //
 /////////////////////////
+
+void EndDeviceLoraMac::resetRetransmissionParameters ()
+{
+  m_retxParams.waitingAck = false;
+  m_retxParams.retxLeft = m_maxNumbTx;
+  m_retxParams.packet = 0;
+  m_retxParams.firstAttempt = Seconds(0);
+}
+
 
 void
 EndDeviceLoraMac::SetDataRateAdaptation (bool adapt)

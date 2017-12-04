@@ -42,9 +42,9 @@ public:
   EndDeviceLoraMac();
   virtual ~EndDeviceLoraMac();
 
-  /////////////////////////////////
-  // Sending / receiving methods //
-  /////////////////////////////////
+  /////////////////////
+  // Sending methods //
+  /////////////////////
 
   /**
    * Send a packet.
@@ -75,6 +75,11 @@ public:
    * \param nextTxDelay Delay at which the transmission will be performed.
    */
   virtual void postponeTransmission (Time nextTxDelay, Ptr<Packet>);
+
+
+  ///////////////////////
+  // Receiving methods //
+  ///////////////////////
 
   /**
    * Receive a packet.
@@ -119,6 +124,11 @@ public:
   // Getters and Setters //
   /////////////////////////
 
+  /**
+  * Reset retransmission parameters contained in the structure LoraRetxParams
+  */
+  virtual void resetRetransmissionParameters ();
+  
   /**
    * Enable data rate adaptation in the retransmitting procedure.
    *
