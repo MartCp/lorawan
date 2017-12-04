@@ -84,7 +84,8 @@ struct PacketStatus {
 
 std::map<Ptr<Packet const>, PacketStatus> packetTracker;
 
-std::list<std::pair<Time, uint8_t> > reTransmissionTracker;
+std::list<std::pair<Time, uint8_t> > successfulReTransmissionTracker;
+std::list<std::pair<Time, uint8_t> > failedReTransmissionTracker;
 
 void
 CheckReceptionByAllGWsComplete (std::map<Ptr<Packet const>, PacketStatus>::iterator it)
@@ -130,7 +131,7 @@ CheckReceptionByAllGWsComplete (std::map<Ptr<Packet const>, PacketStatus>::itera
 }
 
 std::vector<int>
-CountRetransmissions (Time transient)
+CountRetransmissions (Time transient, std::list<std::pair<Time, uint8_t> > reTransmissionTracker)
 {
 
   std::vector<int> reTxAmounts (8, 0);
@@ -164,12 +165,19 @@ TransmissionCallback (Ptr<Packet const> packet, uint32_t systemId)
 }
 
 void
-RequiredTransmissionsCallback (uint8_t reqTx)
+RequiredTransmissionsCallback (uint8_t reqTx, bool success)
 {
   NS_LOG_DEBUG ("ReqTx " << unsigned(reqTx));
 
   std::pair<Time, uint8_t> entry (Simulator::Now (), reqTx);
-  reTransmissionTracker.push_back (entry);
+  if (success)
+    {
+      successfulReTransmissionTracker.push_back (entry);
+    }
+  else
+    {
+      failedReTransmissionTracker.push_back (entry);
+    }
 }
 
 void
@@ -520,20 +528,26 @@ int main (int argc, char *argv[])
 
   std::cout << nDevices << " " << totalPktsSent << " " << received << " " << interfered << " " << noMoreReceivers << " " << underSensitivity << " " << std::endl;
 
-  std::vector<int> reTxAmounts = CountRetransmissions (transientPeriods * appPeriod);
+  std::vector<int> reTxAmounts = CountRetransmissions (transientPeriods * appPeriod, successfulReTransmissionTracker);
 
   std::cout << "Retransmission amounts (without transient): " << reTxAmounts[0]
             << " " << reTxAmounts[1] << " " << reTxAmounts[2] << " "
             << reTxAmounts[3] << " " << reTxAmounts[4] << " " << reTxAmounts[5]
             << " " << reTxAmounts[6] << " " << reTxAmounts[7] << " " << std::endl;
 
-  std::vector<int> totalReTxAmounts = CountRetransmissions (Seconds (0));
+  std::vector<int> totalSuccessfulReTxAmounts = CountRetransmissions (Seconds (0), successfulReTransmissionTracker);
+  std::vector<int> totalFailedReTxAmounts = CountRetransmissions (Seconds (0), failedReTransmissionTracker);
 
-  std::cout << "Retransmission amounts (total):             " << totalReTxAmounts[0] << " "
-            << totalReTxAmounts[1] << " " << totalReTxAmounts[2] << " " << totalReTxAmounts[3]
-            << " " << totalReTxAmounts[4] << " " << totalReTxAmounts[5] << " "
-            << totalReTxAmounts[6] << " " << totalReTxAmounts[7] << " " << std::endl;
+  std::cout << "Retransmission amounts (totalSuccessful):             " << totalSuccessfulReTxAmounts[0] << " "
+            << totalSuccessfulReTxAmounts[1] << " " << totalSuccessfulReTxAmounts[2] << " " << totalSuccessfulReTxAmounts[3]
+            << " " << totalSuccessfulReTxAmounts[4] << " " << totalSuccessfulReTxAmounts[5] << " "
+            << totalSuccessfulReTxAmounts[6] << " " << totalSuccessfulReTxAmounts[7] << " " << std::endl;
 
+  std::vector<int> totalReTxAmounts (8,0);
+  for (int i = 0; i < 8; i++)
+    {
+      totalReTxAmounts[i] = totalSuccessfulReTxAmounts[i] + totalFailedReTxAmounts[i];
+    }
   std::cout << "Total (re)transmissions: "<< totalReTxAmounts[0] + totalReTxAmounts[1]*2 +
   totalReTxAmounts[2]*3 + totalReTxAmounts[3]*4 + totalReTxAmounts[4]*5 +
   totalReTxAmounts[5]*6 + totalReTxAmounts[6]*7 + totalReTxAmounts[7]*8
