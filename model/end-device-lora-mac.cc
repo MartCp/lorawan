@@ -142,7 +142,7 @@ EndDeviceLoraMac::Send (Ptr<Packet> packet)
 {
   NS_LOG_FUNCTION (this << packet);
 
-// Check that payload length is below the allowed maximum
+  // Check that payload length is below the allowed maximum
   if (packet->GetSize () > m_maxAppPayloadForDataRate.at (m_dataRate))
     {
       NS_LOG_WARN ("Attempting to send a packet larger than the maximum allowed"
@@ -157,13 +157,13 @@ EndDeviceLoraMac::Send (Ptr<Packet> packet)
   Time netxTxDelay= GetNextTransmissionDelay ();
   if (netxTxDelay != Seconds (0))
     {
-      postponeTransmission(netxTxDelay, packet);
+      postponeTransmission (netxTxDelay, packet);
     }
 
   // Pick a channel on which to transmit the packet
   Ptr<LogicalLoraChannel> txChannel = GetChannelForTx ();
 
-  if (! (txChannel && m_retxParams.retxLeft > 0))
+  if (!(txChannel && m_retxParams.retxLeft > 0))
     {
       if (!txChannel)
         {
@@ -178,14 +178,15 @@ EndDeviceLoraMac::Send (Ptr<Packet> packet)
     {
       // Make sure we can transmit at the current power on this channel
       NS_ASSERT_MSG (m_txPower <= m_channelHelper.GetTxPowerForChannel (txChannel),
-                 " The selected power is too hight to be supported by this channel ");
-      DoSend(packet);
+                     " The selected power is too hight to be supported by this channel ");
+      DoSend (packet);
     }
 }
 
-void 
-EndDeviceLoraMac::postponeTransmission(Time netxTxDelay, Ptr<Packet> packet)
+void
+EndDeviceLoraMac::postponeTransmission (Time netxTxDelay, Ptr<Packet> packet)
 {
+  NS_LOG_FUNCTION (this);
   // if other transmissions have already been scheduled (by the previous packet) I delete them
   Simulator::Cancel (m_nextTx);
   Simulator::Cancel (m_nextRetx);
@@ -196,15 +197,28 @@ EndDeviceLoraMac::postponeTransmission(Time netxTxDelay, Ptr<Packet> packet)
 
 
 void
-EndDeviceLoraMac::DoSend(Ptr<Packet> packet)
-{ 
+EndDeviceLoraMac::DoSend (Ptr<Packet> packet)
+{
+  NS_LOG_FUNCTION (this);
   // Checking if this is the transmission of a new packet
-  if (!m_retxParams.waitingAck || packet != m_retxParams.packet)
+  if (packet != m_retxParams.packet)
     {
       NS_LOG_DEBUG ("Received a new packet from application. Resetting retransmission parameters.");
 
+      if (m_retxParams.waitingAck)
+        {
+          // Call the callback to notify about the failure
+          uint8_t txs = m_maxNumbTx - (m_retxParams.retxLeft);
+          m_requiredTxCallback (txs, false, m_retxParams.firstAttempt);
+          NS_LOG_DEBUG (" ************* ********************txs = " << unsigned(txs) << " maxNumbTx= "
+                                                                    << unsigned(m_maxNumbTx) << " retxLeft= " << unsigned (m_retxParams.retxLeft));
+        }
+
+      // Reset retransmission parameters
       m_retxParams.waitingAck = false;
       m_retxParams.retxLeft= m_maxNumbTx;
+      m_retxParams.packet = 0;
+      m_retxParams.firstAttempt = Seconds (0);
 
       // If this is the first transmission of a confirmed packet, save parameters for the (possible) next retransmissions.
       if (m_mType == LoraMacHeader::CONFIRMED_DATA_UP)
@@ -212,11 +226,11 @@ EndDeviceLoraMac::DoSend(Ptr<Packet> packet)
           m_retxParams.packet = packet->Copy ();
           m_retxParams.retxLeft = m_maxNumbTx;
           m_retxParams.waitingAck = true;
+          m_retxParams.firstAttempt = Simulator::Now ();
           m_retxParams.retxLeft = m_retxParams.retxLeft -1; // decreasing the number of retransmissions
           NS_LOG_DEBUG ("It is a confirmed packet. Setting retransmission parameters and decreasing the number of transmissions left.");
         }
     }
-
   // this is a retransmission
   else
     {
@@ -227,12 +241,11 @@ EndDeviceLoraMac::DoSend(Ptr<Packet> packet)
         }
     }
 
-  SendToPhy(packet->Copy ());
-  
+  SendToPhy (packet->Copy ());
 }
 
 void
-EndDeviceLoraMac::SendToPhy(Ptr<Packet> packetToSend)
+EndDeviceLoraMac::SendToPhy (Ptr<Packet> packetToSend)
 {
   /////////////////////////////////////////////////////////
   // Add headers, prepare TX parameters and send the packet
@@ -737,19 +750,21 @@ EndDeviceLoraMac::CloseSecondReceiveWindow (void)
       break;
     case EndDeviceLoraPhy::RX:
       // PHY is receiving: let it finish
-      break;
+      NS_LOG_DEBUG ("PHY is receiving: Receive will handle the result");
+      return;
     case EndDeviceLoraPhy::STANDBY:
       // Turn PHY layer to sleep
       phy->SwitchToSleep ();
       break;
     }
 
+  NS_LOG_DEBUG ("No reception initiated by PHY: rescheduling transmission");
   if (m_retxParams.waitingAck)
     {
       if (m_retxParams.retxLeft > 0 )
         {
-          this->Send (m_retxParams.packet);           //Simulator::Schedule(waitingTime, &LoraMac::Send, this, m_retxParams.packet);
           NS_LOG_INFO ("Number of retx left: " << unsigned(m_retxParams.retxLeft) << "... Sending the packet for retransmission");
+          this->Send (m_retxParams.packet);           //Simulator::Schedule(waitingTime, &LoraMac::Send, this, m_retxParams.packet);
         }
       else if (m_retxParams.retxLeft == 0 && m_phy->GetObject<EndDeviceLoraPhy> ()->GetState () != EndDeviceLoraPhy::RX)
         {
@@ -760,7 +775,9 @@ EndDeviceLoraMac::CloseSecondReceiveWindow (void)
 
           m_retxParams.packet= 0;           // Reset to default values
           m_retxParams.retxLeft= m_maxNumbTx;
+          m_retxParams.waitingAck = false;
           NS_LOG_DEBUG ("Reset retransmission variables to default values");
+          NS_LOG_DEBUG ("ReTxLeft = " << unsigned(m_retxParams.retxLeft));
         }
       else
         {

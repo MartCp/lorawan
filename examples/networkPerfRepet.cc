@@ -49,7 +49,7 @@ double gatewayRadius = 7500/((gatewayRings-1)*2+1);
 double simulationTime = 600;
 int appPeriodSeconds = 600;
 int periodsToSimulate = 4;
-int transientPeriods = 1;
+int transientPeriods = 0;
 int run=1;
 std::vector<int> sfQuantity (6);
 
@@ -139,9 +139,12 @@ CheckReceptionByAllGWsComplete (std::map<Ptr<Packet const>, PacketStatus>::itera
 void
 PrintRetransmissions (std::vector<int> reTxVector)
 {
+  NS_LOG_INFO ("PrintRetransmissions");
+
   for (int i = 0; i < int(reTxVector.size ()); i++)
     {
-      std::cout << reTxVector[i] << " ";
+      NS_LOG_INFO ("i: " << i);
+      std::cout << reTxVector.at (i) << " ";
     }
   std::cout << std::endl;
 }
@@ -149,16 +152,21 @@ PrintRetransmissions (std::vector<int> reTxVector)
 int
 SumRetransmissions (std::vector<int> reTxVector)
 {
+  NS_LOG_INFO ("SumRetransmissions");
+
   int total = 0;
   for (int i = 0; i < int(reTxVector.size ()); i++)
     {
+      NS_LOG_INFO ("i: " << i);
       total += reTxVector[i] * (i + 1);
     }
   return total;
 }
+
 void
 CountRetransmissions (Time transient, Time simulationTime, std::list<RetransmissionStatus> reTransmissionTracker)
 {
+  NS_LOG_INFO ("CountRetransmissions");
 
   std::vector<int> totalReTxAmounts (8, 0);
   std::vector<int> successfulReTxAmounts (8, 0);
@@ -166,9 +174,13 @@ CountRetransmissions (Time transient, Time simulationTime, std::list<Retransmiss
 
   for (auto it = reTransmissionTracker.begin (); it != reTransmissionTracker.end (); ++it)
     {
+      NS_LOG_INFO ("Current retransmission info:");
       NS_LOG_INFO ("First attempt at sending: " << (*it).firstAttempt.GetSeconds ());
-      if ((*it).firstAttempt > transient && (*it).firstAttempt < simulationTime - transient)
+      NS_LOG_INFO ("Number of reTx: " << unsigned((*it).reTxAttempts));
+
+      if ((*it).firstAttempt >= transient && (*it).firstAttempt <= simulationTime - transient)
         {
+          NS_LOG_INFO ("ReTx fits requirements");
           totalReTxAmounts.at ((*it).reTxAttempts - 1)++;
 
           if ((*it).successful)
@@ -195,7 +207,7 @@ CountRetransmissions (Time transient, Time simulationTime, std::list<Retransmiss
 void
 TransmissionCallback (Ptr<Packet const> packet, uint32_t systemId)
 {
-  // NS_LOG_INFO ("Transmitted a packet from device " << systemId);
+  NS_LOG_INFO ("Transmitted a packet from device " << systemId);
   // Create a packetStatus
   PacketStatus status;
   status.packet = packet;
@@ -212,7 +224,7 @@ TransmissionCallback (Ptr<Packet const> packet, uint32_t systemId)
 void
 RequiredTransmissionsCallback (uint8_t reqTx, bool success, Time firstAttempt)
 {
-  NS_LOG_DEBUG ("ReqTx " << unsigned(reqTx));
+  NS_LOG_DEBUG ("ReqTx " << unsigned(reqTx) << ", succ: " << success << ", firstAttempt: " << firstAttempt.GetSeconds ());
 
   RetransmissionStatus entry;
   entry.firstAttempt = firstAttempt;
@@ -350,7 +362,7 @@ int main (int argc, char *argv[])
   LogComponentEnable ("EndDeviceLoraMac", LOG_LEVEL_ALL);
   // LogComponentEnable("PointToPointNetDevice", LOG_LEVEL_ALL);
   // LogComponentEnable("PeriodicSenderHelper", LOG_LEVEL_ALL);
-  LogComponentEnable ("PeriodicSender", LOG_LEVEL_ALL);
+  // LogComponentEnable ("PeriodicSender", LOG_LEVEL_ALL);
   // LogComponentEnable ("SimpleNetworkServer", LOG_LEVEL_ALL);
   // LogComponentEnable ("GatewayLoraMac", LOG_LEVEL_ALL);
   // LogComponentEnable ("Forwarder", LOG_LEVEL_ALL);
@@ -534,8 +546,8 @@ int main (int argc, char *argv[])
   *  Install applications on the end devices  *
   *********************************************/
 
-  Time appStopTime = appPeriod * periodsToSimulate; // The application stops
-                                                    // exactly after one period
+  Time appStopTime = appPeriod * periodsToSimulate;                    // The application stops
+                                                                       // exactly after one period
 
   PeriodicSenderHelper appHelper = PeriodicSenderHelper ();
   appHelper.SetPeriod (appPeriod);
@@ -557,7 +569,7 @@ int main (int argc, char *argv[])
   *  Simulation  *
   ****************/
 
-  Simulator::Stop (appStopTime + Hours (4));    // Stop later to permit the retransmission procedure
+  Simulator::Stop (appStopTime + Hours (1000));                    // Stop later to permit the retransmission procedure
 
   // PrintSimulationTime ();
 
@@ -577,7 +589,7 @@ int main (int argc, char *argv[])
 
   std::cout << "--------------------------------" << std::endl;
   std::cout << "Total statistics: " << std::endl;
-  CountRetransmissions (Seconds (0),appStopTime, reTransmissionTracker);
+  CountRetransmissions (Seconds (0), appStopTime+Hours (1000), reTransmissionTracker);
 
   return 0;
 }
