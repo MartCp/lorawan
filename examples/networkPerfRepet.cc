@@ -82,10 +82,16 @@ struct PacketStatus {
   std::vector<enum PacketOutcome> outcomes;
 };
 
+struct RetransmissionStatus {
+  Time firstAttempt;
+  Time finishTime;
+  uint8_t reTxAttempts;
+  bool successful;
+};
+
 std::map<Ptr<Packet const>, PacketStatus> packetTracker;
 
-std::list<std::pair<Time, uint8_t> > successfulReTransmissionTracker;
-std::list<std::pair<Time, uint8_t> > failedReTransmissionTracker;
+std::list<RetransmissionStatus> reTransmissionTracker;
 
 void
 CheckReceptionByAllGWsComplete (std::map<Ptr<Packet const>, PacketStatus>::iterator it)
@@ -130,22 +136,61 @@ CheckReceptionByAllGWsComplete (std::map<Ptr<Packet const>, PacketStatus>::itera
     }
 }
 
-std::vector<int>
-CountRetransmissions (Time transient, std::list<std::pair<Time, uint8_t> > reTransmissionTracker)
+void
+PrintRetransmissions (std::vector<int> reTxVector)
+{
+  for (int i = 0; i < int(reTxVector.size ()); i++)
+    {
+      std::cout << reTxVector[i] << " ";
+    }
+  std::cout << std::endl;
+}
+
+int
+SumRetransmissions (std::vector<int> reTxVector)
+{
+  int total = 0;
+  for (int i = 0; i < int(reTxVector.size ()); i++)
+    {
+      total += reTxVector[i] * (i + 1);
+    }
+  return total;
+}
+void
+CountRetransmissions (Time transient, Time simulationTime, std::list<RetransmissionStatus> reTransmissionTracker)
 {
 
-  std::vector<int> reTxAmounts (8, 0);
+  std::vector<int> totalReTxAmounts (8, 0);
+  std::vector<int> successfulReTxAmounts (8, 0);
+  std::vector<int> failedReTxAmounts (8, 0);
 
   for (auto it = reTransmissionTracker.begin (); it != reTransmissionTracker.end (); ++it)
     {
-      if ((*it).first > transient)
+      NS_LOG_INFO ("First attempt at sending: " << (*it).firstAttempt.GetSeconds ());
+      if ((*it).firstAttempt > transient && (*it).firstAttempt < simulationTime - transient)
         {
-          reTxAmounts [(*it).second-1]++;
+          totalReTxAmounts.at ((*it).reTxAttempts - 1)++;
+
+          if ((*it).successful)
+            {
+              successfulReTxAmounts.at ((*it).reTxAttempts - 1)++;
+            }
+          else
+            {
+              failedReTxAmounts.at ((*it).reTxAttempts - 1)++;
+            }
         }
     }
 
-  return reTxAmounts;
+  std::cout << "Successful retransmissions: ";
+  PrintRetransmissions (successfulReTxAmounts);
+  std::cout << "Failed retransmissions: ";
+  PrintRetransmissions (failedReTxAmounts);
+
+  std::cout << "Total transmissions performed: "
+            << SumRetransmissions (totalReTxAmounts) << std::endl;
 }
+
 
 void
 TransmissionCallback (Ptr<Packet const> packet, uint32_t systemId)
@@ -165,19 +210,17 @@ TransmissionCallback (Ptr<Packet const> packet, uint32_t systemId)
 }
 
 void
-RequiredTransmissionsCallback (uint8_t reqTx, bool success)
+RequiredTransmissionsCallback (uint8_t reqTx, bool success, Time firstAttempt)
 {
   NS_LOG_DEBUG ("ReqTx " << unsigned(reqTx));
 
-  std::pair<Time, uint8_t> entry (Simulator::Now (), reqTx);
-  if (success)
-    {
-      successfulReTransmissionTracker.push_back (entry);
-    }
-  else
-    {
-      failedReTransmissionTracker.push_back (entry);
-    }
+  RetransmissionStatus entry;
+  entry.firstAttempt = firstAttempt;
+  entry.finishTime = Simulator::Now ();
+  entry.reTxAttempts = reqTx;
+  entry.successful = success;
+
+  reTransmissionTracker.push_back (entry);
 }
 
 void
@@ -302,12 +345,12 @@ int main (int argc, char *argv[])
   // LogComponentEnable("LoraPhy", LOG_LEVEL_ALL);
   // LogComponentEnable("LoraChannel", LOG_LEVEL_ALL);
   // LogComponentEnable ("EndDeviceLoraPhy", LOG_LEVEL_ALL);
-  LogComponentEnable ("SimpleEndDeviceLoraPhy", LOG_LEVEL_ALL);
+  // LogComponentEnable ("SimpleEndDeviceLoraPhy", LOG_LEVEL_ALL);
   // LogComponentEnable("LogicalLoraChannelHelper", LOG_LEVEL_ALL);
   LogComponentEnable ("EndDeviceLoraMac", LOG_LEVEL_ALL);
   // LogComponentEnable("PointToPointNetDevice", LOG_LEVEL_ALL);
   // LogComponentEnable("PeriodicSenderHelper", LOG_LEVEL_ALL);
-  // LogComponentEnable("PeriodicSender", LOG_LEVEL_ALL);
+  LogComponentEnable ("PeriodicSender", LOG_LEVEL_ALL);
   // LogComponentEnable ("SimpleNetworkServer", LOG_LEVEL_ALL);
   // LogComponentEnable ("GatewayLoraMac", LOG_LEVEL_ALL);
   // LogComponentEnable ("Forwarder", LOG_LEVEL_ALL);
@@ -528,30 +571,13 @@ int main (int argc, char *argv[])
 
   std::cout << nDevices << " " << totalPktsSent << " " << received << " " << interfered << " " << noMoreReceivers << " " << underSensitivity << " " << std::endl;
 
-  std::vector<int> reTxAmounts = CountRetransmissions (transientPeriods * appPeriod, successfulReTransmissionTracker);
+  std::cout << "--------------------------------" << std::endl;
+  std::cout << "Statistics ignoring transients: " << std::endl;
+  CountRetransmissions (transientPeriods * appPeriod, appStopTime, reTransmissionTracker);
 
-  std::cout << "Retransmission amounts (without transient): " << reTxAmounts[0]
-            << " " << reTxAmounts[1] << " " << reTxAmounts[2] << " "
-            << reTxAmounts[3] << " " << reTxAmounts[4] << " " << reTxAmounts[5]
-            << " " << reTxAmounts[6] << " " << reTxAmounts[7] << " " << std::endl;
-
-  std::vector<int> totalSuccessfulReTxAmounts = CountRetransmissions (Seconds (0), successfulReTransmissionTracker);
-  std::vector<int> totalFailedReTxAmounts = CountRetransmissions (Seconds (0), failedReTransmissionTracker);
-
-  std::cout << "Retransmission amounts (totalSuccessful):             " << totalSuccessfulReTxAmounts[0] << " "
-            << totalSuccessfulReTxAmounts[1] << " " << totalSuccessfulReTxAmounts[2] << " " << totalSuccessfulReTxAmounts[3]
-            << " " << totalSuccessfulReTxAmounts[4] << " " << totalSuccessfulReTxAmounts[5] << " "
-            << totalSuccessfulReTxAmounts[6] << " " << totalSuccessfulReTxAmounts[7] << " " << std::endl;
-
-  std::vector<int> totalReTxAmounts (8,0);
-  for (int i = 0; i < 8; i++)
-    {
-      totalReTxAmounts[i] = totalSuccessfulReTxAmounts[i] + totalFailedReTxAmounts[i];
-    }
-  std::cout << "Total (re)transmissions: "<< totalReTxAmounts[0] + totalReTxAmounts[1]*2 +
-  totalReTxAmounts[2]*3 + totalReTxAmounts[3]*4 + totalReTxAmounts[4]*5 +
-  totalReTxAmounts[5]*6 + totalReTxAmounts[6]*7 + totalReTxAmounts[7]*8
-  << std::endl;
+  std::cout << "--------------------------------" << std::endl;
+  std::cout << "Total statistics: " << std::endl;
+  CountRetransmissions (Seconds (0),appStopTime, reTransmissionTracker);
 
   return 0;
 }
