@@ -148,7 +148,7 @@ int main (int argc, char *argv[])
   helper.Install (phyHelper, macHelper, gateways);
 
   // Set spreading factors up
-  macHelper.SetSpreadingFactorsUp (endDevices, gateways, channel);
+  std::vector<int> sfQuantity = macHelper.SetSpreadingFactorsUp (endDevices, gateways, channel);
 
   ////////////
   // Create NS

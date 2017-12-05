@@ -1,0 +1,146 @@
+*   [33m8af3471[m[33m ([m[1;35mrefs/stash[m[33m)[m WIP on modifySetSF: 8cc1494 Work on performances. SIGSEGV error for appPeriod param
+[31m|[m[32m\[m  
+[31m|[m * [33m9dbe85c[m index on modifySetSF: 8cc1494 Work on performances. SIGSEGV error for appPeriod param
+[31m|[m[31m/[m  
+* [33m8cc1494[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmodifySetSF[m[33m, [m[1;32mpostponeTx[m[33m)[m Work on performances. SIGSEGV error for appPeriod param
+* [33mca5a41c[m[33m ([m[1;31morigin/sendRemake[m[33m, [m[1;31morigin/postponeTx[m[33m)[m Add function to reset retransmission parameters and fix bugs.
+* [33meeaec2e[m Fix corner case
+* [33m270e589[m Modify logic Send function but problem in the number of total packets sent in the output
+* [33m0d78399[m Add parameter to callback
+* [33m68a74b3[m Move printing retransmissions to dedicated function
+* [33me43085f[m Add successful bool to callback
+* [33me8b6a2f[m Split packets between successful and not
+* [33m69033e6[m Add resetting of parameters
+* [33mb2867ca[m Move retransmission counting logic to function, ignore transient
+* [33m4ac6644[m Handle last cases of retransmission logic
+[32m|[m * [33m3be8ebb[m[33m ([m[1;31morigin/callback2[m[33m)[m Work on critical cases but not definitivelt solved (ex: ED= 400, appPeriod=20
+[32m|[m[32m/[m  
+* [33m7ebf13b[m Add handling for extreme cases
+* [33m201f8f4[m Handle various reception cases
+* [33m38689a3[m Work on callback position
+* [33mac555b4[m Fix bug on retx counter but not completly solved: more retx then packets sent
+* [33m43ffa94[m Set DR according to EDs' sensitivity
+* [33md68a5d9[m Fix number of repetitions. TODO: EDs only receive on 2 rx window.
+* [33m490f5f8[m Enable NS answer to retx
+* [33mc531ec5[m Enable NS answer different packets from the same device
+* [33mf781703[m Working on performances with NS adding server2.cc
+* [33m9e1c315[m Working on networkPerfRepet adding network server
+* [33m2892dc9[m Add get method
+* [33m75e9213[m Add methods to handle maxTxNumber and EnableDRAdaptation
+* [33m7324dd6[m Enable tracing (2)
+* [33m38e5601[m Enable tracing (1)
+* [33mc44d162[m Schedule tx if receiving
+* [33m8356086[m Set maxNumbTx as variable
+* [33m5447fef[m Enable DR adaptation
+* [33mee70276[m Enable postponed tx for messages out of duty cycle and newer messages delete the olds
+* [33m202143f[m Work on case 'new packet to send when retransmitting'
+* [33m6a4d07d[m Test packet variable
+* [33m14852e4[m Fix bug of already scheduled retransmission
+* [33m35f918e[m Add retx delay
+* [33m2f50c63[m Fix params for 2nd rx window in repetitionTest
+* [33ma481e70[m Add structure containing retx parameters
+* [33m6f21e8c[m Check and configure repetitionTest
+* [33m7080adb[m Move reset retx values in ParseCommands + logs
+* [33m69b556d[m Apply retx member variables
+* [33md66ebee[m Set ACK field on frame header according to mType
+* [33mb197455[m #
+* [33m9a30279[m Add comment
+* [33m19d289e[m Add example to test ack setting
+[33m|[m * [33m341c26f[m[33m ([m[1;32mdevelop[m[33m)[m Changed frequency value on mac command example
+[33m|[m[33m/[m  
+[33m|[m * [33m789cd1b[m[33m ([m[1;32mrepetitions[m[33m)[m Test packet variable
+[33m|[m * [33m420881e[m Fix bug of already scheduled retransmission
+[33m|[m * [33m9fe4706[m Add retx delay
+[33m|[m * [33maa67d1d[m Fix params for 2nd rx window in repetitionTest
+[33m|[m * [33m3a4da67[m Add structure containing retx parameters
+[33m|[m * [33m46c749f[m Check and configure repetitionTest
+[33m|[m * [33me47935c[m Move reset retx values in ParseCommands + logs
+[33m|[m * [33mf71987f[m Apply retx member variables
+[33m|[m * [33m62ae280[m Set ACK field on frame header according to mType
+[33m|[m * [33m6defcc5[m #
+[33m|[m * [33m9888ff5[m Add comment
+[33m|[m * [33m6960e59[m Add example to test ack setting
+[33m|[m[33m/[m  
+[33m|[m * [33m2006037[m[33m ([m[1;32mnetworkPerf[m[33m)[m Rename scripts
+[33m|[m * [33m928e660[m Do more runs for network performance analysis
+[33m|[m * [33m5e471ac[m Fix and run scripts for netPerf
+[33m|[m * [33m0ce5b8c[m Add networkPerf, networkPerf2 and networkPerfScript2
+[33m|[m[33m/[m  
+* [33m2cee328[m[33m ([m[1;31mpublic-origin/develop[m[33m)[m Initialize devices in SLEEP mode instead of STANDBY
+[36m|[m * [33m9323d39[m[33m ([m[1;31mpublic-origin/master[m[33m)[m Initialize devices in SLEEP mode instead of STANDBY
+[36m|[m * [33m1aa8562[m Set channels as enabled for uplink by default
+[36m|[m * [33mca667d9[m Update TxPower to reflect 1.0.2 version of the specification
+[36m|[m * [33m12620b8[m Add authors and reference publications
+[36m|[m [1;31m|[m * [33m34a042b[m[33m ([m[1;32menableRetx[m[33m)[m Test packet variable
+[36m|[m [1;31m|[m * [33mce9258d[m Fix bug of already scheduled retransmission
+[36m|[m [1;31m|[m * [33mbb62d16[m Add retx delay
+[36m|[m [1;31m|[m * [33mbb967a9[m Fix params for 2nd rx window in repetitionTest
+[36m|[m [1;31m|[m * [33m5475ab6[m Add structure containing retx parameters
+[36m|[m [1;31m|[m * [33m9b78042[m Check and configure repetitionTest
+[36m|[m [1;31m|[m * [33mb857bc4[m Move reset retx values in ParseCommands + logs
+[36m|[m [1;31m|[m * [33m5d6536e[m Apply retx member variables
+[36m|[m [1;31m|[m * [33mda90a69[m Set ACK field on frame header according to mType
+[36m|[m [1;31m|[m * [33m372613b[m #
+[36m|[m [1;31m|[m * [33mefabc73[m Add comment
+[36m|[m [1;31m|[m * [33m4947fce[m Add example to test ack setting
+[36m|[m [1;31m|[m[36m/[m  
+[36m|[m[36m/[m[1;31m|[m   
+* [1;31m|[m [33mae7abdd[m Set channels as enabled for uplink by default
+[1;32m|[m [1;31m|[m * [33m096b2ad[m[33m ([m[1;31morigin/enableRetx[m[33m)[m Test packet variable
+[1;32m|[m [1;31m|[m * [33mda32900[m Fix bug of already scheduled retransmission
+[1;32m|[m [1;31m|[m * [33m4539ad1[m Add retx delay
+[1;32m|[m [1;31m|[m * [33m6a39376[m Fix params for 2nd rx window in repetitionTest
+[1;32m|[m [1;31m|[m * [33mc07b864[m Add structure containing retx parameters
+[1;32m|[m [1;31m|[m * [33m2bf6953[m Check and configure repetitionTest
+[1;32m|[m [1;31m|[m * [33mb057d59[m Move reset retx values in ParseCommands + logs
+[1;32m|[m [1;31m|[m * [33m4235aaf[m Apply retx member variables
+[1;32m|[m [1;31m|[m * [33m90625c6[m Set ACK field on frame header according to mType
+[1;32m|[m [1;31m|[m * [33m30ec52e[m[33m ([m[1;31morigin/repetitions[m[33m)[m #
+[1;32m|[m [1;31m|[m * [33me57e12b[m Add comment
+[1;32m|[m [1;31m|[m * [33m5d176b8[m Add example to test ack setting
+[1;32m|[m [1;31m|[m[1;32m/[m  
+[1;32m|[m[1;32m/[m[1;31m|[m   
+[1;32m|[m [1;31m|[m * [33mb9c2545[m[33m ([m[1;31morigin/networkPerf[m[33m)[m Fix and run scripts for netPerf
+[1;32m|[m [1;31m|[m * [33mc77401a[m Add networkPerf, networkPerf2 and networkPerfScript2
+[1;32m|[m [1;31m|[m[1;32m/[m  
+[1;32m|[m[1;32m/[m[1;31m|[m   
+* [1;31m|[m [33m40e1df3[m[33m ([m[1;31morigin/develop[m[33m)[m Add function for enabled channel and MAC command example
+* [1;31m|[m [33m9bdf33e[m Update TxPower to reflect 1.0.2 version of the specification
+* [1;31m|[m [33m83fe884[m Add authors and reference publications
+* [1;31m|[m [33m01b1dc4[m Fix comments, overlap cycle, complete example
+[1;34m|[m [1;31m|[m * [33mf59615e[m[33m ([m[1;31morigin/feature/fixes[m[33m)[m Add function for enabled channel and MAC command example
+[1;34m|[m [1;31m|[m * [33m3e6080c[m Fix comments, overlap cycle, complete example
+[1;34m|[m [1;31m|[m[1;34m/[m  
+[1;34m|[m[1;34m/[m[1;31m|[m   
+* [1;31m|[m [33m942467a[m Refactor PHY layers to use the Simple prefix
+* [1;31m|[m [33m673d914[m Add first energy model support
+* [1;31m|[m [33m88d8e54[m Fix comment
+* [1;31m|[m [33m09511e1[m Initialize LoraDeviceAddress
+* [1;31m|[m [33me3267ab[m Set spreading factors up in the example
+* [1;31m|[m [33m6391468[m Correct description
+[1;31m|[m[1;31m/[m  
+[1;31m|[m * [33m9d62cac[m[33m ([m[1;32mExperiment[m[33m)[m Update simple example
+[1;31m|[m * [33mb8a0094[m Add GetEnabledChannelList
+[1;31m|[m * [33m0432a7b[m[33m ([m[1;31morigin/Experiment[m[33m)[m redo
+[1;31m|[m * [33m5938de5[m Add custom experiment
+[1;31m|[m * [33m08c4f42[m Remove README
+[1;31m|[m[1;31m/[m  
+[1;31m|[m * [33mc07f12e[m[33m ([m[1;32mfeature/fixcomment[m[33m)[m Add method GetEnabledChannelList and upgrade its use on end-device-lora-mac.cc
+[1;31m|[m * [33mcdc0100[m[33m ([m[1;31morigin/feature/fixcomment[m[33m)[m Fix comment
+[1;31m|[m[1;31m/[m  
+[1;31m|[m * [33m5645244[m[33m ([m[1;31mpublic-origin/gh-pages[m[33m, [m[1;31morigin/gh-pages[m[33m)[m Set theme jekyll-theme-cayman
+[1;31m|[m[1;31m/[m  
+* [33mc9c079c[m[33m ([m[1;33mtag: v0.1.0[m[33m, [m[1;31morigin/master[m[33m, [m[1;31morigin/HEAD[m[33m, [m[1;32mmaster[m[33m)[m Only test the lorawan suite
+* [33mcc52544[m Use github mirror of ns-3 repo instead of the one from nsnam.org
+* [33m909cb93[m Add travis integration
+* [33ma4635c4[m Clean the event list once there are 100 events in it
+* [33mf8d4f43[m Add Gitter reference
+* [33m5be12de[m Move contributing and code of conduct to .github folder
+* [33m4a4a131[m Add procedure to install dependencies
+* [33m4354f80[m Add pull request template
+* [33m900ce8e[m Create issue template
+* [33m78e8fb0[m Add code of conduct
+* [33m5721b2c[m Add build instructions and other information
+* [33mf6ba057[m Add contribution guidelines
+* [33mec469fd[m Create LICENSE
+* [33mb26f916[m Initial commit
