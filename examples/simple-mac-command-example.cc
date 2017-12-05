@@ -31,23 +31,23 @@ int main (int argc, char *argv[])
 
   // Set up logging
   LogComponentEnable ("SimpleMacCommandExample", LOG_LEVEL_ALL);
-  LogComponentEnable ("LoraChannel", LOG_LEVEL_INFO);
-  LogComponentEnable ("LoraPhy", LOG_LEVEL_ALL);
-  LogComponentEnable ("EndDeviceLoraPhy", LOG_LEVEL_ALL);
-  LogComponentEnable ("GatewayLoraPhy", LOG_LEVEL_ALL);
-  LogComponentEnable ("LoraInterferenceHelper", LOG_LEVEL_ALL);
-  LogComponentEnable ("LoraMac", LOG_LEVEL_ALL);
-  LogComponentEnable ("EndDeviceLoraMac", LOG_LEVEL_ALL);
-  LogComponentEnable ("GatewayLoraMac", LOG_LEVEL_ALL);
-  LogComponentEnable ("LogicalLoraChannelHelper", LOG_LEVEL_ALL);
-  LogComponentEnable ("LogicalLoraChannel", LOG_LEVEL_ALL);
-  LogComponentEnable ("LoraHelper", LOG_LEVEL_ALL);
-  LogComponentEnable ("LoraPhyHelper", LOG_LEVEL_ALL);
+  //LogComponentEnable ("LoraChannel", LOG_LEVEL_INFO);
+  //LogComponentEnable ("LoraPhy", LOG_LEVEL_ALL);
+  //LogComponentEnable ("EndDeviceLoraPhy", LOG_LEVEL_ALL);
+  //LogComponentEnable ("GatewayLoraPhy", LOG_LEVEL_ALL);
+  //LogComponentEnable ("LoraInterferenceHelper", LOG_LEVEL_ALL);
+  //LogComponentEnable ("LoraMac", LOG_LEVEL_ALL);
+  //LogComponentEnable ("EndDeviceLoraMac", LOG_LEVEL_ALL);
+  //LogComponentEnable ("GatewayLoraMac", LOG_LEVEL_ALL);
+  //LogComponentEnable ("LogicalLoraChannelHelper", LOG_LEVEL_ALL);
+  //LogComponentEnable ("LogicalLoraChannel", LOG_LEVEL_ALL);
+  //LogComponentEnable ("LoraHelper", LOG_LEVEL_ALL);
+  //LogComponentEnable ("LoraPhyHelper", LOG_LEVEL_ALL);
   LogComponentEnable ("LoraMacHelper", LOG_LEVEL_ALL);
-  LogComponentEnable ("OneShotSenderHelper", LOG_LEVEL_ALL);
-  LogComponentEnable ("OneShotSender", LOG_LEVEL_ALL);
-  LogComponentEnable ("LoraMacHeader", LOG_LEVEL_ALL);
-  LogComponentEnable ("LoraFrameHeader", LOG_LEVEL_ALL);
+  //LogComponentEnable ("OneShotSenderHelper", LOG_LEVEL_ALL);
+  //LogComponentEnable ("OneShotSender", LOG_LEVEL_ALL);
+  //LogComponentEnable ("LoraMacHeader", LOG_LEVEL_ALL);
+  //LogComponentEnable ("LoraFrameHeader", LOG_LEVEL_ALL);
   LogComponentEnableAll (LOG_PREFIX_FUNC);
   LogComponentEnableAll (LOG_PREFIX_NODE);
   LogComponentEnableAll (LOG_PREFIX_TIME);
@@ -78,7 +78,11 @@ int main (int argc, char *argv[])
   MobilityHelper mobility;
   Ptr<ListPositionAllocator> allocator = CreateObject<ListPositionAllocator> ();
   // Position of the end device
-  allocator->Add (Vector (5,0,0)); 
+
+  allocator->Add (Vector (6316,0,0));
+  allocator->Add (Vector (6317,0,0)); 
+  allocator->Add (Vector (6318,0,0));
+
   // Position of the gateway 
   allocator->Add (Vector (0,0,0));
   mobility.SetPositionAllocator (allocator);
@@ -103,7 +107,7 @@ int main (int argc, char *argv[])
 
   // Create a set of nodes
   NodeContainer endDevices;
-  endDevices.Create (1);
+  endDevices.Create (3);
 
   // Assign a mobility model to the node
   mobility.Install (endDevices);
@@ -145,8 +149,12 @@ int main (int argc, char *argv[])
   *  Set DataRate according to rx power  *
   ****************************************/
 
-  macHelper.SetSpreadingFactorsUp(endDevices, gateways, channel);
+  std::vector<int> sfQuantity = macHelper.SetSpreadingFactorsUp(endDevices, gateways, channel);
 
+  NS_LOG_INFO ("sfQuantity 7: " << sfQuantity[0] << " 8: " << sfQuantity[0] << " 8: "
+              << sfQuantity[1] << " 9: " << sfQuantity[2] << " 10: "
+              << sfQuantity[3] << " 11: " << sfQuantity[4] << " 12: "
+              << sfQuantity[5] << " out of range: " << sfQuantity[6]);
 
   /*********************************************
   *  Install applications on the end devices   *

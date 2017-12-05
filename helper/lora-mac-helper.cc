@@ -314,8 +314,11 @@ LoraMacHelper::SetSpreadingFactorsUp (NodeContainer endDevices, NodeContainer ga
         }
       else // Device is out of range. Assign SF12.
         {
+          // NS_LOG_DEBUG ("Device out of range");
           mac->SetDataRate (0);
           sfQuantity[6] = sfQuantity[6] + 1;
+          // NS_LOG_DEBUG ("sfQuantity[6] = " << sfQuantity[6]);
+
         }
 
 /*
@@ -328,30 +331,42 @@ LoraMacHelper::SetSpreadingFactorsUp (NodeContainer endDevices, NodeContainer ga
       if(rxPower > *gwSensitivity)
         {
           mac->SetDataRate (5);
+          sfQuantity[0] = sfQuantity[0] + 1;
+
         }
       else if (rxPower > *(gwSensitivity+1))
         {
           mac->SetDataRate (4);
+          sfQuantity[1] = sfQuantity[1] + 1;
+
         }
       else if (rxPower > *(gwSensitivity+2))
         {
           mac->SetDataRate (3);
+          sfQuantity[2] = sfQuantity[2] + 1;
+
         }
       else if (rxPower > *(gwSensitivity+3))
         {
           mac->SetDataRate (2);
+          sfQuantity[3] = sfQuantity[3] + 1;
         }
       else if (rxPower > *(gwSensitivity+4))
         {
           mac->SetDataRate (1);
+          sfQuantity[4] = sfQuantity[4] + 1;
         }
       else if (rxPower > *(gwSensitivity+5))
         {
           mac->SetDataRate (0);
+          sfQuantity[5] = sfQuantity[5] + 1;
+
         }
       else // Device is out of range. Assign SF12.
         {
           mac->SetDataRate (0);
+          sfQuantity[6] = sfQuantity[6] + 1;
+
         }
         */
     } // end loop on nodes

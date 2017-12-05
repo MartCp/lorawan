@@ -396,6 +396,11 @@ int main (int argc, char *argv[])
 
   sfQuantity = macHelper.SetSpreadingFactorsUp (endDevices, gateways, channel);
 
+  NS_LOG_INFO ("sfQuantity 7: " << sfQuantity[0] << " 8: " << sfQuantity[0] << " 8: "
+            << sfQuantity[1] << " 9: " << sfQuantity[2] << " 10: "
+            << sfQuantity[3] << " 11: " << sfQuantity[4] << " 12: "
+            << sfQuantity[5] << " out of range: " << sfQuantity[6]);
+
   NS_LOG_DEBUG ("Completed configuration");
 
   /*********************************************
@@ -437,7 +442,8 @@ int main (int argc, char *argv[])
   *  Results  *
   *************/
 
- std::cout << nDevices << " " << totalPktsSent << " " << received << " " << interfered << " " << noMoreReceivers << " " << underSensitivity 
+ std::cout << nDevices << " " << sfQuantity[1] << " " << sfQuantity[2] << " " << sfQuantity[3] 
+ << " " << sfQuantity[4] << " " << sfQuantity[5]  << " " << sfQuantity[6] 
     << std::endl;
 
 
