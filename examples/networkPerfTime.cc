@@ -26,7 +26,7 @@
 
 using namespace ns3;
 
-NS_LOG_COMPONENT_DEFINE ("ComplexLorawanNetworkExample");
+NS_LOG_COMPONENT_DEFINE ("NetworkPerfTime");
 
 // Network settings
 int nDevices = 2000;
@@ -230,14 +230,14 @@ int main (int argc, char *argv[])
   cmd.AddValue ("radius", "The radius of the area to simulate", radius);
   cmd.AddValue ("gatewayRadius", "The distance between two gateways", gatewayRadius);
   cmd.AddValue ("simulationTime", "The time for which to simulate", simulationTime);
-  cmd.AddValue ("appPeriod", "The period in seconds to be used by periodically transmitting applications", appPeriodSeconds);
+  cmd.AddValue("appPeriod", "The period of the application (s)", appPeriodSeconds);
   cmd.AddValue ("printEDs", "Whether or not to print a file containing the ED's positions", printEDs);
   // cmd.AddValue ("RngRun", "Set run of the RngSeedManager", run);
 
   cmd.Parse (argc, argv);
 
   // Set up logging
-  LogComponentEnable ("ComplexLorawanNetworkExample", LOG_LEVEL_ALL);
+  LogComponentEnable ("NetworkPerfTime", LOG_LEVEL_ALL);
   // LogComponentEnable("LoraChannel", LOG_LEVEL_INFO);
   // LogComponentEnable("LoraPhy", LOG_LEVEL_ALL);
   // LogComponentEnable("EndDeviceLoraPhy", LOG_LEVEL_ALL);
@@ -433,7 +433,6 @@ int main (int argc, char *argv[])
   *  Results  *
   *************/
 
-  // those are not probabilities!
 
   std::cout << simulationTime << " " << totalPktsSent << " " << received << " " << interfered << " " << noMoreReceivers << " " << underSensitivity << std::endl;
 

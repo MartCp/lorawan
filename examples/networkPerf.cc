@@ -26,7 +26,7 @@
 
 using namespace ns3;
 
-NS_LOG_COMPONENT_DEFINE ("ComplexLorawanNetworkExample");
+NS_LOG_COMPONENT_DEFINE ("NetworkPerf");
 
 // Network settings
 int nDevices = 2000;
@@ -44,7 +44,7 @@ int interfered = 0;
 int received = 0;
 int underSensitivity = 0;
 int totalPktsSent = 0;
-std::vector<int> v (8, 0);
+// std::vector<int> v (8, 0);
 
 // Output control
 bool printEDs = true;
@@ -129,13 +129,6 @@ TransmissionCallback (Ptr<Packet const> packet, uint32_t systemId)
 
   // Update number of transmitted packets
   totalPktsSent= totalPktsSent +1;
-}
-
-void
-RequiredTransmissionsCallback(uint8_t reqTx)
-{
-  // NS_LOG_DEBUG ("ReqTx " << unsigned(reqTx));
-  v[reqTx-1]= v[reqTx-1] + 1;
 }
 
 void
@@ -238,14 +231,14 @@ int main (int argc, char *argv[])
   cmd.AddValue ("radius", "The radius of the area to simulate", radius);
   cmd.AddValue ("gatewayRadius", "The distance between two gateways", gatewayRadius);
   cmd.AddValue ("simulationTime", "The time for which to simulate", simulationTime);
-  cmd.AddValue ("appPeriod", "The period in seconds to be used by periodically transmitting applications", appPeriodSeconds);
+  cmd.AddValue("appPeriod", "The period of the application (s)", appPeriodSeconds);
   cmd.AddValue ("printEDs", "Whether or not to print a file containing the ED's positions", printEDs);
   // cmd.AddValue ("RngRun", "Set run of the RngSeedManager", run);
 
   cmd.Parse (argc, argv);
 
   // Set up logging
-  LogComponentEnable ("ComplexLorawanNetworkExample", LOG_LEVEL_ALL);
+  LogComponentEnable ("NetworkPerf", LOG_LEVEL_ALL);
   // LogComponentEnable("LoraChannel", LOG_LEVEL_INFO);
   // LogComponentEnable("LoraPhy", LOG_LEVEL_ALL);
   // LogComponentEnable("EndDeviceLoraPhy", LOG_LEVEL_ALL);
@@ -348,9 +341,6 @@ int main (int argc, char *argv[])
       phy->TraceConnectWithoutContext ("StartSending",
                                        MakeCallback (&TransmissionCallback));
       
-      Ptr<EndDeviceLoraMac> mac= loraNetDevice->GetMac()-> GetObject<EndDeviceLoraMac>();
-      mac->TraceConnectWithoutContext("RequiredTransmissions",
-                                        MakeCallback (&RequiredTransmissionsCallback));
     }
 
   /*********************
@@ -445,19 +435,7 @@ int main (int argc, char *argv[])
   *  Results  *
   *************/
 
-  // double receivedAvg = double(received)/nDevices;
-  // double interferedProb = double(interfered)/nDevices;
-  // double noMoreReceiversProb = double(noMoreReceivers)/nDevices;
-  // double underSensitivityProb = double(underSensitivity)/nDevices;
-
-  // double receivedProbGivenAboveSensitivity = double(received)/(nDevices - underSensitivity);
-  // double interferedProbGivenAboveSensitivity = double(interfered)/(nDevices - underSensitivity);
-  // double noMoreReceiversProbGivenAboveSensitivity = double(noMoreReceivers)/(nDevices - underSensitivity);
-  // std::cout << nDevices << " " << double(nDevices)/simulationTime << " " << receivedProb << " " << interferedProb << " " << noMoreReceiversProb << " " << underSensitivityProb <<
-  // " " << receivedProbGivenAboveSensitivity << " " << interferedProbGivenAboveSensitivity << " " << noMoreReceiversProbGivenAboveSensitivity << std::endl;
-  
-  // double receivedProb= double(received)/double(totalPktsSent);
-  std::cout << nDevices << " " << totalPktsSent << " " << received << " " << interfered << " " << noMoreReceivers << " " << underSensitivity 
+ std::cout << nDevices << " " << totalPktsSent << " " << received << " " << interfered << " " << noMoreReceivers << " " << underSensitivity 
     << std::endl;
 
 
