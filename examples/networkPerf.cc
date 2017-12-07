@@ -37,7 +37,7 @@ double gatewayRadius = 7500/((gatewayRings-1)*2+1);
 double simulationTime = 601;
 int appPeriodSeconds = 600;
 int run=1;
-std::vector<int> sfQuantity (6);
+std::vector<int> sfQuantity (7,0);
 
 int noMoreReceivers = 0;
 int interfered = 0;

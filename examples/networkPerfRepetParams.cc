@@ -3,30 +3,42 @@
  * devices. The metric of interest for this script is the throughput of the
  * network.
  */
+#include "ns3/point-to-point-module.h"
+#include "ns3/forwarder-helper.h"
+#include "ns3/network-server-helper.h"
+#include "ns3/lora-channel.h"
+#include "ns3/mobility-helper.h"
+#include "ns3/lora-phy-helper.h"
+#include "ns3/lora-mac-helper.h"
+#include "ns3/lora-helper.h"
+#include "ns3/gateway-lora-phy.h"
+#include "ns3/periodic-sender.h"
+#include "ns3/periodic-sender-helper.h"
+#include "ns3/log.h"
+#include "ns3/string.h"
+#include "ns3/command-line.h"
+#include "ns3/core-module.h"
+#include "ns3/network-module.h"
+#include "ns3/lora-device-address-generator.h"
+#include "ns3/one-shot-sender-helper.h"
 
 #include "ns3/end-device-lora-phy.h"
-#include "ns3/gateway-lora-phy.h"
 #include "ns3/end-device-lora-mac.h"
 #include "ns3/gateway-lora-mac.h"
 #include "ns3/simulator.h"
-#include "ns3/log.h"
 #include "ns3/pointer.h"
 #include "ns3/constant-position-mobility-model.h"
-#include "ns3/lora-helper.h"
 #include "ns3/node-container.h"
-#include "ns3/mobility-helper.h"
 #include "ns3/position-allocator.h"
 #include "ns3/double.h"
 #include "ns3/random-variable-stream.h"
-#include "ns3/periodic-sender-helper.h"
-#include "ns3/command-line.h"
 #include "ns3/rng-seed-manager.h"
 #include <algorithm>
 #include <ctime>
 
 using namespace ns3;
 
-NS_LOG_COMPONENT_DEFINE ("NetworkPerf");
+NS_LOG_COMPONENT_DEFINE ("NetworkPerformanceRepetition");
 
 // Network settings
 int nDevices = 2000;
@@ -34,20 +46,22 @@ int gatewayRings = 1;
 int nGateways = 3*gatewayRings*gatewayRings-3*gatewayRings+1;
 double radius = 7500;
 double gatewayRadius = 7500/((gatewayRings-1)*2+1);
-//double simulationTime = 600;
+double simulationTime = 600;
 int appPeriodSeconds = 600;
+int periodsToSimulate = 1;
+int transientPeriods = 0;
 int run=1;
-std::vector<int> sfQuantity (7,0);
+bool DRAdapt=false;
+int maxNumbTx=8;
 
 int noMoreReceivers = 0;
 int interfered = 0;
 int received = 0;
 int underSensitivity = 0;
 int totalPktsSent = 0;
-// std::vector<int> v (8, 0);
 
 // Output control
-bool printEDs = true;
+bool printEDs = false;
 bool buildingsEnabled = false;
 
 /**********************
@@ -69,7 +83,16 @@ struct PacketStatus {
   std::vector<enum PacketOutcome> outcomes;
 };
 
+struct RetransmissionStatus {
+  Time firstAttempt;
+  Time finishTime;
+  uint8_t reTxAttempts;
+  bool successful;
+};
+
 std::map<Ptr<Packet const>, PacketStatus> packetTracker;
+
+std::list<RetransmissionStatus> reTransmissionTracker;
 
 void
 CheckReceptionByAllGWsComplete (std::map<Ptr<Packet const>, PacketStatus>::iterator it)
@@ -115,6 +138,73 @@ CheckReceptionByAllGWsComplete (std::map<Ptr<Packet const>, PacketStatus>::itera
 }
 
 void
+PrintRetransmissions (std::vector<int> reTxVector)
+{
+  // NS_LOG_INFO ("PrintRetransmissions");
+
+  for (int i = 0; i < int(reTxVector.size ()); i++)
+    {
+      // NS_LOG_INFO ("i: " << i);
+      std::cout << reTxVector.at (i) << " ";
+    }
+  // std::cout << std::endl;
+}
+
+int
+SumRetransmissions (std::vector<int> reTxVector)
+{
+  // NS_LOG_INFO ("SumRetransmissions");
+
+  int total = 0;
+  for (int i = 0; i < int(reTxVector.size ()); i++)
+    {
+      // NS_LOG_INFO ("i: " << i);
+      total += reTxVector[i] * (i + 1);
+    }
+  return total;
+}
+
+void
+CountRetransmissions (Time transient, Time simulationTime, std::list<RetransmissionStatus> reTransmissionTracker)
+{
+  NS_LOG_INFO ("CountRetransmissions");
+
+  std::vector<int> totalReTxAmounts (8, 0);
+  std::vector<int> successfulReTxAmounts (8, 0);
+  std::vector<int> failedReTxAmounts (8, 0);
+
+  for (auto it = reTransmissionTracker.begin (); it != reTransmissionTracker.end (); ++it)
+    {
+      // NS_LOG_INFO ("Current retransmission info:");
+      // NS_LOG_INFO ("First attempt at sending: " << (*it).firstAttempt.GetSeconds ());
+      // NS_LOG_INFO ("Number of reTx: " << unsigned((*it).reTxAttempts));
+
+      if ((*it).firstAttempt >= transient && (*it).firstAttempt <= simulationTime - transient)
+        {
+          // NS_LOG_INFO ("ReTx fits requirements");
+          totalReTxAmounts.at ((*it).reTxAttempts - 1)++;
+
+          if ((*it).successful)
+            {
+              successfulReTxAmounts.at ((*it).reTxAttempts - 1)++;
+            }
+          else
+            {
+              failedReTxAmounts.at ((*it).reTxAttempts - 1)++;
+            }
+        }
+    }
+
+  // std::cout << "Successful retransmissions: ";
+  PrintRetransmissions (successfulReTxAmounts);
+  // std::cout << "Failed retransmissions: ";
+  PrintRetransmissions (failedReTxAmounts);
+
+  std::cout << SumRetransmissions (totalReTxAmounts) << std::endl;
+}
+
+
+void
 TransmissionCallback (Ptr<Packet const> packet, uint32_t systemId)
 {
   // NS_LOG_INFO ("Transmitted a packet from device " << systemId);
@@ -129,6 +219,20 @@ TransmissionCallback (Ptr<Packet const> packet, uint32_t systemId)
 
   // Update number of transmitted packets
   totalPktsSent= totalPktsSent +1;
+}
+
+void
+RequiredTransmissionsCallback (uint8_t reqTx, bool success, Time firstAttempt)
+{
+  // NS_LOG_DEBUG ("ReqTx " << unsigned(reqTx) << ", succ: " << success << ", firstAttempt: " << firstAttempt.GetSeconds ());
+
+  RetransmissionStatus entry;
+  entry.firstAttempt = firstAttempt;
+  entry.finishTime = Simulator::Now ();
+  entry.reTxAttempts = reqTx;
+  entry.successful = success;
+
+  reTransmissionTracker.push_back (entry);
 }
 
 void
@@ -230,32 +334,47 @@ int main (int argc, char *argv[])
   cmd.AddValue ("gatewayRings", "Number of gateway rings to include", gatewayRings);
   cmd.AddValue ("radius", "The radius of the area to simulate", radius);
   cmd.AddValue ("gatewayRadius", "The distance between two gateways", gatewayRadius);
-  //cmd.AddValue ("simulationTime", "The time for which to simulate", simulationTime);
-  cmd.AddValue("appPeriod", "The period of the application (s)", appPeriodSeconds);
+  cmd.AddValue ("simulationTime", "The time for which to simulate", simulationTime);
+  cmd.AddValue ("appPeriod", "The period in seconds to be used by periodically transmitting applications", appPeriodSeconds);
+  cmd.AddValue ("periodsToSimulate", "The number of application periods to simulate", periodsToSimulate);
+  cmd.AddValue ("transientPeriods", "The number of periods we consider as a transient", transientPeriods);
   cmd.AddValue ("printEDs", "Whether or not to print a file containing the ED's positions", printEDs);
-  // cmd.AddValue ("RngRun", "Set run of the RngSeedManager", run);
+  cmd.AddValue ("DRAdapt", "Enable data rate adaptation", DRAdapt);
+  cmd.AddValue ("maxNumbTx", "The maximum number of transmissions allowed", maxNumbTx);
+
+
 
   cmd.Parse (argc, argv);
 
   // Set up logging
-  LogComponentEnable ("NetworkPerf", LOG_LEVEL_ALL);
-  // LogComponentEnable("LoraChannel", LOG_LEVEL_INFO);
-  // LogComponentEnable("LoraPhy", LOG_LEVEL_ALL);
-  // LogComponentEnable("EndDeviceLoraPhy", LOG_LEVEL_ALL);
-  // LogComponentEnable("GatewayLoraPhy", LOG_LEVEL_ALL);
+  LogComponentEnable ("NetworkPerformanceRepetition", LOG_LEVEL_ALL);
   // LogComponentEnable("LoraInterferenceHelper", LOG_LEVEL_ALL);
   // LogComponentEnable("LoraMac", LOG_LEVEL_ALL);
-  // LogComponentEnable("EndDeviceLoraMac", LOG_LEVEL_ALL);
-  // LogComponentEnable("GatewayLoraMac", LOG_LEVEL_ALL);
-  // LogComponentEnable("LogicalLoraChannelHelper", LOG_LEVEL_ALL);
   // LogComponentEnable("LogicalLoraChannel", LOG_LEVEL_ALL);
   // LogComponentEnable("LoraHelper", LOG_LEVEL_ALL);
   // LogComponentEnable("LoraPhyHelper", LOG_LEVEL_ALL);
   // LogComponentEnable("LoraMacHelper", LOG_LEVEL_ALL);
-  // LogComponentEnable("PeriodicSenderHelper", LOG_LEVEL_ALL);
-  // LogComponentEnable("PeriodicSender", LOG_LEVEL_ALL);
-  // LogComponentEnable("LoraMacHeader", LOG_LEVEL_ALL);
   // LogComponentEnable("LoraFrameHeader", LOG_LEVEL_ALL);
+  // LogComponentEnable("LoraMacHeader", LOG_LEVEL_ALL);
+  // LogComponentEnable("MacCommand", LOG_LEVEL_ALL);
+  // LogComponentEnable("GatewayLoraPhy", LOG_LEVEL_ALL);
+  // LogComponentEnable("LoraPhy", LOG_LEVEL_ALL);
+  // LogComponentEnable("LoraChannel", LOG_LEVEL_ALL);
+  // LogComponentEnable ("EndDeviceLoraPhy", LOG_LEVEL_ALL);
+  // LogComponentEnable ("SimpleEndDeviceLoraPhy", LOG_LEVEL_ALL);
+  // LogComponentEnable("LogicalLoraChannelHelper", LOG_LEVEL_ALL);
+  // LogComponentEnable ("EndDeviceLoraMac", LOG_LEVEL_ALL);
+  // LogComponentEnable("PointToPointNetDevice", LOG_LEVEL_ALL);
+  // LogComponentEnable("PeriodicSenderHelper", LOG_LEVEL_ALL);
+  // LogComponentEnable ("PeriodicSender", LOG_LEVEL_ALL);
+  // LogComponentEnable ("SimpleNetworkServer", LOG_LEVEL_ALL);
+  // LogComponentEnable ("GatewayLoraMac", LOG_LEVEL_ALL);
+  // LogComponentEnable ("Forwarder", LOG_LEVEL_ALL);
+  // LogComponentEnable ("DeviceStatus", LOG_LEVEL_ALL);
+  // LogComponentEnable ("GatewayStatus", LOG_LEVEL_ALL);
+  LogComponentEnableAll (LOG_PREFIX_FUNC);
+  LogComponentEnableAll (LOG_PREFIX_NODE);
+  LogComponentEnableAll (LOG_PREFIX_TIME);
 
   /***********
   *  Setup  *
@@ -324,9 +443,15 @@ int main (int argc, char *argv[])
       mobility->SetPosition (position);
     }
 
+  // Create a LoraDeviceAddressGenerator
+  uint8_t nwkId = 54;
+  uint32_t nwkAddr = 1864;
+  Ptr<LoraDeviceAddressGenerator> addrGen = CreateObject<LoraDeviceAddressGenerator> (nwkId,nwkAddr);
+
   // Create the LoraNetDevices of the end devices
   phyHelper.SetDeviceType (LoraPhyHelper::ED);
   macHelper.SetDeviceType (LoraMacHelper::ED);
+  macHelper.SetAddressGenerator (addrGen);
   helper.Install (phyHelper, macHelper, endDevices);
 
   // Now end devices are connected to the channel
@@ -340,7 +465,14 @@ int main (int argc, char *argv[])
       Ptr<LoraPhy> phy = loraNetDevice->GetPhy ();
       phy->TraceConnectWithoutContext ("StartSending",
                                        MakeCallback (&TransmissionCallback));
-      
+
+      Ptr<EndDeviceLoraMac> mac= loraNetDevice->GetMac ()->GetObject<EndDeviceLoraMac>();
+      mac->TraceConnectWithoutContext ("RequiredTransmissions",
+                                       MakeCallback (&RequiredTransmissionsCallback));
+      // Set message type, otherwise the NS does not send ACKs
+      mac->SetMType (LoraMacHeader::CONFIRMED_DATA_UP);
+      mac->SetMaxNumberOfTransmissions(maxNumbTx);
+      mac->SetDataRateAdaptation(DRAdapt);
     }
 
   /*********************
@@ -353,7 +485,7 @@ int main (int argc, char *argv[])
 
   Ptr<ListPositionAllocator> allocator = CreateObject<ListPositionAllocator> ();
   // Make it so that nodes are at a certain height > 0
-  allocator->Add (Vector (0.0, 0.0, 15.0));    
+  allocator->Add (Vector (0.0, 0.0, 15.0));
   mobility.SetPositionAllocator (allocator);
   mobility.Install (gateways);
 
@@ -396,15 +528,35 @@ int main (int argc, char *argv[])
 
   macHelper.SetSpreadingFactorsUp (endDevices, gateways, channel);
 
+  /**********************************************
+  *              Create Network Server          *
+  **********************************************/
+
+  NodeContainer networkServers;
+  networkServers.Create (1);
+
+  // Install the SimpleNetworkServer application on the network server
+  NetworkServerHelper networkServerHelper;
+  networkServerHelper.SetGateways (gateways);
+  networkServerHelper.SetEndDevices (endDevices);
+  networkServerHelper.Install (networkServers);
+
+  // Install the Forwarder application on the gateways
+  ForwarderHelper forwarderHelper;
+  forwarderHelper.Install (gateways);
+
+
   NS_LOG_DEBUG ("Completed configuration");
 
   /*********************************************
   *  Install applications on the end devices  *
   *********************************************/
 
-  Time appStopTime = Seconds (appPeriodSeconds);
+  Time appStopTime = appPeriod * periodsToSimulate;                    // The application stops
+                                                                       // exactly after one period
+
   PeriodicSenderHelper appHelper = PeriodicSenderHelper ();
-  appHelper.SetPeriod (Seconds (appPeriodSeconds));
+  appHelper.SetPeriod (appPeriod);
   ApplicationContainer appContainer = appHelper.Install (endDevices);
 
   appContainer.Start (Seconds (0));
@@ -423,7 +575,7 @@ int main (int argc, char *argv[])
   *  Simulation  *
   ****************/
 
-  Simulator::Stop (appStopTime + Hours (2));
+  Simulator::Stop (appStopTime + Hours (1000));                    // Stop later to permit the retransmission procedure
 
   // PrintSimulationTime ();
 
@@ -435,10 +587,9 @@ int main (int argc, char *argv[])
   *  Results  *
   *************/
 
- std::cout << appPeriodSeconds << " " << totalPktsSent << " " << received << " " << interfered << " " << noMoreReceivers << " " << underSensitivity 
-    << std::endl;
-
-
+  std::cout << nDevices << " ";
+  // std::cout << "Statistics ignoring transients: " << std::endl;
+  CountRetransmissions (transientPeriods * appPeriod, appStopTime, reTransmissionTracker);
 
   return 0;
 }
