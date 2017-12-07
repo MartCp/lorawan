@@ -421,7 +421,7 @@ EndDeviceLoraMac::FailedReception (Ptr<Packet const> packet)
   // Switch to sleep after a failed reception
   m_phy->GetObject<EndDeviceLoraPhy> ()->SwitchToSleep ();
 
-  if (m_secondReceiveWindow.IsExpired ())
+  if (m_secondReceiveWindow.IsExpired () && m_retxParams.waitingAck)
     {
       if (m_retxParams.retxLeft > 0)
         {
