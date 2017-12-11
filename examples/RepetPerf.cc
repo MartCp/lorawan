@@ -1,7 +1,6 @@
 /*
- * This script simulates a complex scenario with multiple gateways and end
- * devices. The metric of interest for this script is the throughput of the
- * network.
+ * Modify required tx callback to take also packet as input and add counter to see 
+ * the number of successfully received/interfered/... packets only inside the transients
  */
 #include "ns3/point-to-point-module.h"
 #include "ns3/forwarder-helper.h"
@@ -138,27 +137,19 @@ CheckReceptionByAllGWsComplete (std::map<Ptr<Packet const>, PacketStatus>::itera
 }
 
 void
-PrintRetransmissions (std::vector<int> reTxVector)
+PrintVector (std::vector<int> vector)
 {
   // NS_LOG_INFO ("PrintRetransmissions");
 
-  for (int i = 0; i < int(reTxVector.size ()); i++)
+  for (int i = 0; i < int(vector.size ()); i++)
     {
       // NS_LOG_INFO ("i: " << i);
-      std::cout << reTxVector.at (i) << " ";
+      std::cout << vector.at (i) << " ";
     }
   //
     std::cout << std::endl;
 }
 
-void
-PrintNetworkPerformances (void)
-{
-  // NS_LOG_INFO ("PrintNetworkPerformances");
-
-  std::cout << nDevices << " " << totalPktsSent << " " << received << " " << interfered << " " << 
-      noMoreReceivers << " " << underSensitivity << " ";
-}
 
 int
 SumRetransmissions (std::vector<int> reTxVector)
@@ -175,13 +166,18 @@ SumRetransmissions (std::vector<int> reTxVector)
 }
 
 void
-CountRetransmissions (Time transient, Time simulationTime, std::list<RetransmissionStatus> reTransmissionTracker)
+CountRetransmissions (Time transient, Time simulationTime, std::list<RetransmissionStatus> reTransmissionTracker, 
+    std::map<Ptr<Packet const>, PacketStatus> packetTracker)
 {
   NS_LOG_INFO ("CountRetransmissions");
 
   std::vector<int> totalReTxAmounts (8, 0);
   std::vector<int> successfulReTxAmounts (8, 0);
   std::vector<int> failedReTxAmounts (8, 0);
+  // vector performanceAmounts will contain - for the interval given in the input of the function,
+  // totPacketsSent receivedPackets interferedPackets noMoreGwPackets underSensitivityPackets
+  std::vector<int> performancesAmounts (5, 0);
+
 
   for (auto it = reTransmissionTracker.begin (); it != reTransmissionTracker.end (); ++it)
     {
@@ -193,6 +189,8 @@ CountRetransmissions (Time transient, Time simulationTime, std::list<Retransmiss
         {
           // NS_LOG_INFO ("ReTx fits requirements");
           totalReTxAmounts.at ((*it).reTxAttempts - 1)++;
+          performancesAmounts.at(0)++;
+          Ptr<Packet> currentPacket= (*it).packet;
 
           if ((*it).successful)
             {
@@ -202,17 +200,60 @@ CountRetransmissions (Time transient, Time simulationTime, std::list<Retransmiss
             {
               failedReTxAmounts.at ((*it).reTxAttempts - 1)++;
             }
-        }
+
+          std::map<Ptr<Packet const>, PacketStatus>::iterator it = packetTracker.find (currentPacket);
+              {
+                NS_LOG_INFO("Found the same packet");
+
+                // Update the statistics
+                
+                for (int j = 0; j < nGateways; j++)
+                  {
+                    switch ((*it).second.outcomes.at (1))
+                      {
+                      case RECEIVED:
+                        {
+                          performancesAmounts.at(1)++;
+                          NS_LOG_DEBUG("Inside received case");
+                          break;
+                        }
+                      case UNDER_SENSITIVITY:
+                        {
+                          performancesAmounts.at(2)++;
+                          break;
+                        }
+                      case NO_MORE_RECEIVERS:
+                        {
+                          performancesAmounts.at(3)++;
+                          break;
+                        }
+                      case INTERFERED:
+                        {
+                          performancesAmounts.at(4)++;
+                          break;
+                        }
+                      case UNSET:
+                        {
+                          break;
+                        }
+                      }
+                  }                
+              }
+
+        } // end loop to ignorate transients
     }
 
   // std::cout << "Successful retransmissions: ";
-  PrintRetransmissions (successfulReTxAmounts);
+  PrintVector (successfulReTxAmounts);
   // std::cout << "Failed retransmissions: ";
-  PrintRetransmissions (failedReTxAmounts);
+  PrintVector (failedReTxAmounts);
+
+  std::cout << "networkPerf inside transients " << std::endl;
+  PrintVector(performancesAmounts);
 
   std::cout << SumRetransmissions (totalReTxAmounts) << std::endl;
-}
 
+}
 
 void
 TransmissionCallback (Ptr<Packet const> packet, uint32_t systemId)
@@ -600,15 +641,16 @@ int main (int argc, char *argv[])
 // Statistics considering all the simulated periods
 */
  
-  std::cout << nDevices << " " << totalPktsSent << " " << received << " " << interfered << " " << noMoreReceivers << " " << underSensitivity << " " << std::endl;
+  std::cout << nDevices << " " << totalPktsSent << " " << received << " " << interfered << " " << noMoreReceivers 
+      << " " << underSensitivity << " " << std::endl;
 
   std::cout << "--------------------------------" << std::endl;
   std::cout << "Statistics ignoring transients: " << std::endl;
-  CountRetransmissions (transientPeriods * appPeriod, appStopTime, reTransmissionTracker);
+  CountRetransmissions (transientPeriods * appPeriod, appStopTime, reTransmissionTracker, packetTracker);
 
   std::cout << "--------------------------------" << std::endl;
   std::cout << "Total statistics: " << std::endl;
-  CountRetransmissions (Seconds (0), appStopTime+Hours (1000), reTransmissionTracker);
+  CountRetransmissions (Seconds (0), appStopTime+Hours (1000), reTransmissionTracker, packetTracker);
 
   return 0;
 }
