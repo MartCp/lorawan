@@ -1,7 +1,6 @@
 /*
- * This script simulates a complex scenario with multiple gateways and end
- * devices. The metric of interest for this script is the throughput of the
- * network.
+ * Modify required tx callback to take also packet as input and add counter to see 
+ * the number of successfully received/interfered/... packets only inside the transients
  */
 #include "ns3/point-to-point-module.h"
 #include "ns3/forwarder-helper.h"
@@ -38,7 +37,7 @@
 
 using namespace ns3;
 
-NS_LOG_COMPONENT_DEFINE ("NetworkPerformanceRepetition");
+NS_LOG_COMPONENT_DEFINE ("CompleteNetworkPerformances");
 
 // Network settings
 int nDevices = 2000;
@@ -51,14 +50,18 @@ int appPeriodSeconds = 600;
 int periodsToSimulate = 1;
 int transientPeriods = 0;
 int run=1;
-bool DRAdapt=false;
-int maxNumbTx=8;
+std::vector<int> sfQuantity (6);
 
 int noMoreReceivers = 0;
 int interfered = 0;
 int received = 0;
 int underSensitivity = 0;
 int totalPktsSent = 0;
+
+// RetransmissionParameters
+int maxNumbTx = 8;
+bool DRAdapt = false;
+bool mixedPeriods = false;
 
 // Output control
 bool printEDs = false;
@@ -88,6 +91,7 @@ struct RetransmissionStatus {
   Time finishTime;
   uint8_t reTxAttempts;
   bool successful;
+  Ptr<Packet> packet;
 };
 
 std::map<Ptr<Packet const>, PacketStatus> packetTracker;
@@ -138,22 +142,24 @@ CheckReceptionByAllGWsComplete (std::map<Ptr<Packet const>, PacketStatus>::itera
 }
 
 void
-PrintRetransmissions (std::vector<int> reTxVector)
+PrintVector (std::vector<int> vector)
 {
   // NS_LOG_INFO ("PrintRetransmissions");
 
-  for (int i = 0; i < int(reTxVector.size ()); i++)
+  for (int i = 0; i < int(vector.size ()); i++)
     {
       // NS_LOG_INFO ("i: " << i);
-      std::cout << reTxVector.at (i) << " ";
+      std::cout << vector.at (i) << " ";
     }
-  // std::cout << std::endl;
+  //
+    std::cout << std::endl;
 }
 
-int
-SumRetransmissions (std::vector<int> reTxVector)
+
+void
+PrintSumRetransmissions (std::vector<int> reTxVector)
 {
-  // NS_LOG_INFO ("SumRetransmissions");
+  // NS_LOG_INFO ("PrintSumRetransmissions");
 
   int total = 0;
   for (int i = 0; i < int(reTxVector.size ()); i++)
@@ -161,27 +167,32 @@ SumRetransmissions (std::vector<int> reTxVector)
       // NS_LOG_INFO ("i: " << i);
       total += reTxVector[i] * (i + 1);
     }
-  return total;
+  std::cout << total << std::endl;
 }
 
 void
-CountRetransmissions (Time transient, Time simulationTime, std::list<RetransmissionStatus> reTransmissionTracker)
+CountRetransmissions (Time transient, Time simulationTime, std::list<RetransmissionStatus> reTransmissionTracker, 
+    std::map<Ptr<Packet const>, PacketStatus> packetTracker)
 {
-  NS_LOG_INFO ("CountRetransmissions");
+  // NS_LOG_INFO ("CountRetransmissions");
 
   std::vector<int> totalReTxAmounts (8, 0);
   std::vector<int> successfulReTxAmounts (8, 0);
   std::vector<int> failedReTxAmounts (8, 0);
+  // vector performanceAmounts will contain - for the interval given in the input of the function,
+  // totPacketsSent receivedPackets interferedPackets noMoreGwPackets underSensitivityPackets
+  std::vector<int> performancesAmounts (5, 0);
+
 
   for (auto it = reTransmissionTracker.begin (); it != reTransmissionTracker.end (); ++it)
     {
-      // NS_LOG_INFO ("Current retransmission info:");
-      // NS_LOG_INFO ("First attempt at sending: " << (*it).firstAttempt.GetSeconds ());
-      // NS_LOG_INFO ("Number of reTx: " << unsigned((*it).reTxAttempts));
+      // NS_LOG_DEBUG ("Current retransmission info:");
+      // NS_LOG_DEBUG ("First attempt at sending: " << (*it).firstAttempt.GetSeconds ());
+      // NS_LOG_DEBUG ("Number of reTx: " << unsigned((*it).reTxAttempts));
 
       if ((*it).firstAttempt >= transient && (*it).firstAttempt <= simulationTime - transient)
         {
-          // NS_LOG_INFO ("ReTx fits requirements");
+          // NS_LOG_DEBUG ("ReTx fits requirements");
           totalReTxAmounts.at ((*it).reTxAttempts - 1)++;
 
           if ((*it).successful)
@@ -192,17 +203,69 @@ CountRetransmissions (Time transient, Time simulationTime, std::list<Retransmiss
             {
               failedReTxAmounts.at ((*it).reTxAttempts - 1)++;
             }
-        }
+
+          if (transient> Seconds(0))
+          {
+            performancesAmounts.at(0)++;
+            Ptr<Packet> currentPacket= (*it).packet;
+            std::map<Ptr<Packet const>, PacketStatus>::iterator it = packetTracker.find (currentPacket);
+              
+            // NS_LOG_DEBUG("Found the same packet");
+
+            // Update the statistics
+            
+            for (int j = 0; j < nGateways; j++)
+              {
+                switch ((*it).second.outcomes.at (1))
+                  {
+                  case RECEIVED:
+                    {
+                      performancesAmounts.at(1)++;
+                      // NS_LOG_DEBUG("Inside received case");
+                      break;
+                    }
+                  case UNDER_SENSITIVITY:
+                    {
+                      performancesAmounts.at(2)++;
+                      break;
+                    }
+                  case NO_MORE_RECEIVERS:
+                    {
+                      performancesAmounts.at(3)++;
+                      break;
+                    }
+                  case INTERFERED:
+                    {
+                      performancesAmounts.at(4)++;
+                      break;
+                    }
+                  case UNSET:
+                    {
+                      break;
+                    }
+                  }   //end switch
+              }       //end for cycling all the gws
+          }           // end if transient > 0
+
+        } // end loop to ignorate transients
     }
 
-  // std::cout << "Successful retransmissions: ";
-  PrintRetransmissions (successfulReTxAmounts);
-  // std::cout << "Failed retransmissions: ";
-  PrintRetransmissions (failedReTxAmounts);
+  std::cout << "Successful retransmissions: ";
+  PrintVector (successfulReTxAmounts);
+  std::cout << "Failed retransmissions: ";
+  PrintVector (failedReTxAmounts);
 
-  std::cout << SumRetransmissions (totalReTxAmounts) << std::endl;
+  // this condition because, if not verified, the Retransmission Tracker is empty
+  if (transient > Seconds(0))
+  {
+    std::cout << "Network performances inside transients: ";
+    PrintVector(performancesAmounts);
+  }
+
+  std::cout << "Total transmitted packets inside the considered period: ";
+  PrintSumRetransmissions (totalReTxAmounts);
+
 }
-
 
 void
 TransmissionCallback (Ptr<Packet const> packet, uint32_t systemId)
@@ -222,7 +285,7 @@ TransmissionCallback (Ptr<Packet const> packet, uint32_t systemId)
 }
 
 void
-RequiredTransmissionsCallback (uint8_t reqTx, bool success, Time firstAttempt)
+RequiredTransmissionsCallback (uint8_t reqTx, bool success, Time firstAttempt, Ptr<Packet> packet)
 {
   // NS_LOG_DEBUG ("ReqTx " << unsigned(reqTx) << ", succ: " << success << ", firstAttempt: " << firstAttempt.GetSeconds ());
 
@@ -231,6 +294,7 @@ RequiredTransmissionsCallback (uint8_t reqTx, bool success, Time firstAttempt)
   entry.finishTime = Simulator::Now ();
   entry.reTxAttempts = reqTx;
   entry.successful = success;
+  entry.packet = packet;
 
   reTransmissionTracker.push_back (entry);
 }
@@ -338,16 +402,15 @@ int main (int argc, char *argv[])
   cmd.AddValue ("appPeriod", "The period in seconds to be used by periodically transmitting applications", appPeriodSeconds);
   cmd.AddValue ("periodsToSimulate", "The number of application periods to simulate", periodsToSimulate);
   cmd.AddValue ("transientPeriods", "The number of periods we consider as a transient", transientPeriods);
-  cmd.AddValue ("printEDs", "Whether or not to print a file containing the ED's positions", printEDs);
+  cmd.AddValue ("maxNumbTx", "The maximum number of transmissions allowed.", maxNumbTx);
   cmd.AddValue ("DRAdapt", "Enable data rate adaptation", DRAdapt);
-  cmd.AddValue ("maxNumbTx", "The maximum number of transmissions allowed", maxNumbTx);
-
-
+  cmd.AddValue ("mixedPeriods", "Enable mixed application periods", mixedPeriods);
+  cmd.AddValue ("printEDs", "Whether or not to print a file containing the ED's positions", printEDs);
 
   cmd.Parse (argc, argv);
 
   // Set up logging
-  LogComponentEnable ("NetworkPerformanceRepetition", LOG_LEVEL_ALL);
+  LogComponentEnable ("CompleteNetworkPerformances", LOG_LEVEL_ALL);
   // LogComponentEnable("LoraInterferenceHelper", LOG_LEVEL_ALL);
   // LogComponentEnable("LoraMac", LOG_LEVEL_ALL);
   // LogComponentEnable("LogicalLoraChannel", LOG_LEVEL_ALL);
@@ -471,8 +534,9 @@ int main (int argc, char *argv[])
                                        MakeCallback (&RequiredTransmissionsCallback));
       // Set message type, otherwise the NS does not send ACKs
       mac->SetMType (LoraMacHeader::CONFIRMED_DATA_UP);
-      mac->SetMaxNumberOfTransmissions(maxNumbTx);
+      mac-> SetMaxNumberOfTransmissions(maxNumbTx);
       mac->SetDataRateAdaptation(DRAdapt);
+
     }
 
   /*********************
@@ -552,12 +616,23 @@ int main (int argc, char *argv[])
   *  Install applications on the end devices  *
   *********************************************/
 
-  Time appStopTime = appPeriod * periodsToSimulate;                    // The application stops
-                                                                       // exactly after one period
-
   PeriodicSenderHelper appHelper = PeriodicSenderHelper ();
-  appHelper.SetPeriod (appPeriod);
+
+  if (mixedPeriods)
+  {
+    appHelper.SetPeriod (Seconds(0));
+    // In this case, as application period we take
+    // the maximum of the possible application periods, i.e. 1 day
+    appPeriod = Seconds(24*60*60);   
+  }
+  else
+  {
+    appHelper.SetPeriod (appPeriod);
+  }
+
   ApplicationContainer appContainer = appHelper.Install (endDevices);
+
+  Time appStopTime = appPeriod * periodsToSimulate;
 
   appContainer.Start (Seconds (0));
   appContainer.Stop (appStopTime);
@@ -586,10 +661,17 @@ int main (int argc, char *argv[])
   /*************
   *  Results  *
   *************/
+ 
+  std::cout << nDevices << " " << totalPktsSent << " " << received << " " << interfered << " " << noMoreReceivers 
+      << " " << underSensitivity << " " << std::endl;
 
-  std::cout << nDevices << " ";
-  // std::cout << "Statistics ignoring transients: " << std::endl;
-  CountRetransmissions (transientPeriods * appPeriod, appStopTime, reTransmissionTracker);
+  std::cout << "--------------------------------" << std::endl;
+  std::cout << "Statistics ignoring transients: " << std::endl;
+  CountRetransmissions (transientPeriods * appPeriod, appStopTime, reTransmissionTracker, packetTracker);
+
+  std::cout << "--------------------------------" << std::endl;
+  std::cout << "Total statistics: " << std::endl;
+  CountRetransmissions (Seconds (0), appStopTime+Hours (1000), reTransmissionTracker, packetTracker);
 
   return 0;
 }

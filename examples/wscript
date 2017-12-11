@@ -37,23 +37,5 @@ def build(bld):
     obj = bld.create_ns3_program('repetitionTest', ['lorawan'])
     obj.source = 'repetitionTest.cc'
 
-    obj = bld.create_ns3_program('networkPerf', ['lorawan'])
-    obj.source = 'networkPerf.cc'
-
-    obj = bld.create_ns3_program('networkPerfRepet', ['lorawan'])
-    obj.source = 'networkPerfRepet.cc'
-
-    obj = bld.create_ns3_program('networkPerfRepetParams', ['lorawan'])
-    obj.source = 'networkPerfRepetParams.cc'
-
-    obj = bld.create_ns3_program('networkPerfRetxOneline', ['lorawan'])
-    obj.source = 'networkPerfRetxOneline.cc'
-
-    obj = bld.create_ns3_program('networkPerfTime', ['lorawan'])
-    obj.source = 'networkPerfTime.cc'
-
-    obj = bld.create_ns3_program('mixedPeriods', ['lorawan'])
-    obj.source = 'mixedPeriods.cc'
-
-    obj = bld.create_ns3_program('RepetPerf', ['lorawan'])
-    obj.source = 'RepetPerf.cc'
+    obj = bld.create_ns3_program('CompleteNetworkPerformances', ['lorawan'])
+    obj.source = 'CompleteNetworkPerformances.cc'
