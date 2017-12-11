@@ -213,7 +213,7 @@ EndDeviceLoraMac::DoSend (Ptr<Packet> packet)
         {
           // Call the callback to notify about the failure
           uint8_t txs = m_maxNumbTx - (m_retxParams.retxLeft);
-          m_requiredTxCallback (txs, false, m_retxParams.firstAttempt);
+          m_requiredTxCallback (txs, false, m_retxParams.firstAttempt, m_retxParams.packet);
           NS_LOG_DEBUG (" ************* ********************txs = " << unsigned(txs) << " maxNumbTx= "
                                                                     << unsigned(m_maxNumbTx) << " retxLeft= " << unsigned (m_retxParams.retxLeft));
         }
@@ -375,7 +375,7 @@ EndDeviceLoraMac::Receive (Ptr<Packet const> packet)
               if (m_retxParams.retxLeft == 0)
                 {
                   uint8_t txs = m_maxNumbTx - (m_retxParams.retxLeft);
-                  m_requiredTxCallback (txs, false, m_retxParams.firstAttempt);
+                  m_requiredTxCallback (txs, false, m_retxParams.firstAttempt, m_retxParams.packet);
                   NS_LOG_DEBUG (" ************* ********************txs = " << unsigned(txs) << " maxNumbTx= "
                                                                             << unsigned(m_maxNumbTx) << " retxLeft= " << unsigned (m_retxParams.retxLeft));
 
@@ -401,7 +401,7 @@ EndDeviceLoraMac::Receive (Ptr<Packet const> packet)
       else
         {
           uint8_t txs = m_maxNumbTx - (m_retxParams.retxLeft);
-          m_requiredTxCallback (txs, false, m_retxParams.firstAttempt);
+          m_requiredTxCallback (txs, false, m_retxParams.firstAttempt, m_retxParams.packet);
           NS_LOG_DEBUG (" ************* ********************txs = " << unsigned(txs) << " maxNumbTx= "
                                                                     << unsigned(m_maxNumbTx) << " retxLeft= " << unsigned (m_retxParams.retxLeft));
 
@@ -431,7 +431,7 @@ EndDeviceLoraMac::FailedReception (Ptr<Packet const> packet)
       else
         {
           uint8_t txs = m_maxNumbTx - (m_retxParams.retxLeft);
-          m_requiredTxCallback (txs, false, m_retxParams.firstAttempt);
+          m_requiredTxCallback (txs, false, m_retxParams.firstAttempt, m_retxParams.packet);
           NS_LOG_DEBUG (" ************* ********************txs = " << unsigned(txs) << " maxNumbTx= "
                                                                     << unsigned(m_maxNumbTx) << " retxLeft= " << unsigned (m_retxParams.retxLeft));
 
@@ -455,7 +455,7 @@ EndDeviceLoraMac::ParseCommands (LoraFrameHeader frameHeader)
           NS_LOG_DEBUG ("Reset retransmission variables to default values and cancel retransmission if already scheduled");
 
           uint8_t txs = m_maxNumbTx - (m_retxParams.retxLeft);
-          m_requiredTxCallback (txs, true, m_retxParams.firstAttempt);
+          m_requiredTxCallback (txs, true, m_retxParams.firstAttempt, m_retxParams.packet);
           NS_LOG_DEBUG (" ************* ********************txs = " << unsigned(txs) << " maxNumbTx= "
                                                                     << unsigned(m_maxNumbTx) << " retxLeft= " << unsigned (m_retxParams.retxLeft));
 
@@ -768,7 +768,7 @@ EndDeviceLoraMac::CloseSecondReceiveWindow (void)
       else if (m_retxParams.retxLeft == 0 && m_phy->GetObject<EndDeviceLoraPhy> ()->GetState () != EndDeviceLoraPhy::RX)
         {
           uint8_t txs = m_maxNumbTx - (m_retxParams.retxLeft);
-          m_requiredTxCallback (txs, false, m_retxParams.firstAttempt);
+          m_requiredTxCallback (txs, false, m_retxParams.firstAttempt, m_retxParams.packet);
           NS_LOG_DEBUG (" ************* ********************txs = " << unsigned(txs) << " maxNumbTx= "
                                                                     << unsigned(m_maxNumbTx) << " retxLeft= " << unsigned (m_retxParams.retxLeft));
 
@@ -785,7 +785,7 @@ EndDeviceLoraMac::CloseSecondReceiveWindow (void)
     {
       NS_LOG_DEBUG (" m_maxNumbTx " << unsigned(m_maxNumbTx) << " m_retxParams.retxLeft " << unsigned(m_retxParams.retxLeft));
       uint8_t txs = m_maxNumbTx - (m_retxParams.retxLeft );
-      m_requiredTxCallback (txs, true, m_retxParams.firstAttempt);
+      m_requiredTxCallback (txs, true, m_retxParams.firstAttempt, m_retxParams.packet);
       NS_LOG_DEBUG (" ************ ************ txs = " << unsigned(txs) << " maxNumbTx= "
                                                         << unsigned(m_maxNumbTx) << " retxLeft= " << unsigned (m_retxParams.retxLeft));
 

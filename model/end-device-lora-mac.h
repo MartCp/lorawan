@@ -562,7 +562,7 @@ TracedValue<uint8_t> m_requiredTx;
    *
    * \see class CallBackTraceSource
    */
-  TracedCallback<uint8_t, bool, Time> m_requiredTxCallback;
+  TracedCallback<uint8_t, bool, Time, Ptr<Packet> > m_requiredTxCallback;
 
 };
 
