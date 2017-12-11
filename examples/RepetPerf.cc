@@ -151,10 +151,10 @@ PrintVector (std::vector<int> vector)
 }
 
 
-int
-SumRetransmissions (std::vector<int> reTxVector)
+void
+PrintSumRetransmissions (std::vector<int> reTxVector)
 {
-  // NS_LOG_INFO ("SumRetransmissions");
+  // NS_LOG_INFO ("PrintSumRetransmissions");
 
   int total = 0;
   for (int i = 0; i < int(reTxVector.size ()); i++)
@@ -162,7 +162,7 @@ SumRetransmissions (std::vector<int> reTxVector)
       // NS_LOG_INFO ("i: " << i);
       total += reTxVector[i] * (i + 1);
     }
-  return total;
+  std::cout << total << std::endl;
 }
 
 void
@@ -181,16 +181,14 @@ CountRetransmissions (Time transient, Time simulationTime, std::list<Retransmiss
 
   for (auto it = reTransmissionTracker.begin (); it != reTransmissionTracker.end (); ++it)
     {
-      // NS_LOG_INFO ("Current retransmission info:");
-      // NS_LOG_INFO ("First attempt at sending: " << (*it).firstAttempt.GetSeconds ());
-      // NS_LOG_INFO ("Number of reTx: " << unsigned((*it).reTxAttempts));
+      // NS_LOG_DEBUG ("Current retransmission info:");
+      // NS_LOG_DEBUG ("First attempt at sending: " << (*it).firstAttempt.GetSeconds ());
+      // NS_LOG_DEBUG ("Number of reTx: " << unsigned((*it).reTxAttempts));
 
       if ((*it).firstAttempt >= transient && (*it).firstAttempt <= simulationTime - transient)
         {
-          // NS_LOG_INFO ("ReTx fits requirements");
+          // NS_LOG_DEBUG ("ReTx fits requirements");
           totalReTxAmounts.at ((*it).reTxAttempts - 1)++;
-          performancesAmounts.at(0)++;
-          Ptr<Packet> currentPacket= (*it).packet;
 
           if ((*it).successful)
             {
@@ -201,57 +199,66 @@ CountRetransmissions (Time transient, Time simulationTime, std::list<Retransmiss
               failedReTxAmounts.at ((*it).reTxAttempts - 1)++;
             }
 
-          std::map<Ptr<Packet const>, PacketStatus>::iterator it = packetTracker.find (currentPacket);
-              {
-                NS_LOG_INFO("Found the same packet");
+          if (transient> Seconds(0))
+          {
+            performancesAmounts.at(0)++;
+            Ptr<Packet> currentPacket= (*it).packet;
+            std::map<Ptr<Packet const>, PacketStatus>::iterator it = packetTracker.find (currentPacket);
+              
+            // NS_LOG_DEBUG("Found the same packet");
 
-                // Update the statistics
-                
-                for (int j = 0; j < nGateways; j++)
+            // Update the statistics
+            
+            for (int j = 0; j < nGateways; j++)
+              {
+                switch ((*it).second.outcomes.at (1))
                   {
-                    switch ((*it).second.outcomes.at (1))
-                      {
-                      case RECEIVED:
-                        {
-                          performancesAmounts.at(1)++;
-                          NS_LOG_DEBUG("Inside received case");
-                          break;
-                        }
-                      case UNDER_SENSITIVITY:
-                        {
-                          performancesAmounts.at(2)++;
-                          break;
-                        }
-                      case NO_MORE_RECEIVERS:
-                        {
-                          performancesAmounts.at(3)++;
-                          break;
-                        }
-                      case INTERFERED:
-                        {
-                          performancesAmounts.at(4)++;
-                          break;
-                        }
-                      case UNSET:
-                        {
-                          break;
-                        }
-                      }
-                  }                
-              }
+                  case RECEIVED:
+                    {
+                      performancesAmounts.at(1)++;
+                      // NS_LOG_DEBUG("Inside received case");
+                      break;
+                    }
+                  case UNDER_SENSITIVITY:
+                    {
+                      performancesAmounts.at(2)++;
+                      break;
+                    }
+                  case NO_MORE_RECEIVERS:
+                    {
+                      performancesAmounts.at(3)++;
+                      break;
+                    }
+                  case INTERFERED:
+                    {
+                      performancesAmounts.at(4)++;
+                      break;
+                    }
+                  case UNSET:
+                    {
+                      break;
+                    }
+                  }   //end switch
+              }       //end for cycling all the gws
+          }           // end if transient > 0
 
         } // end loop to ignorate transients
     }
 
-  // std::cout << "Successful retransmissions: ";
+  std::cout << "Successful retransmissions: ";
   PrintVector (successfulReTxAmounts);
-  // std::cout << "Failed retransmissions: ";
+  std::cout << "Failed retransmissions: ";
   PrintVector (failedReTxAmounts);
 
-  std::cout << "networkPerf inside transients " << std::endl;
-  PrintVector(performancesAmounts);
+  // this condition because, if not verified, the Retransmission Tracker is empty
+  if (transient > Seconds(0))
+  {
+    std::cout << "networkPerf inside transients :";
+    PrintVector(performancesAmounts);
+  }
 
-  std::cout << SumRetransmissions (totalReTxAmounts) << std::endl;
+  std::cout << "Total transmitted packets inside the considered period: ";
+  PrintSumRetransmissions (totalReTxAmounts);
 
 }
 
