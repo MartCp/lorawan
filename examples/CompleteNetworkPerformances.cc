@@ -84,6 +84,8 @@ struct PacketStatus {
   uint32_t senderId;
   int outcomeNumber;
   std::vector<enum PacketOutcome> outcomes;
+  Time receivedTime;
+  Time delay;
 };
 
 struct RetransmissionStatus {
@@ -184,44 +186,55 @@ CountRetransmissions (Time transient, Time simulationTime, std::list<Retransmiss
   std::vector<int> performancesAmounts (5, 0);
 
 
-  for (auto it = reTransmissionTracker.begin (); it != reTransmissionTracker.end (); ++it)
+  for (auto itRetx = reTransmissionTracker.begin (); itRetx != reTransmissionTracker.end (); ++itRetx)
     {
       NS_LOG_DEBUG ("Current retransmission info:");
-      NS_LOG_DEBUG ("First attempt at sending: " << (*it).firstAttempt.GetSeconds ());
-      // NS_LOG_DEBUG ("Number of reTx: " << unsigned((*it).reTxAttempts));
+      NS_LOG_DEBUG ("First attempt at sending: " << (*itRetx).firstAttempt.GetSeconds ());
+      // NS_LOG_DEBUG ("Number of reTx: " << unsigned((*itRetx).reTxAttempts));
 
-      if ((*it).firstAttempt >= transient && (*it).firstAttempt <= simulationTime - transient)
+      if ((*itRetx).firstAttempt >= transient && (*itRetx).firstAttempt <= simulationTime - transient)
         {
           NS_LOG_DEBUG ("ReTx fits requirements");
-          totalReTxAmounts.at ((*it).reTxAttempts - 1)++;
+          totalReTxAmounts.at ((*itRetx).reTxAttempts - 1)++;
 
-          if ((*it).successful)
+          if ((*itRetx).successful)
             {
-              successfulReTxAmounts.at ((*it).reTxAttempts - 1)++;
+              successfulReTxAmounts.at ((*itRetx).reTxAttempts - 1)++;
             }
           else
             {
-              failedReTxAmounts.at ((*it).reTxAttempts - 1)++;
+              failedReTxAmounts.at ((*itRetx).reTxAttempts - 1)++;
             }
 
           if (transient> Seconds(0))
           {
             performancesAmounts.at(0)++;
-            Ptr<Packet> currentPacket= (*it).packet;
+            Ptr<Packet> currentPacket= (*itRetx).packet;
             std::map<Ptr<Packet const>, PacketStatus>::iterator it = packetTracker.find (currentPacket);
               
-            // NS_LOG_DEBUG("Found the same packet");
+            NS_LOG_DEBUG("Found the same packet");
 
             // Update the statistics
             
             for (int j = 0; j < nGateways; j++)
               {
-                switch ((*it).second.outcomes.at (0))
+                NS_LOG_DEBUG("outcome at j+1= + " << j+1 << " " << (*it).second.outcomes.at (j+1));
+                // For what specified in PacketReceptionCalled, the outcome of the first GW is recorded at index
+                // equal to 0. 
+                // Therefor, to scan all the gws we make j starting from 0 up to nGateways
+
+                // TODO change this 1 with j+1 to scan all the gw and take the delay for the first gw that 
+                // has received the packet.
+                switch ((*it).second.outcomes.at (1))
                   {
                   case RECEIVED:
                     {
                       performancesAmounts.at(1)++;
                       NS_LOG_DEBUG("Inside received case");
+                      NS_LOG_DEBUG("received time = " << (*it).second.receivedTime.GetSeconds() 
+                          << " first attempt " << (*itRetx).firstAttempt.GetSeconds());
+                      (*it).second.delay= ((*it).second.receivedTime - (*itRetx).firstAttempt);
+                      NS_LOG_DEBUG("Delay of this received packet = " << (*it).second.delay.GetSeconds());
                       break;
                     }
                   case UNDER_SENSITIVITY:
@@ -277,6 +290,8 @@ TransmissionCallback (Ptr<Packet const> packet, uint32_t systemId)
   status.senderId = systemId;
   status.outcomeNumber = 0;
   status.outcomes = std::vector<enum PacketOutcome> (nGateways, UNSET);
+  status.receivedTime= Seconds(0);
+  status.delay= Seconds(0);
 
   packetTracker.insert (std::pair<Ptr<Packet const>, PacketStatus> (packet, status));
 
@@ -308,7 +323,10 @@ PacketReceptionCallback (Ptr<Packet const> packet, uint32_t systemId)
   std::map<Ptr<Packet const>, PacketStatus>::iterator it = packetTracker.find (packet);
   (*it).second.outcomes.at (systemId - nDevices) = RECEIVED;
   (*it).second.outcomeNumber += 1;
-
+  (*it).second.receivedTime= Simulator::Now();
+  NS_LOG_DEBUG ("Packet received at gateway " << systemId << " at time " << Simulator::Now().GetSeconds() 
+      << ". Outcome at systemId - nDevices= " << systemId - nDevices << " is " << (*it).second.outcomes.at (systemId - nDevices));
+  NS_LOG_DEBUG ("Received time has been set to " << (*it).second.receivedTime.GetSeconds());
   CheckReceptionByAllGWsComplete (it);
 }
 
