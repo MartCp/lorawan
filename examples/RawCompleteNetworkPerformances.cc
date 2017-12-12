@@ -152,7 +152,6 @@ PrintVector (std::vector<int> vector)
       std::cout << vector.at (i) << " ";
     }
   //
-    std::cout << std::endl;
 }
 
 
@@ -186,13 +185,13 @@ CountRetransmissions (Time transient, Time simulationTime, std::list<Retransmiss
 
   for (auto it = reTransmissionTracker.begin (); it != reTransmissionTracker.end (); ++it)
     {
-      NS_LOG_DEBUG ("Current retransmission info:");
-      NS_LOG_DEBUG ("First attempt at sending: " << (*it).firstAttempt.GetSeconds ());
+      // NS_LOG_DEBUG ("Current retransmission info:");
+      // NS_LOG_DEBUG ("First attempt at sending: " << (*it).firstAttempt.GetSeconds ());
       // NS_LOG_DEBUG ("Number of reTx: " << unsigned((*it).reTxAttempts));
 
       if ((*it).firstAttempt >= transient && (*it).firstAttempt <= simulationTime - transient)
         {
-          NS_LOG_DEBUG ("ReTx fits requirements");
+          // NS_LOG_DEBUG ("ReTx fits requirements");
           totalReTxAmounts.at ((*it).reTxAttempts - 1)++;
 
           if ((*it).successful)
@@ -204,13 +203,14 @@ CountRetransmissions (Time transient, Time simulationTime, std::list<Retransmiss
               failedReTxAmounts.at ((*it).reTxAttempts - 1)++;
             }
 
-          if (transient> Seconds(0))
+          if (transientPeriods > 0)
           {
             performancesAmounts.at(0)++;
             Ptr<Packet> currentPacket= (*it).packet;
             std::map<Ptr<Packet const>, PacketStatus>::iterator it = packetTracker.find (currentPacket);
               
             // NS_LOG_DEBUG("Found the same packet");
+            NS_LOG_DEBUG("Transient period = " << transientPeriods);
 
             // Update the statistics
             
@@ -250,19 +250,17 @@ CountRetransmissions (Time transient, Time simulationTime, std::list<Retransmiss
         } // end loop to ignorate transients
     }
 
-  std::cout << "Successful retransmissions: ";
-  PrintVector (successfulReTxAmounts);
-  std::cout << "Failed retransmissions: ";
-  PrintVector (failedReTxAmounts);
-
+  std::cout << " ";
+  
   // this condition because, if not verified, the Retransmission Tracker is empty
-  if (transient > Seconds(0))
+  if (transientPeriods > 0)
   {
     std::cout << "Network performances inside transients: ";
     PrintVector(performancesAmounts);
   }
+  PrintVector (successfulReTxAmounts);
+  PrintVector (failedReTxAmounts);
 
-  std::cout << "Total transmitted packets inside the considered period: ";
   PrintSumRetransmissions (totalReTxAmounts);
 
 }
@@ -426,9 +424,9 @@ int main (int argc, char *argv[])
   // LogComponentEnable ("EndDeviceLoraPhy", LOG_LEVEL_ALL);
   // LogComponentEnable ("SimpleEndDeviceLoraPhy", LOG_LEVEL_ALL);
   // LogComponentEnable("LogicalLoraChannelHelper", LOG_LEVEL_ALL);
-  LogComponentEnable ("EndDeviceLoraMac", LOG_LEVEL_ALL);
+  // LogComponentEnable ("EndDeviceLoraMac", LOG_LEVEL_ALL);
   // LogComponentEnable("PointToPointNetDevice", LOG_LEVEL_ALL);
-  LogComponentEnable("PeriodicSenderHelper", LOG_LEVEL_ALL);
+  // LogComponentEnable("PeriodicSenderHelper", LOG_LEVEL_ALL);
   // LogComponentEnable ("PeriodicSender", LOG_LEVEL_ALL);
   // LogComponentEnable ("SimpleNetworkServer", LOG_LEVEL_ALL);
   // LogComponentEnable ("GatewayLoraMac", LOG_LEVEL_ALL);
@@ -533,9 +531,9 @@ int main (int argc, char *argv[])
       mac->TraceConnectWithoutContext ("RequiredTransmissions",
                                        MakeCallback (&RequiredTransmissionsCallback));
       // Set message type, otherwise the NS does not send ACKs
-      mac->SetMType (LoraMacHeader::CONFIRMED_DATA_UP);
+      mac-> SetMType (LoraMacHeader::CONFIRMED_DATA_UP);
       mac-> SetMaxNumberOfTransmissions(maxNumbTx);
-      mac->SetDataRateAdaptation(DRAdapt);
+      mac-> SetDataRateAdaptation(DRAdapt);
 
     }
 
@@ -624,7 +622,7 @@ int main (int argc, char *argv[])
     // In this case, as application period we take
     // the maximum of the possible application periods, i.e. 1 day
     appPeriodSeconds= (24*60*60); 
-    appPeriod = Seconds(appPeriodSeconds);   
+    appPeriod = Seconds(appPeriodSeconds);
   }
   else
   {
@@ -662,17 +660,22 @@ int main (int argc, char *argv[])
   /*************
   *  Results  *
   *************/
- 
-  std::cout << nDevices << " " << totalPktsSent << " " << received << " " << interfered << " " << noMoreReceivers 
-      << " " << underSensitivity << " " << std::endl;
+  
+  // Total statistics of the network 
+  std::cout << nDevices << " " << appPeriodSeconds;
 
-  std::cout << "--------------------------------" << std::endl;
-  std::cout << "Statistics ignoring transients: " << std::endl;
+  if (transientPeriods == 0)
+  {
+    std::cout<<" "<< totalPktsSent 
+      << " " << received << " " << interfered << " " << noMoreReceivers 
+      << " " << underSensitivity;
+  }
+
+  // Statistics ignoring transients:
   CountRetransmissions (transientPeriods * appPeriod, appStopTime, reTransmissionTracker, packetTracker);
 
-  std::cout << "--------------------------------" << std::endl;
-  std::cout << "Total statistics: " << std::endl;
-  CountRetransmissions (Seconds (0), appStopTime+Hours (1000), reTransmissionTracker, packetTracker);
+  // Total statistics:
+  // CountRetransmissions (Seconds (0), appStopTime+Hours (1000), reTransmissionTracker, packetTracker);
 
   return 0;
 }
