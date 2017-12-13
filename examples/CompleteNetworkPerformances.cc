@@ -206,7 +206,7 @@ CountRetransmissions (Time transient, Time simulationTime, std::list<Retransmiss
               failedReTxAmounts.at ((*itRetx).reTxAttempts - 1)++;
             }
 
-          if (transient> Seconds(0))
+          if (transient != Seconds(0))
           {
             performancesAmounts.at(0)++;
             Ptr<Packet> currentPacket= (*itRetx).packet;
@@ -416,7 +416,7 @@ int main (int argc, char *argv[])
   cmd.AddValue ("gatewayRings", "Number of gateway rings to include", gatewayRings);
   cmd.AddValue ("radius", "The radius of the area to simulate", radius);
   cmd.AddValue ("gatewayRadius", "The distance between two gateways", gatewayRadius);
-  cmd.AddValue ("simulationTime", "The time for which to simulate", simulationTime);
+  // cmd.AddValue ("simulationTime", "The time for which to simulate", simulationTime);
   cmd.AddValue ("appPeriod", "The period in seconds to be used by periodically transmitting applications", appPeriodSeconds);
   cmd.AddValue ("periodsToSimulate", "The number of application periods to simulate", periodsToSimulate);
   cmd.AddValue ("transientPeriods", "The number of periods we consider as a transient", transientPeriods);
