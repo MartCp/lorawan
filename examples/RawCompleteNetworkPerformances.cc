@@ -408,7 +408,7 @@ int main (int argc, char *argv[])
 
   // Set up logging
   LogComponentEnable ("CompleteNetworkPerformances", LOG_LEVEL_ALL);
-  //LogComponentEnable("LoraInterferenceHelper", LOG_LEVEL_ALL);
+  LogComponentEnable("LoraInterferenceHelper", LOG_LEVEL_ALL);
   // LogComponentEnable("LoraMac", LOG_LEVEL_ALL);
   // LogComponentEnable("LogicalLoraChannel", LOG_LEVEL_ALL);
   // LogComponentEnable("LoraHelper", LOG_LEVEL_ALL);
@@ -421,14 +421,14 @@ int main (int argc, char *argv[])
   // LogComponentEnable("LoraPhy", LOG_LEVEL_ALL);
   // LogComponentEnable("LoraChannel", LOG_LEVEL_ALL);
   // LogComponentEnable ("EndDeviceLoraPhy", LOG_LEVEL_ALL);
-  //LogComponentEnable ("SimpleEndDeviceLoraPhy", LOG_LEVEL_ALL);
+  LogComponentEnable ("SimpleEndDeviceLoraPhy", LOG_LEVEL_ALL);
   // LogComponentEnable("LogicalLoraChannelHelper", LOG_LEVEL_ALL);
-  //LogComponentEnable ("EndDeviceLoraMac", LOG_LEVEL_ALL);
+  LogComponentEnable ("EndDeviceLoraMac", LOG_LEVEL_ALL);
   // LogComponentEnable("PointToPointNetDevice", LOG_LEVEL_ALL);
   // LogComponentEnable("PeriodicSenderHelper", LOG_LEVEL_ALL);
   // LogComponentEnable ("PeriodicSender", LOG_LEVEL_ALL);
   // LogComponentEnable ("SimpleNetworkServer", LOG_LEVEL_ALL);
-  //LogComponentEnable ("GatewayLoraMac", LOG_LEVEL_ALL);
+  LogComponentEnable ("GatewayLoraMac", LOG_LEVEL_ALL);
   // LogComponentEnable ("Forwarder", LOG_LEVEL_ALL);
   // LogComponentEnable ("DeviceStatus", LOG_LEVEL_ALL);
   // LogComponentEnable ("GatewayStatus", LOG_LEVEL_ALL);
