@@ -208,6 +208,21 @@ EndDeviceLoraMac::DoSend (Ptr<Packet> packet)
   if (packet != m_retxParams.packet)
     {
       NS_LOG_DEBUG ("Received a new packet from application. Resetting retransmission parameters.");
+      NS_LOG_DEBUG ("APP packet: " << packet);
+
+      // Add the Lora Frame Header to the packet
+      LoraFrameHeader frameHdr;
+      ApplyNecessaryOptions (frameHdr);
+      packet->AddHeader (frameHdr);
+
+      NS_LOG_INFO ("Added frame header of size " << frameHdr.GetSerializedSize () <<
+                   " bytes");
+
+      // Add the Lora Mac header to the packet
+      LoraMacHeader macHdr;
+      ApplyNecessaryOptions (macHdr);
+      packet->AddHeader (macHdr);
+
 
       if (m_retxParams.waitingAck)
         {
@@ -229,8 +244,23 @@ EndDeviceLoraMac::DoSend (Ptr<Packet> packet)
           m_retxParams.waitingAck = true;
           m_retxParams.firstAttempt = Simulator::Now ();
           m_retxParams.retxLeft = m_retxParams.retxLeft -1; // decreasing the number of retransmissions
+
           NS_LOG_DEBUG ("It is a confirmed packet. Setting retransmission parameters and decreasing the number of transmissions left.");
+
+          NS_LOG_INFO ("Added MAC header of size " << macHdr.GetSerializedSize () <<
+                       " bytes");
+
+          // Sent a new packet
+          NS_LOG_DEBUG ("Copied packet: " << m_retxParams.packet);
+          m_sentNewPacket (m_retxParams.packet);
+
+          SendToPhy (m_retxParams.packet);
         }
+      else
+        {
+          SendToPhy (packet);
+        }
+
     }
   // this is a retransmission
   else
@@ -239,10 +269,11 @@ EndDeviceLoraMac::DoSend (Ptr<Packet> packet)
         {
           m_retxParams.retxLeft = m_retxParams.retxLeft -1; // decreasing the number of retransmissions
           NS_LOG_DEBUG ("Retransmitting an old packet");
+
+          SendToPhy (m_retxParams.packet);
         }
     }
 
-  SendToPhy (packet->Copy ());
 }
 
 void
@@ -252,20 +283,7 @@ EndDeviceLoraMac::SendToPhy (Ptr<Packet> packetToSend)
   // Add headers, prepare TX parameters and send the packet
   /////////////////////////////////////////////////////////
 
-  // Add the Lora Frame Header to the packet
-  LoraFrameHeader frameHdr;
-  ApplyNecessaryOptions (frameHdr);
-  packetToSend->AddHeader (frameHdr);
-
-  NS_LOG_INFO ("Added frame header of size " << frameHdr.GetSerializedSize () <<
-               " bytes");
-
-  // Add the Lora Mac header to the packet
-  LoraMacHeader macHdr;
-  ApplyNecessaryOptions (macHdr);
-  packetToSend->AddHeader (macHdr);
-  NS_LOG_INFO ("Added MAC header of size " << macHdr.GetSerializedSize () <<
-               " bytes");
+  NS_LOG_DEBUG ("PacketToSend: " << packetToSend);
 
   // Data Rate Adaptation
   if (m_enableDRAdapt && (m_dataRate > 0) && (m_retxParams.retxLeft < m_maxNumbTx) && (m_retxParams.retxLeft % 2 == 0) )
@@ -287,6 +305,7 @@ EndDeviceLoraMac::SendToPhy (Ptr<Packet> packetToSend)
 
   Ptr<LogicalLoraChannel> txChannel = GetChannelForTx ();
 
+  NS_LOG_DEBUG ("PacketToSend: " << packetToSend);
   m_phy->Send (packetToSend, params, txChannel->GetFrequency (), m_txPower);
 
   //////////////////////////////////////////////
