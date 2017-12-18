@@ -1,5 +1,5 @@
 /*
- * Modify required tx callback to take also packet as input and add counter to see 
+ * Modify required tx callback to take also packet as input and add counter to see
  * the number of successfully received/interfered/... packets only inside the transients
  */
 #include "ns3/point-to-point-module.h"
@@ -43,7 +43,7 @@ NS_LOG_COMPONENT_DEFINE ("CompleteNetworkPerformances");
 int nDevices = 2000;
 int gatewayRings = 1;
 int nGateways = 3*gatewayRings*gatewayRings-3*gatewayRings+1;
-double radius = 7500;
+double radius = 6300;
 double gatewayRadius = 7500/((gatewayRings-1)*2+1);
 double simulationTime = 600;
 int appPeriodSeconds = 600;
@@ -91,12 +91,23 @@ struct RetransmissionStatus {
   Time finishTime;
   uint8_t reTxAttempts;
   bool successful;
-  Ptr<Packet> packet;
 };
 
-std::map<Ptr<Packet const>, PacketStatus> packetTracker;
+struct MacPacketStatus {
+  Time sendTime;
+  Time receivedTime;
+  uint32_t systemId;
+};
 
-std::list<RetransmissionStatus> reTransmissionTracker;
+typedef std::map<Ptr<Packet const>, MacPacketStatus> MacPacketData;
+typedef std::map<Ptr<Packet const>, PacketStatus> PhyPacketData;
+typedef std::map<Ptr<Packet const>, RetransmissionStatus> RetransmissionData;
+
+PhyPacketData packetTracker;
+
+MacPacketData macPacketTracker;
+
+RetransmissionData reTransmissionTracker;
 
 void
 CheckReceptionByAllGWsComplete (std::map<Ptr<Packet const>, PacketStatus>::iterator it)
@@ -137,7 +148,7 @@ CheckReceptionByAllGWsComplete (std::map<Ptr<Packet const>, PacketStatus>::itera
             }
         }
       // Remove the packet from the tracker
-      packetTracker.erase (it);
+      // packetTracker.erase (it);
     }
 }
 
@@ -151,7 +162,6 @@ PrintVector (std::vector<int> vector)
       // NS_LOG_INFO ("i: " << i);
       std::cout << vector.at (i) << " ";
     }
-  //
 }
 
 
@@ -170,8 +180,9 @@ PrintSumRetransmissions (std::vector<int> reTxVector)
 }
 
 void
-CountRetransmissions (Time transient, Time simulationTime, std::list<RetransmissionStatus> reTransmissionTracker, 
-    std::map<Ptr<Packet const>, PacketStatus> packetTracker)
+CountRetransmissions (Time transient, Time simulationTime, MacPacketData
+                      macPacketTracker, RetransmissionData reTransmissionTracker,
+                      PhyPacketData packetTracker)
 {
   // NS_LOG_INFO ("CountRetransmissions");
 
@@ -181,87 +192,124 @@ CountRetransmissions (Time transient, Time simulationTime, std::list<Retransmiss
   // vector performanceAmounts will contain - for the interval given in the input of the function,
   // totPacketsSent receivedPackets interferedPackets noMoreGwPackets underSensitivityPackets
   std::vector<int> performancesAmounts (5, 0);
+  Time delaySum = Seconds (0);
 
+  int packetsOutsideTransient = 0;
 
-  for (auto it = reTransmissionTracker.begin (); it != reTransmissionTracker.end (); ++it)
+  for (auto itMac = macPacketTracker.begin (); itMac != macPacketTracker.end(); ++itMac)
     {
-      // NS_LOG_DEBUG ("Current retransmission info:");
-      // NS_LOG_DEBUG ("First attempt at sending: " << (*it).firstAttempt.GetSeconds ());
-      // NS_LOG_DEBUG ("Number of reTx: " << unsigned((*it).reTxAttempts));
+      // NS_LOG_DEBUG ("Dealing with packet " << (*itMac).first);
 
-      if ((*it).firstAttempt >= transient && (*it).firstAttempt <= simulationTime - transient)
+      if ((*itMac).second.sendTime >= transient && (*itMac).second.sendTime <= simulationTime - transient)
         {
-          // NS_LOG_DEBUG ("ReTx fits requirements");
-          totalReTxAmounts.at ((*it).reTxAttempts - 1)++;
+          packetsOutsideTransient++;
 
-          if ((*it).successful)
+          // Count retransmissions
+          ////////////////////////
+          auto itRetx = reTransmissionTracker.find ((*itMac).first);
+
+          if (itRetx == reTransmissionTracker.end())
             {
-              successfulReTxAmounts.at ((*it).reTxAttempts - 1)++;
+              NS_LOG_DEBUG ("Packet " << (*itMac).first << " not found. Sent at " << (*itMac).second.sendTime.GetSeconds());
+            }
+
+          // NS_LOG_DEBUG ("Transmission attempts: " << unsigned((*itRetx).second.reTxAttempts));
+
+          totalReTxAmounts.at ((*itRetx).second.reTxAttempts - 1)++;
+
+          if ((*itRetx).second.successful)
+            {
+              successfulReTxAmounts.at ((*itRetx).second.reTxAttempts - 1)++;
             }
           else
             {
-              failedReTxAmounts.at ((*it).reTxAttempts - 1)++;
+              failedReTxAmounts.at ((*itRetx).second.reTxAttempts - 1)++;
             }
 
-          if (transientPeriods > 0)
-          {
-            performancesAmounts.at(0)++;
-            Ptr<Packet> currentPacket= (*it).packet;
-            std::map<Ptr<Packet const>, PacketStatus>::iterator it = packetTracker.find (currentPacket);
-              
-            // NS_LOG_DEBUG("Found the same packet");
-            NS_LOG_DEBUG("Transient period = " << transientPeriods);
+          // Compute delays
+          /////////////////
+          if ((*itMac).second.receivedTime == Time::Max())
+            {
+              // NS_LOG_DEBUG ("Packet never received, ignoring it");
+              packetsOutsideTransient--;
+            }
+          else
+            {
+              delaySum += (*itMac).second.receivedTime - (*itMac).second.sendTime;
+            }
 
-            // Update the statistics
-            
-            for (int j = 0; j < nGateways; j++)
+          // Compute retransmission outcomes
+          //////////////////////////////////
+          auto itPhy = packetTracker.find ((*itMac).first);
+
+          performancesAmounts.at(0)++;
+
+          switch ((*itPhy).second.outcomes.at (0))
+            {
+            case RECEIVED:
               {
-                switch ((*it).second.outcomes.at (0))
-                  {
-                  case RECEIVED:
-                    {
-                      performancesAmounts.at(1)++;
-                      NS_LOG_DEBUG("Inside received case");
-                      break;
-                    }
-                  case UNDER_SENSITIVITY:
-                    {
-                      performancesAmounts.at(2)++;
-                      break;
-                    }
-                  case NO_MORE_RECEIVERS:
-                    {
-                      performancesAmounts.at(3)++;
-                      break;
-                    }
-                  case INTERFERED:
-                    {
-                      performancesAmounts.at(4)++;
-                      break;
-                    }
-                  case UNSET:
-                    {
-                      break;
-                    }
-                  }   //end switch
-              }       //end for cycling all the gws
-          }           // end if transient > 0
+                performancesAmounts.at(1)++;
+                break;
+              }
+            case UNDER_SENSITIVITY:
+              {
+                performancesAmounts.at(2)++;
+                break;
+              }
+            case NO_MORE_RECEIVERS:
+              {
+                performancesAmounts.at(3)++;
+                break;
+              }
+            case INTERFERED:
+              {
+                performancesAmounts.at(4)++;
+                break;
+              }
+            case UNSET:
+              {
+                break;
+              }
+            }   //end switch
 
-        } // end loop to ignorate transients
+
+        }
     }
 
-  std::cout << " ";
-  
+  double avgDelay = (delaySum / packetsOutsideTransient).GetSeconds ();
+
   // this condition because, if not verified, the Retransmission Tracker is empty
-  if (transientPeriods > 0)
+  if (transient > Seconds(0))
   {
+    // std::cout << "Network performances inside transients: ";
     PrintVector(performancesAmounts);
   }
+
+  // std::cout << "Successful retransmissions: ";
   PrintVector (successfulReTxAmounts);
+  // std::cout << "Failed retransmissions: ";
   PrintVector (failedReTxAmounts);
 
-  PrintSumRetransmissions (totalReTxAmounts);
+  // std::cout << "Average delay: " << avgDelay << " s" << std::endl;
+  std::cout << avgDelay << " ";
 
+  // std::cout << "Total transmitted packets inside the considered period: ";
+  PrintSumRetransmissions (totalReTxAmounts);
+}
+
+void
+MacTransmissionCallback (Ptr<Packet const> packet)
+{
+  // NS_LOG_INFO ("A new packet arrived at the MAC layer");
+
+  // NS_LOG_INFO ("Packet: " << packet);
+
+  MacPacketStatus status;
+  status.sendTime = Simulator::Now ();
+  status.receivedTime = Time::Max ();
+  status.systemId = Simulator::GetContext ();
+
+  macPacketTracker.insert (std::pair<Ptr<Packet const>, MacPacketStatus> (packet, status));
 }
 
 void
@@ -291,9 +339,32 @@ RequiredTransmissionsCallback (uint8_t reqTx, bool success, Time firstAttempt, P
   entry.finishTime = Simulator::Now ();
   entry.reTxAttempts = reqTx;
   entry.successful = success;
-  entry.packet = packet;
 
-  reTransmissionTracker.push_back (entry);
+  reTransmissionTracker.insert (std::pair<Ptr<Packet>, RetransmissionStatus> (packet, entry));
+}
+
+void
+MacGwReceptionCallback (Ptr<Packet const> packet)
+{
+  // NS_LOG_INFO ("A packet was successfully received at MAC layer of a gateway");
+
+  // NS_LOG_INFO ("Packet: " << packet);
+
+  // NS_LOG_INFO ("Packet size: " << packet->GetSize());
+  // NS_LOG_INFO ("Packet tracker size: " << macPacketTracker.size());
+
+  // Find the received packet in the macPacketTracker
+  auto it = macPacketTracker.find(packet);
+  if (it != macPacketTracker.end())
+    {
+      // NS_LOG_INFO ("Found the packet in the tracker");
+
+      (*it).second.receivedTime = Simulator::Now ();
+
+      // NS_LOG_INFO ("Delay for device " << (*it).second.systemId << ": " <<
+      //                            ((*it).second.receivedTime -
+      //                            (*it).second.sendTime).GetSeconds ());
+    }
 }
 
 void
@@ -305,7 +376,8 @@ PacketReceptionCallback (Ptr<Packet const> packet, uint32_t systemId)
   std::map<Ptr<Packet const>, PacketStatus>::iterator it = packetTracker.find (packet);
   (*it).second.outcomes.at (systemId - nDevices) = RECEIVED;
   (*it).second.outcomeNumber += 1;
-
+  // NS_LOG_DEBUG ("Packet received at gateway " << systemId << " at time " << Simulator::Now().GetSeconds()
+  //     << ". Outcome at systemId - nDevices= " << systemId - nDevices << " is " << (*it).second.outcomes.at (systemId - nDevices));
   CheckReceptionByAllGWsComplete (it);
 }
 
@@ -395,7 +467,7 @@ int main (int argc, char *argv[])
   cmd.AddValue ("gatewayRings", "Number of gateway rings to include", gatewayRings);
   cmd.AddValue ("radius", "The radius of the area to simulate", radius);
   cmd.AddValue ("gatewayRadius", "The distance between two gateways", gatewayRadius);
-  cmd.AddValue ("simulationTime", "The time for which to simulate", simulationTime);
+  // cmd.AddValue ("simulationTime", "The time for which to simulate", simulationTime);
   cmd.AddValue ("appPeriod", "The period in seconds to be used by periodically transmitting applications", appPeriodSeconds);
   cmd.AddValue ("periodsToSimulate", "The number of application periods to simulate", periodsToSimulate);
   cmd.AddValue ("transientPeriods", "The number of periods we consider as a transient", transientPeriods);
@@ -408,7 +480,7 @@ int main (int argc, char *argv[])
 
   // Set up logging
   LogComponentEnable ("CompleteNetworkPerformances", LOG_LEVEL_ALL);
-  LogComponentEnable("LoraInterferenceHelper", LOG_LEVEL_ALL);
+  // LogComponentEnable("LoraInterferenceHelper", LOG_LEVEL_ALL);
   // LogComponentEnable("LoraMac", LOG_LEVEL_ALL);
   // LogComponentEnable("LogicalLoraChannel", LOG_LEVEL_ALL);
   // LogComponentEnable("LoraHelper", LOG_LEVEL_ALL);
@@ -421,14 +493,14 @@ int main (int argc, char *argv[])
   // LogComponentEnable("LoraPhy", LOG_LEVEL_ALL);
   // LogComponentEnable("LoraChannel", LOG_LEVEL_ALL);
   // LogComponentEnable ("EndDeviceLoraPhy", LOG_LEVEL_ALL);
-  LogComponentEnable ("SimpleEndDeviceLoraPhy", LOG_LEVEL_ALL);
+  // LogComponentEnable ("SimpleEndDeviceLoraPhy", LOG_LEVEL_ALL);
   // LogComponentEnable("LogicalLoraChannelHelper", LOG_LEVEL_ALL);
-  LogComponentEnable ("EndDeviceLoraMac", LOG_LEVEL_ALL);
+  // LogComponentEnable ("EndDeviceLoraMac", LOG_LEVEL_ALL);
   // LogComponentEnable("PointToPointNetDevice", LOG_LEVEL_ALL);
   // LogComponentEnable("PeriodicSenderHelper", LOG_LEVEL_ALL);
   // LogComponentEnable ("PeriodicSender", LOG_LEVEL_ALL);
   // LogComponentEnable ("SimpleNetworkServer", LOG_LEVEL_ALL);
-  LogComponentEnable ("GatewayLoraMac", LOG_LEVEL_ALL);
+  // LogComponentEnable ("GatewayLoraMac", LOG_LEVEL_ALL);
   // LogComponentEnable ("Forwarder", LOG_LEVEL_ALL);
   // LogComponentEnable ("DeviceStatus", LOG_LEVEL_ALL);
   // LogComponentEnable ("GatewayStatus", LOG_LEVEL_ALL);
@@ -527,12 +599,16 @@ int main (int argc, char *argv[])
                                        MakeCallback (&TransmissionCallback));
 
       Ptr<EndDeviceLoraMac> mac= loraNetDevice->GetMac ()->GetObject<EndDeviceLoraMac>();
+
+      mac->TraceConnectWithoutContext ("SentNewPacket",
+                                       MakeCallback (&MacTransmissionCallback));
+
       mac->TraceConnectWithoutContext ("RequiredTransmissions",
                                        MakeCallback (&RequiredTransmissionsCallback));
       // Set message type, otherwise the NS does not send ACKs
-      mac-> SetMType (LoraMacHeader::CONFIRMED_DATA_UP);
+      mac->SetMType (LoraMacHeader::CONFIRMED_DATA_UP);
       mac-> SetMaxNumberOfTransmissions(maxNumbTx);
-      mac-> SetDataRateAdaptation(DRAdapt);
+      mac->SetDataRateAdaptation(DRAdapt);
 
     }
 
@@ -581,6 +657,10 @@ int main (int argc, char *argv[])
                                          MakeCallback (&NoMoreReceiversCallback));
       gwPhy->TraceConnectWithoutContext ("LostPacketBecauseUnderSensitivity",
                                          MakeCallback (&UnderSensitivityCallback));
+
+      Ptr<GatewayLoraMac> gwMac = loraNetDevice->GetMac ()->GetObject<GatewayLoraMac> ();
+      gwMac->TraceConnectWithoutContext ("ReceivedPacket",
+                                         MakeCallback (&MacGwReceptionCallback));
     }
 
   /**********************************************
@@ -620,7 +700,7 @@ int main (int argc, char *argv[])
     appHelper.SetPeriod (Seconds(0));
     // In this case, as application period we take
     // the maximum of the possible application periods, i.e. 1 day
-    appPeriodSeconds= (24*60*60); 
+    appPeriodSeconds= (24*60*60);
     appPeriod = Seconds(appPeriodSeconds);
   }
   else
@@ -659,9 +739,9 @@ int main (int argc, char *argv[])
   /*************
   *  Results  *
   *************/
-  
+
   // Total statistics of the network 
-  std::cout << nDevices << " " << appPeriodSeconds;
+  std::cout << nDevices << " " << appPeriodSeconds << " ";
 
   if (transientPeriods == 0)
   {
@@ -670,11 +750,8 @@ int main (int argc, char *argv[])
       << " " << underSensitivity;
   }
 
-  // Statistics ignoring transients:
-  CountRetransmissions (transientPeriods * appPeriod, appStopTime, reTransmissionTracker, packetTracker);
-
-  // Total statistics:
-  // CountRetransmissions (Seconds (0), appStopTime+Hours (1000), reTransmissionTracker, packetTracker);
+  // Statistics ignoring transient
+  CountRetransmissions (transientPeriods * appPeriod, appStopTime, macPacketTracker, reTransmissionTracker, packetTracker);
 
   return 0;
 }
