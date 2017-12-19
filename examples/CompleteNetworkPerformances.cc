@@ -195,6 +195,7 @@ CountRetransmissions (Time transient, Time simulationTime, MacPacketData
   // totPacketsSent receivedPackets interferedPackets noMoreGwPackets underSensitivityPackets
   std::vector<int> performancesAmounts (5, 0);
   Time delaySum = Seconds (0);
+  Time ackDelaySum = Seconds(0);
 
   int packetsOutsideTransient = 0;
 
@@ -238,6 +239,7 @@ CountRetransmissions (Time transient, Time simulationTime, MacPacketData
           else
             {
               delaySum += (*itMac).second.receivedTime - (*itMac).second.sendTime;
+              ackDelaySum += (*itRetx).second.finishTime - (*itRetx).second.firstAttempt;
             }
 
           // Compute retransmission outcomes
@@ -279,79 +281,8 @@ CountRetransmissions (Time transient, Time simulationTime, MacPacketData
     }
 
   double avgDelay = (delaySum / packetsOutsideTransient).GetSeconds ();
-  // NS_LOG_DEBUG ("Average delay: " << avgDelay << " s");
-  // for (auto itRetx = reTransmissionTracker.begin (); itRetx != reTransmissionTracker.end (); ++itRetx)
-  //   {
-  //     NS_LOG_DEBUG ("Current retransmission info:");
-  //     NS_LOG_DEBUG ("First attempt at sending: " << (*itRetx).firstAttempt.GetSeconds ());
-  //     // NS_LOG_DEBUG ("Number of reTx: " << unsigned((*itRetx).reTxAttempts));
-
-  //     if ((*itRetx).firstAttempt >= transient && (*itRetx).firstAttempt <= simulationTime - transient)
-  //       {
-  //         NS_LOG_DEBUG ("ReTx fits requirements");
-  //         totalReTxAmounts.at ((*itRetx).reTxAttempts - 1)++;
-
-  //         if ((*itRetx).successful)
-  //           {
-  //             successfulReTxAmounts.at ((*itRetx).reTxAttempts - 1)++;
-  //           }
-  //         else
-  //           {
-  //             failedReTxAmounts.at ((*itRetx).reTxAttempts - 1)++;
-  //           }
-
-  //         if (transient != Seconds(0))
-  //         {
-  //           performancesAmounts.at(0)++;
-  //           Ptr<Packet> currentPacket= (*itRetx).packet;
-  //           std::map<Ptr<Packet const>, PacketStatus>::iterator it = packetTracker.find (currentPacket);
-
-  //           NS_LOG_DEBUG("Found the same packet");
-
-  //           // Update the statistics
-
-  //           for (int j = 0; j < nGateways; j++)
-  //             {
-  //               // NS_LOG_DEBUG("outcome at j+1= + " << j+1 << " " << (*it).second.outcomes.at (j+1));
-  //               // For what specified in PacketReceptionCalled, the outcome of the first GW is recorded at index
-  //               // equal to 0.
-  //               // Therefor, to scan all the gws we make j starting from 0 up to nGateways
-
-  //               // TODO change this 1 with j+1 to scan all the gw and take the delay for the first gw that
-  //               // has received the packet.
-  //               switch ((*it).second.outcomes.at (1))
-  //                 {
-  //                 case RECEIVED:
-  //                   {
-  //                     performancesAmounts.at(1)++;
-  //                     break;
-  //                   }
-  //                 case UNDER_SENSITIVITY:
-  //                   {
-  //                     performancesAmounts.at(2)++;
-  //                     break;
-  //                   }
-  //                 case NO_MORE_RECEIVERS:
-  //                   {
-  //                     performancesAmounts.at(3)++;
-  //                     break;
-  //                   }
-  //                 case INTERFERED:
-  //                   {
-  //                     performancesAmounts.at(4)++;
-  //                     break;
-  //                   }
-  //                 case UNSET:
-  //                   {
-  //                     break;
-  //                   }
-  //                 }   //end switch
-  //             }       //end for cycling all the gws
-  //         }           // end if transient > 0
-
-  //       } // end loop to ignorate transients
-  //   }
-
+  double avgAckDelay = ((ackDelaySum) / packetsOutsideTransient).GetSeconds ();
+  
   std::cout << "Successful retransmissions: ";
   PrintVector (successfulReTxAmounts);
   std::cout << "Failed retransmissions: ";
@@ -365,6 +296,8 @@ CountRetransmissions (Time transient, Time simulationTime, MacPacketData
   }
 
   std::cout << "Average delay: " << avgDelay << " s" << std::endl;
+  std::cout << "Average ACK delay: " << avgAckDelay << " s" << std::endl;
+
 
   std::cout << "Total transmitted packets inside the considered period: ";
   PrintSumRetransmissions (totalReTxAmounts);
@@ -568,7 +501,7 @@ int main (int argc, char *argv[])
   // LogComponentEnable ("EndDeviceLoraPhy", LOG_LEVEL_ALL);
   // LogComponentEnable ("SimpleEndDeviceLoraPhy", LOG_LEVEL_ALL);
   // LogComponentEnable("LogicalLoraChannelHelper", LOG_LEVEL_ALL);
-  // LogComponentEnable ("EndDeviceLoraMac", LOG_LEVEL_ALL);
+  LogComponentEnable ("EndDeviceLoraMac", LOG_LEVEL_ALL);
   // LogComponentEnable("PointToPointNetDevice", LOG_LEVEL_ALL);
   // LogComponentEnable("PeriodicSenderHelper", LOG_LEVEL_ALL);
   // LogComponentEnable ("PeriodicSender", LOG_LEVEL_ALL);

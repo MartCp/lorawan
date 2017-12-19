@@ -193,6 +193,7 @@ CountRetransmissions (Time transient, Time simulationTime, MacPacketData
   // totPacketsSent receivedPackets interferedPackets noMoreGwPackets underSensitivityPackets
   std::vector<int> performancesAmounts (5, 0);
   Time delaySum = Seconds (0);
+  Time ackDelaySum = Seconds(0);
 
   int packetsOutsideTransient = 0;
 
@@ -236,6 +237,7 @@ CountRetransmissions (Time transient, Time simulationTime, MacPacketData
           else
             {
               delaySum += (*itMac).second.receivedTime - (*itMac).second.sendTime;
+              ackDelaySum += (*itRetx).second.finishTime - (*itRetx).second.firstAttempt;           
             }
 
           // Compute retransmission outcomes
@@ -277,6 +279,7 @@ CountRetransmissions (Time transient, Time simulationTime, MacPacketData
     }
 
   double avgDelay = (delaySum / packetsOutsideTransient).GetSeconds ();
+  double avgAckDelay = ((ackDelaySum) / packetsOutsideTransient).GetSeconds ();
 
   // this condition because, if not verified, the Retransmission Tracker is empty
   if (transient > Seconds(0))
@@ -292,6 +295,7 @@ CountRetransmissions (Time transient, Time simulationTime, MacPacketData
 
   // std::cout << "Average delay: " << avgDelay << " s" << std::endl;
   std::cout << avgDelay << " ";
+  std::cout << avgAckDelay << " ";
 
   // std::cout << "Total transmitted packets inside the considered period: ";
   PrintSumRetransmissions (totalReTxAmounts);
