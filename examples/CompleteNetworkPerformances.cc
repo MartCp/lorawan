@@ -283,6 +283,7 @@ CountRetransmissions (Time transient, Time simulationTime, MacPacketData
   double avgDelay = (delaySum / packetsOutsideTransient).GetSeconds ();
   double avgAckDelay = ((ackDelaySum) / packetsOutsideTransient).GetSeconds ();
   
+  std::cout << "Total number of MAC (app) packets sent in this period: " << packetsOutsideTransient << std::endl;
   std::cout << "Successful retransmissions: ";
   PrintVector (successfulReTxAmounts);
   std::cout << "Failed retransmissions: ";
