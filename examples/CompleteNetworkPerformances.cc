@@ -198,6 +198,7 @@ CountRetransmissions (Time transient, Time simulationTime, MacPacketData
   Time ackDelaySum = Seconds(0);
 
   int packetsOutsideTransient = 0;
+  int MACpacketsOutsideTransient = 0;
 
   for (auto itMac = macPacketTracker.begin (); itMac != macPacketTracker.end(); ++itMac)
     {
@@ -206,6 +207,7 @@ CountRetransmissions (Time transient, Time simulationTime, MacPacketData
       if ((*itMac).second.sendTime >= transient && (*itMac).second.sendTime <= simulationTime - transient)
         {
           packetsOutsideTransient++;
+          MACpacketsOutsideTransient++;
 
           // Count retransmissions
           ////////////////////////
@@ -283,7 +285,7 @@ CountRetransmissions (Time transient, Time simulationTime, MacPacketData
   double avgDelay = (delaySum / packetsOutsideTransient).GetSeconds ();
   double avgAckDelay = ((ackDelaySum) / packetsOutsideTransient).GetSeconds ();
   
-  std::cout << "Total number of MAC (app) packets sent in this period: " << packetsOutsideTransient << std::endl;
+  std::cout << "Total number of MAC (app) packets sent in this period: " << MACpacketsOutsideTransient << std::endl;
   std::cout << "Successful retransmissions: ";
   PrintVector (successfulReTxAmounts);
   std::cout << "Failed retransmissions: ";
