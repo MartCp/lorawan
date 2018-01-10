@@ -37,7 +37,7 @@ double gatewayRadius = 7500/((gatewayRings-1)*2+1);
 int appPeriodSeconds = 600;
 bool mixedPeriods = false;
 int run=1;
-std::vector<int> sfQuantity (7,0);
+std::vector<int> sfQuantity (6);
 
 int noMoreReceivers = 0;
 int interfered = 0;
@@ -395,7 +395,7 @@ int main (int argc, char *argv[])
   *  Set up the end device's spreading factor  *
   **********************************************/
 
-  macHelper.SetSpreadingFactorsUp (endDevices, gateways, channel);
+  sfQuantity = macHelper.SetSpreadingFactorsUp (endDevices, gateways, channel);
 
   NS_LOG_DEBUG ("Completed configuration");
 

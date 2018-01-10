@@ -144,8 +144,8 @@ int main (int argc, char *argv[])
   /***************************************
   *  Set DataRate according to rx power  *
   ****************************************/
-
-  macHelper.SetSpreadingFactorsUp(endDevices, gateways, channel);
+  std::vector<int> sfQuantity (6);
+  sfQuantity = macHelper.SetSpreadingFactorsUp(endDevices, gateways, channel);
 
 
   /*********************************************
