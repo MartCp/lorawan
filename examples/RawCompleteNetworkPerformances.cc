@@ -99,6 +99,7 @@ struct MacPacketStatus {
   uint32_t systemId;
 };
 
+typedef std::pair<Time, PacketOutcome> PhyOutcome;
 typedef std::map<Ptr<Packet const>, MacPacketStatus> MacPacketData;
 typedef std::map<Ptr<Packet const>, PacketStatus> PhyPacketData;
 typedef std::map<Ptr<Packet const>, RetransmissionStatus> RetransmissionData;
@@ -109,11 +110,13 @@ MacPacketData macPacketTracker;
 
 RetransmissionData reTransmissionTracker;
 
+std::list<PhyOutcome> phyPacketOutcomes;
+
 void
 CheckReceptionByAllGWsComplete (std::map<Ptr<Packet const>, PacketStatus>::iterator it)
 {
   // Check whether this packet is received by all gateways
-  if ((*it).second.outcomeNumber == nGateways)
+  // if ((*it).second.outcomeNumber == nGateways)
     {
       // Update the statistics
       PacketStatus status = (*it).second;
@@ -162,6 +165,8 @@ PrintVector (std::vector<int> vector)
       // NS_LOG_INFO ("i: " << i);
       std::cout << vector.at (i) << " ";
     }
+  //
+    // std::cout << std::endl;
 }
 
 
@@ -196,6 +201,7 @@ CountRetransmissions (Time transient, Time simulationTime, MacPacketData
   Time ackDelaySum = Seconds(0);
 
   int packetsOutsideTransient = 0;
+  int MACpacketsOutsideTransient = 0;
 
   for (auto itMac = macPacketTracker.begin (); itMac != macPacketTracker.end(); ++itMac)
     {
@@ -204,6 +210,7 @@ CountRetransmissions (Time transient, Time simulationTime, MacPacketData
       if ((*itMac).second.sendTime >= transient && (*itMac).second.sendTime <= simulationTime - transient)
         {
           packetsOutsideTransient++;
+          MACpacketsOutsideTransient++;
 
           // Count retransmissions
           ////////////////////////
@@ -237,47 +244,50 @@ CountRetransmissions (Time transient, Time simulationTime, MacPacketData
           else
             {
               delaySum += (*itMac).second.receivedTime - (*itMac).second.sendTime;
-              ackDelaySum += (*itRetx).second.finishTime - (*itRetx).second.firstAttempt;           
+              ackDelaySum += (*itRetx).second.finishTime - (*itRetx).second.firstAttempt;
             }
-
-          // Compute retransmission outcomes
-          //////////////////////////////////
-          auto itPhy = packetTracker.find ((*itMac).first);
-
-          performancesAmounts.at(0)++;
-
-          switch ((*itPhy).second.outcomes.at (0))
-            {
-            case RECEIVED:
-              {
-                performancesAmounts.at(1)++;
-                break;
-              }
-            case UNDER_SENSITIVITY:
-              {
-                performancesAmounts.at(2)++;
-                break;
-              }
-            case NO_MORE_RECEIVERS:
-              {
-                performancesAmounts.at(3)++;
-                break;
-              }
-            case INTERFERED:
-              {
-                performancesAmounts.at(4)++;
-                break;
-              }
-            case UNSET:
-              {
-                break;
-              }
-            }   //end switch
-
 
         }
     }
 
+  // Sum PHY outcomes
+  //////////////////////////////////
+
+  for (auto itPhy = phyPacketOutcomes.begin(); itPhy != phyPacketOutcomes.end(); ++itPhy)
+  {
+    if ((*itPhy).first >= transient && (*itPhy).first <= simulationTime - transient)
+    {
+      performancesAmounts.at(0)++;
+
+      switch ((*itPhy).second)
+      {
+        case RECEIVED:
+          {
+            performancesAmounts.at(1)++;
+            break;
+          }
+        case INTERFERED:
+          {
+            performancesAmounts.at(2)++;
+            break;
+          }
+        case NO_MORE_RECEIVERS:
+          {
+            performancesAmounts.at(3)++;
+            break;
+          }
+        case UNDER_SENSITIVITY:
+          {
+            performancesAmounts.at(4)++;
+            break;
+          }
+        case UNSET:
+          {
+            break;
+          }
+      }   //end switch
+    }
+  }
   double avgDelay = (delaySum / packetsOutsideTransient).GetSeconds ();
   double avgAckDelay = ((ackDelaySum) / packetsOutsideTransient).GetSeconds ();
 
@@ -288,6 +298,7 @@ CountRetransmissions (Time transient, Time simulationTime, MacPacketData
     PrintVector(performancesAmounts);
   }
 
+  // std::cout << "Total number of MAC (app) packets sent in this period: " << MACpacketsOutsideTransient << std::endl;
   // std::cout << "Successful retransmissions: ";
   PrintVector (successfulReTxAmounts);
   // std::cout << "Failed retransmissions: ";
@@ -297,7 +308,7 @@ CountRetransmissions (Time transient, Time simulationTime, MacPacketData
   std::cout << avgDelay << " ";
   std::cout << avgAckDelay << " ";
 
-  // std::cout << "Total transmitted packets inside the considered period: ";
+  // std::cout << "Total transmitted MAC packets inside the considered period: ";
   PrintSumRetransmissions (totalReTxAmounts);
 }
 
@@ -383,6 +394,8 @@ PacketReceptionCallback (Ptr<Packet const> packet, uint32_t systemId)
   // NS_LOG_DEBUG ("Packet received at gateway " << systemId << " at time " << Simulator::Now().GetSeconds()
   //     << ". Outcome at systemId - nDevices= " << systemId - nDevices << " is " << (*it).second.outcomes.at (systemId - nDevices));
   CheckReceptionByAllGWsComplete (it);
+
+  phyPacketOutcomes.push_back (std::pair<Time, PacketOutcome> (Simulator::Now (), RECEIVED));
 }
 
 void
@@ -395,6 +408,8 @@ InterferenceCallback (Ptr<Packet const> packet, uint32_t systemId)
   (*it).second.outcomeNumber += 1;
 
   CheckReceptionByAllGWsComplete (it);
+
+  phyPacketOutcomes.push_back (std::pair<Time, PacketOutcome> (Simulator::Now (), INTERFERED));
 }
 
 void
@@ -407,6 +422,8 @@ NoMoreReceiversCallback (Ptr<Packet const> packet, uint32_t systemId)
   (*it).second.outcomeNumber += 1;
 
   CheckReceptionByAllGWsComplete (it);
+
+  phyPacketOutcomes.push_back (std::pair<Time, PacketOutcome> (Simulator::Now (), NO_MORE_RECEIVERS));
 }
 
 void
@@ -419,6 +436,8 @@ UnderSensitivityCallback (Ptr<Packet const> packet, uint32_t systemId)
   (*it).second.outcomeNumber += 1;
 
   CheckReceptionByAllGWsComplete (it);
+
+  phyPacketOutcomes.push_back (std::pair<Time, PacketOutcome> (Simulator::Now (), UNDER_SENSITIVITY));
 }
 
 time_t oldtime = std::time (0);
