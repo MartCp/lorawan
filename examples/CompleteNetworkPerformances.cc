@@ -99,6 +99,7 @@ struct MacPacketStatus {
   uint32_t systemId;
 };
 
+typedef std::pair<Time, PacketOutcome> PhyOutcome;
 typedef std::map<Ptr<Packet const>, MacPacketStatus> MacPacketData;
 typedef std::map<Ptr<Packet const>, PacketStatus> PhyPacketData;
 typedef std::map<Ptr<Packet const>, RetransmissionStatus> RetransmissionData;
@@ -109,11 +110,13 @@ MacPacketData macPacketTracker;
 
 RetransmissionData reTransmissionTracker;
 
+std::list<PhyOutcome> phyPacketOutcomes;
+
 void
 CheckReceptionByAllGWsComplete (std::map<Ptr<Packet const>, PacketStatus>::iterator it)
 {
   // Check whether this packet is received by all gateways
-  if ((*it).second.outcomeNumber == nGateways)
+  // if ((*it).second.outcomeNumber == nGateways)
     {
       // Update the statistics
       PacketStatus status = (*it).second;
@@ -244,47 +247,50 @@ CountRetransmissions (Time transient, Time simulationTime, MacPacketData
               ackDelaySum += (*itRetx).second.finishTime - (*itRetx).second.firstAttempt;
             }
 
-          // Compute retransmission outcomes
-          //////////////////////////////////
-          auto itPhy = packetTracker.find ((*itMac).first);
-
-          performancesAmounts.at(0)++;
-
-          switch ((*itPhy).second.outcomes.at (0))
-            {
-            case RECEIVED:
-              {
-                performancesAmounts.at(1)++;
-                break;
-              }
-            case UNDER_SENSITIVITY:
-              {
-                performancesAmounts.at(2)++;
-                break;
-              }
-            case NO_MORE_RECEIVERS:
-              {
-                performancesAmounts.at(3)++;
-                break;
-              }
-            case INTERFERED:
-              {
-                performancesAmounts.at(4)++;
-                break;
-              }
-            case UNSET:
-              {
-                break;
-              }
-            }   //end switch
-
-
         }
     }
 
+  // Sum PHY outcomes
+  //////////////////////////////////
+
+  for (auto itPhy = phyPacketOutcomes.begin(); itPhy != phyPacketOutcomes.end(); ++itPhy)
+  {
+    if ((*itPhy).first >= transient && (*itPhy).first <= simulationTime - transient)
+    {
+      performancesAmounts.at(0)++;
+
+      switch ((*itPhy).second)
+      {
+        case RECEIVED:
+          {
+            performancesAmounts.at(1)++;
+            break;
+          }
+        case INTERFERED:
+          {
+            performancesAmounts.at(2)++;
+            break;
+          }
+        case NO_MORE_RECEIVERS:
+          {
+            performancesAmounts.at(3)++;
+            break;
+          }
+        case UNDER_SENSITIVITY:
+          {
+            performancesAmounts.at(4)++;
+            break;
+          }
+        case UNSET:
+          {
+            break;
+          }
+      }   //end switch
+    }
+  }
   double avgDelay = (delaySum / packetsOutsideTransient).GetSeconds ();
   double avgAckDelay = ((ackDelaySum) / packetsOutsideTransient).GetSeconds ();
-  
+
   std::cout << "Total number of MAC (app) packets sent in this period: " << MACpacketsOutsideTransient << std::endl;
   std::cout << "Successful retransmissions: ";
   PrintVector (successfulReTxAmounts);
@@ -302,7 +308,7 @@ CountRetransmissions (Time transient, Time simulationTime, MacPacketData
   std::cout << "Average ACK delay: " << avgAckDelay << " s" << std::endl;
 
 
-  std::cout << "Total transmitted packets inside the considered period: ";
+  std::cout << "Total transmitted MAC packets inside the considered period: ";
   PrintSumRetransmissions (totalReTxAmounts);
 }
 
@@ -388,6 +394,8 @@ PacketReceptionCallback (Ptr<Packet const> packet, uint32_t systemId)
   // NS_LOG_DEBUG ("Packet received at gateway " << systemId << " at time " << Simulator::Now().GetSeconds()
   //     << ". Outcome at systemId - nDevices= " << systemId - nDevices << " is " << (*it).second.outcomes.at (systemId - nDevices));
   CheckReceptionByAllGWsComplete (it);
+
+  phyPacketOutcomes.push_back (std::pair<Time, PacketOutcome> (Simulator::Now (), RECEIVED));
 }
 
 void
@@ -400,6 +408,8 @@ InterferenceCallback (Ptr<Packet const> packet, uint32_t systemId)
   (*it).second.outcomeNumber += 1;
 
   CheckReceptionByAllGWsComplete (it);
+
+  phyPacketOutcomes.push_back (std::pair<Time, PacketOutcome> (Simulator::Now (), INTERFERED));
 }
 
 void
@@ -412,6 +422,8 @@ NoMoreReceiversCallback (Ptr<Packet const> packet, uint32_t systemId)
   (*it).second.outcomeNumber += 1;
 
   CheckReceptionByAllGWsComplete (it);
+
+  phyPacketOutcomes.push_back (std::pair<Time, PacketOutcome> (Simulator::Now (), NO_MORE_RECEIVERS));
 }
 
 void
@@ -424,6 +436,8 @@ UnderSensitivityCallback (Ptr<Packet const> packet, uint32_t systemId)
   (*it).second.outcomeNumber += 1;
 
   CheckReceptionByAllGWsComplete (it);
+
+  phyPacketOutcomes.push_back (std::pair<Time, PacketOutcome> (Simulator::Now (), UNDER_SENSITIVITY));
 }
 
 time_t oldtime = std::time (0);
@@ -504,7 +518,7 @@ int main (int argc, char *argv[])
   // LogComponentEnable ("EndDeviceLoraPhy", LOG_LEVEL_ALL);
   // LogComponentEnable ("SimpleEndDeviceLoraPhy", LOG_LEVEL_ALL);
   // LogComponentEnable("LogicalLoraChannelHelper", LOG_LEVEL_ALL);
-  LogComponentEnable ("EndDeviceLoraMac", LOG_LEVEL_ALL);
+  // LogComponentEnable ("EndDeviceLoraMac", LOG_LEVEL_ALL);
   // LogComponentEnable("PointToPointNetDevice", LOG_LEVEL_ALL);
   // LogComponentEnable("PeriodicSenderHelper", LOG_LEVEL_ALL);
   // LogComponentEnable ("PeriodicSender", LOG_LEVEL_ALL);
