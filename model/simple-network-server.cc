@@ -195,7 +195,8 @@ SimpleNetworkServer::Receive (Ptr<NetDevice> device, Ptr<const Packet> packet,
       replyFrameHdr.SetAck (true);
       reply.frameHeader = replyFrameHdr;
 
-      Ptr<Packet> replyPacket = Create<Packet> (10);
+      // The downlink packet carries 0 bytes of payload
+      Ptr<Packet> replyPacket = Create<Packet> (0);
       reply.packet = replyPacket;
 
       m_deviceStatuses.at (frameHdr.GetAddress ()).SetReply (reply);

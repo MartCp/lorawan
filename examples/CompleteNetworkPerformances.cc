@@ -20,6 +20,10 @@
 #include "ns3/network-module.h"
 #include "ns3/lora-device-address-generator.h"
 #include "ns3/one-shot-sender-helper.h"
+#include "ns3/correlated-shadowing-propagation-loss-model.h"
+#include "ns3/building-penetration-loss.h"
+#include "ns3/building-allocator.h"
+#include "ns3/buildings-helper.h"
 
 #include "ns3/end-device-lora-phy.h"
 #include "ns3/end-device-lora-mac.h"
@@ -64,8 +68,9 @@ bool DRAdapt = false;
 bool mixedPeriods = false;
 
 // Output control
-bool printEDs = false;
+bool print = false;
 bool buildingsEnabled = false;
+bool shadowingEnabled = false;
 
 /**********************
  *  Global Callbacks  *
@@ -497,7 +502,9 @@ int main (int argc, char *argv[])
   cmd.AddValue ("maxNumbTx", "The maximum number of transmissions allowed.", maxNumbTx);
   cmd.AddValue ("DRAdapt", "Enable data rate adaptation", DRAdapt);
   cmd.AddValue ("mixedPeriods", "Enable mixed application periods", mixedPeriods);
-  cmd.AddValue ("printEDs", "Whether or not to print a file containing the ED's positions", printEDs);
+  cmd.AddValue ("print", "Whether or not to print a file containing the ED's positions and the buildings", print);
+  cmd.AddValue("buildingsEnabled", "Whether to use buildings in the simulation or not", buildingsEnabled);
+  cmd.AddValue("shadowingEnabled", "Whether to use shadowing in the simulation or not", shadowingEnabled);
 
   cmd.Parse (argc, argv);
 
@@ -558,6 +565,20 @@ int main (int argc, char *argv[])
   Ptr<LogDistancePropagationLossModel> loss = CreateObject<LogDistancePropagationLossModel> ();
   loss->SetPathLossExponent (3.76);
   loss->SetReference (1, 8.1);
+
+  if(shadowingEnabled)
+  {
+    // Create the correlated shadowing component
+    Ptr<CorrelatedShadowingPropagationLossModel> shadowing = CreateObject<CorrelatedShadowingPropagationLossModel> ();
+
+    // Aggregate shadowing to the logdistance loss
+    loss->SetNext(shadowing);
+
+    // Add the effect to the channel propagation loss
+    Ptr<BuildingPenetrationLoss> buildingLoss = CreateObject<BuildingPenetrationLoss> ();
+
+    shadowing->SetNext(buildingLoss);
+  }
 
   Ptr<PropagationDelayModel> delay = CreateObject<ConstantSpeedPropagationDelayModel> ();
 
@@ -686,6 +707,56 @@ int main (int argc, char *argv[])
                                          MakeCallback (&MacGwReceptionCallback));
     }
 
+/**********************
+  *  Handle buildings  *
+  **********************/
+
+  double xLength = 130;
+  double deltaX = 32;
+  double yLength = 64;
+  double deltaY = 17;
+  int gridWidth = 2*radius/(xLength+deltaX);
+  int gridHeight = 2*radius/(yLength+deltaY);
+  if (buildingsEnabled == false)
+  {
+    gridWidth = 0;
+    gridHeight = 0;
+  }
+  Ptr<GridBuildingAllocator> gridBuildingAllocator;
+  gridBuildingAllocator = CreateObject<GridBuildingAllocator> ();
+  gridBuildingAllocator->SetAttribute ("GridWidth", UintegerValue (gridWidth));
+  gridBuildingAllocator->SetAttribute ("LengthX", DoubleValue (xLength));
+  gridBuildingAllocator->SetAttribute ("LengthY", DoubleValue (yLength));
+  gridBuildingAllocator->SetAttribute ("DeltaX", DoubleValue (deltaX));
+  gridBuildingAllocator->SetAttribute ("DeltaY", DoubleValue (deltaY));
+  gridBuildingAllocator->SetAttribute ("Height", DoubleValue (6));
+  gridBuildingAllocator->SetBuildingAttribute ("NRoomsX", UintegerValue (2));
+  gridBuildingAllocator->SetBuildingAttribute ("NRoomsY", UintegerValue (4));
+  gridBuildingAllocator->SetBuildingAttribute ("NFloors", UintegerValue (2));
+  gridBuildingAllocator->SetAttribute ("MinX", DoubleValue (-gridWidth*(xLength+deltaX)/2+deltaX/2));
+  gridBuildingAllocator->SetAttribute ("MinY", DoubleValue (-gridHeight*(yLength+deltaY)/2+deltaY/2));
+  BuildingContainer bContainer = gridBuildingAllocator->Create (gridWidth * gridHeight);
+
+  BuildingsHelper::Install (endDevices);
+  BuildingsHelper::Install (gateways);
+  BuildingsHelper::MakeMobilityModelConsistent ();
+
+  // Print the buildings
+  if (print)
+  {
+    std::ofstream myfile;
+    myfile.open ("buildings.txt");
+    std::vector<Ptr<Building> >::const_iterator it;
+    int j = 1;
+    for (it = bContainer.Begin (); it != bContainer.End (); ++it, ++j)
+    {
+      Box boundaries = (*it)->GetBoundaries ();
+      myfile << "set object " << j << " rect from " << boundaries.xMin << "," << boundaries.yMin << " to " << boundaries.xMax << "," << boundaries.yMax << std::endl;
+    }
+    myfile.close();
+
+  }
+
   /**********************************************
   *  Set up the end device's spreading factor  *
   **********************************************/
@@ -741,10 +812,10 @@ int main (int argc, char *argv[])
   /**********************
    * Print output files *
    *********************/
-  if (printEDs)
+  if (print)
     {
       PrintEndDevices (endDevices, gateways,
-                       "src/lorawan/examples/endDevices.dat");
+                       "endDevices.dat");
     }
 
   /****************
@@ -755,13 +826,23 @@ int main (int argc, char *argv[])
 
   // PrintSimulationTime ();
 
-  Simulator::Run ();
+  // Simulator::Run ();
 
   Simulator::Destroy ();
 
   /*************
   *  Results  *
   *************/
+
+  std::cout << "--------------------------------" << std::endl;
+  std::cout << "Number of devices for each SF: " << std::endl;
+  std::cout << "SF 7 = " << sfQuantity[0] << std::endl;
+  std::cout << "SF 8 = " << sfQuantity[1] << std::endl;
+  std::cout << "SF 9 = " << sfQuantity[2] << std::endl;
+  std::cout << "SF 10 = " << sfQuantity[3] << std::endl;
+  std::cout << "SF 11 = " << sfQuantity[4] << std::endl;
+  std::cout << "SF 12 = " << sfQuantity[5] << std::endl;
+  std::cout << "Devices out of range = " << sfQuantity[6] << std::endl;
 
   std::cout << nDevices << " " << totalPktsSent << " " << received << " " << interfered << " " << noMoreReceivers
       << " " << underSensitivity << " " << std::endl;
@@ -774,6 +855,17 @@ int main (int argc, char *argv[])
   std::cout << "--------------------------------" << std::endl;
   std::cout << "Total statistics: " << std::endl;
   CountRetransmissions (Seconds (0), appStopTime+Hours (1000), macPacketTracker, reTransmissionTracker, packetTracker);
+
+  std::cout << "--------------------------------" << std::endl;
+  std::cout << "Number of devices for each SF: " << std::endl;
+  // std::cout << "SF 7 = " << sfQuantity(0) << std::endl;
+  // std::cout << "SF 8 = " << sfQuantity(1) << std::endl;
+  // std::cout << "SF 9 = " << sfQuantity(2) << std::endl;
+  // std::cout << "SF 10 = " << sfQuantity(3) << std::endl;
+  // std::cout << "SF 11 = " << sfQuantity(4) << std::endl;
+  // std::cout << "SF 12 = " << sfQuantity(5) << std::endl;
+  // std::cout << "Devices out of range = " << sfQuantity(6) << std::endl;
+
 
   return 0;
 }
