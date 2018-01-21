@@ -839,9 +839,9 @@ int main (int argc, char *argv[])
 
   if (transientPeriods == 0)
   {
-    std::cout<<" "<< totalPktsSent 
+    std::cout<< totalPktsSent 
       << " " << received << " " << interfered << " " << noMoreReceivers 
-      << " " << underSensitivity;
+      << " " << underSensitivity <<" ";
   }
 
   // Statistics ignoring transient

@@ -826,7 +826,7 @@ int main (int argc, char *argv[])
 
   // PrintSimulationTime ();
 
-  // Simulator::Run ();
+  //Simulator::Run ();
 
   Simulator::Destroy ();
 
