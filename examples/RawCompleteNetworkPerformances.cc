@@ -39,6 +39,8 @@
 #include <algorithm>
 #include <ctime>
 
+#include "ns3/okumura-hata-propagation-loss-model.h"
+
 using namespace ns3;
 
 NS_LOG_COMPONENT_DEFINE ("CompleteNetworkPerformances");
@@ -562,6 +564,7 @@ int main (int argc, char *argv[])
   ************************/
 
   // Create the lora channel object
+
   Ptr<LogDistancePropagationLossModel> loss = CreateObject<LogDistancePropagationLossModel> ();
   loss->SetPathLossExponent (3.76);
   loss->SetReference (1, 8.1);

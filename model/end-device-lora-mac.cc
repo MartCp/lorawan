@@ -112,6 +112,9 @@ EndDeviceLoraMac::EndDeviceLoraMac () :
   // transmit on.
   m_uniformRV = CreateObject<UniformRandomVariable> ();
 
+  m_ack_timeout = m_uniformRV->GetValue (1, 3);
+
+
   // Void the two receiveWindow events
   m_closeFirstWindow = EventId ();
   m_closeFirstWindow.Cancel ();
@@ -161,6 +164,10 @@ EndDeviceLoraMac::Send (Ptr<Packet> packet)
   Time netxTxDelay= GetNextTransmissionDelay ();
   if (netxTxDelay != Seconds (0))
     {
+      if (m_retxParams.waitingAck)
+      {
+        netxTxDelay = netxTxDelay + Seconds(m_ack_timeout);
+      }
       postponeTransmission (netxTxDelay, packet);
     }
 
