@@ -277,64 +277,19 @@ LoraInterferenceHelper::IsDestroyedByInterference
       // Gather information about this interferer
       uint8_t interfererSf = interferer->GetSpreadingFactor ();
       double interfererPower = interferer->GetRxPowerdBm ();
-      Time interfererStartTime = interferer->GetStartTime ();
-      Time interfererEndTime = interferer->GetEndTime ();
 
-      NS_LOG_INFO ("Found an interferer: sf = " << unsigned(interfererSf)
-                                                << ", power = " << interfererPower
-                                                << ", start time = " << interfererStartTime
-                                                << ", end time = " << interfererEndTime);
-
-      // Compute the fraction of time the two events are overlapping
       Time overlap = GetOverlapTime (event, interferer);
 
-      NS_LOG_DEBUG ("The two events overlap for " << overlap.GetSeconds () << " s.");
+      if (interfererSf == sf && interfererPower > (rxPowerDbm - 6) && overlap >
+          Seconds(0))
+        {
+          NS_LOG_DEBUG ("Packet destroyed");
+          return interfererSf;
+        }
 
-      // Compute the equivalent energy of the interference
-      // Power [mW] = 10^(Power[dBm]/10)
-      // Power [W] = Power [mW] / 1000
-      double interfererPowerW = pow (10, interfererPower/10) / 1000;
-      // Energy [J] = Time [s] * Power [W]
-      double interferenceEnergy = overlap.GetSeconds () * interfererPowerW;
-      cumulativeInterferenceEnergy.at (unsigned(interfererSf)-7) += interferenceEnergy;
-      NS_LOG_DEBUG ("Interferer power in W: " << interfererPowerW);
-      NS_LOG_DEBUG ("Interference energy: " << interferenceEnergy);
       it++;
     }
 
-  // For each SF, check if there was destructive interference
-  for (uint8_t currentSf = uint8_t (7); currentSf <= uint8_t (12); currentSf++)
-    {
-      NS_LOG_DEBUG ("Cumulative Interference Energy: " <<
-                    cumulativeInterferenceEnergy.at (unsigned(currentSf)-7));
-
-      // Use the computed cumulativeInterferenceEnergy to determine whether the
-      // interference with this SF destroys the packet
-      double signalPowerW = pow (10, rxPowerDbm/10) / 1000;
-      double signalEnergy = duration.GetSeconds () * signalPowerW;
-      NS_LOG_DEBUG ("Signal power in W: " << signalPowerW);
-      NS_LOG_DEBUG ("Signal energy: " << signalEnergy);
-
-      // Check whether the packet survives the interference of this SF
-      double snirIsolation = collisionSnir [unsigned(sf)-7][unsigned(currentSf)-7];
-      NS_LOG_DEBUG ("The needed isolation to survive is "
-                    << snirIsolation << " dB");
-      double snir = 10*log10 (signalEnergy/cumulativeInterferenceEnergy.at (unsigned(currentSf)-7));
-      NS_LOG_DEBUG ("The current SNIR is " << snir << " dB");
-
-      if (snir >= snirIsolation)
-        {
-          // Move on and check the rest of the interferers
-          NS_LOG_DEBUG ("Packet survived interference with SF " << currentSf);
-        }
-      else
-        {
-          NS_LOG_DEBUG ("Packet destroyed by interference with SF" <<
-                        unsigned(currentSf));
-
-          return currentSf;
-        }
-    }
   // If we get to here, it means that the packet survived all interference
   NS_LOG_DEBUG ("Packet survived all interference");
 
@@ -387,7 +342,7 @@ LoraInterferenceHelper::GetOverlapTime (Ptr<LoraInterferenceHelper::Event> event
           overlap = e2 - s1;
         }
     }
-   
+
   return overlap;
 }
 }

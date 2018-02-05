@@ -78,6 +78,9 @@ SimpleGatewayLoraPhy::Send (Ptr<Packet> packet, LoraTxParameters txParams,
    *  While this may not destroy packets incoming on the same frequency, this
    *  is almost always guaranteed to do so due to the fact that this event can
    *  have a power up to 27 dBm.
+   *
+   *  Destruction of packets being received by all receive paths can be modeled
+   *  by adding one event for each available interference.
    */
   m_interference.Add (duration, txPowerDbm, txParams.sf, packet, frequencyMHz);
 

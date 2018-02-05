@@ -39,6 +39,8 @@
 #include <algorithm>
 #include <ctime>
 
+#include "ns3/okumura-hata-propagation-loss-model.h"
+
 using namespace ns3;
 
 NS_LOG_COMPONENT_DEFINE ("CompleteNetworkPerformances");
