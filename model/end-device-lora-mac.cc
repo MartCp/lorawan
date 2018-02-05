@@ -161,6 +161,11 @@ EndDeviceLoraMac::Send (Ptr<Packet> packet)
   Time netxTxDelay= GetNextTransmissionDelay ();
   if (netxTxDelay != Seconds (0))
     {
+      if (m_retxParams.waitingAck)
+      {
+        double ack_timeout = m_uniformRV-> GetValue(1,3);
+        netxTxDelay = netxTxDelay + Seconds(ack_timeout);
+      }
       postponeTransmission (netxTxDelay, packet);
     }
 
