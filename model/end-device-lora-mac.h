@@ -455,10 +455,6 @@ TracedValue<uint8_t> m_requiredTx;
    */
   Time m_receiveDelay2;
 
-  /**
-   * The random interval after which the retransmission is performed.
-   */
-  double m_ack_timeout;
 
   /**
    * The duration of a receive window.
