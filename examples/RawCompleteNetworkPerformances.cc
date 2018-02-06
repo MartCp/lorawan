@@ -567,7 +567,7 @@ int main (int argc, char *argv[])
 
   Ptr<OkumuraHataPropagationLossModel> loss = CreateObject<OkumuraHataPropagationLossModel> ();
   loss->SetAttribute ("Frequency", DoubleValue (868.1e6));
-  loss->SetAttribute ("Environment", EnumValue (OpenAreasEnvironmen));
+  loss->SetAttribute ("Environment", EnumValue (OpenAreasEnvironment));
 
   if(shadowingEnabled)
   {
@@ -837,13 +837,13 @@ int main (int argc, char *argv[])
   *  Results  *
   *************/
 
-  // Total statistics of the network 
+  // Total statistics of the network
   std::cout << nDevices << " " << appPeriodSeconds << " ";
 
   if (transientPeriods == 0)
   {
-    std::cout<< totalPktsSent 
-      << " " << received << " " << interfered << " " << noMoreReceivers 
+    std::cout<< totalPktsSent
+      << " " << received << " " << interfered << " " << noMoreReceivers
       << " " << underSensitivity <<" ";
   }
 

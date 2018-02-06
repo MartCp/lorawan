@@ -567,7 +567,7 @@ int main (int argc, char *argv[])
   // Create the lora channel object
   Ptr<OkumuraHataPropagationLossModel> loss = CreateObject<OkumuraHataPropagationLossModel> ();
   loss->SetAttribute ("Frequency", DoubleValue (868.1e6));
-  loss->SetAttribute ("Environment", EnumValue (OpenAreasEnvironmen));
+  loss->SetAttribute ("Environment", EnumValue (OpenAreasEnvironment));
 
   if(shadowingEnabled)
   {
@@ -829,7 +829,7 @@ int main (int argc, char *argv[])
 
   // PrintSimulationTime ();
 
-  //Simulator::Run ();
+  Simulator::Run ();
 
   Simulator::Destroy ();
 
