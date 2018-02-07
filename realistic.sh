@@ -7,7 +7,7 @@
 # i= number of nDevices
 # increment= increment in EDs
 gatewayRings=1
-i=1
+i=501
 increment=500
 maxEndDevices=3001
 radius=1300 # because we also have shadowing and buildings
@@ -38,7 +38,7 @@ transientPeriods=2
 # echo "- Receive paths"
 # echo "- Path loss"
 # echo -n "Configuring and building..."
-./waf clean
+#./waf clean
 ./waf --build-profile=optimized --out=build/optimized configure > /dev/null
 ./waf build > /dev/null
 # echo " done."
@@ -79,7 +79,7 @@ do
     centralavgAckdelaysum=0
     centraltotRetxsum=0
 
-# echo "Done initialization"
+ #echo "Done initialization"
     while [ $currentrun -le $maxRuns ]
     do
         # nGateways=$[3*$gatewayRings*$gatewayRings-$[3*$gatewayRings]+1]
