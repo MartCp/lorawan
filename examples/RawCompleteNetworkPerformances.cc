@@ -623,7 +623,11 @@ int main (int argc, char *argv[])
 
   // Now end devices are connected to the channel
 
+  int cont;
+  cont=0;
+
   // Connect trace sources
+  // and set a percentage of devices to use confirmed traffic.
   for (NodeContainer::Iterator j = endDevices.Begin ();
        j != endDevices.End (); ++j)
     {
@@ -640,12 +644,20 @@ int main (int argc, char *argv[])
 
       mac->TraceConnectWithoutContext ("RequiredTransmissions",
                                        MakeCallback (&RequiredTransmissionsCallback));
-      // Set message type, otherwise the NS does not send ACKs
-      mac->SetMType (LoraMacHeader::CONFIRMED_DATA_UP);
+
+      // Set message type according to a percentage
+      if (cont < nDevices*confirmPercent)
+        {
+          mac->SetMType (LoraMacHeader::CONFIRMED_DATA_UP);
+          ++cont;
+        }
+
       mac-> SetMaxNumberOfTransmissions(maxNumbTx);
-      mac->SetDataRateAdaptation(false);
+      mac-> SetDataRateAdaptation(false);
 
     }
+
+
 
   /*********************
   *  Create Gateways  *
