@@ -264,6 +264,7 @@ EndDeviceLoraMac::DoSend (Ptr<Packet> packet)
       else
         {
           SendToPhy (packet);
+          m_sentNewPacket (packet);
         }
 
     }

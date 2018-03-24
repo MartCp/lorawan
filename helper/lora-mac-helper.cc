@@ -234,12 +234,12 @@ LoraMacHelper::ApplyCommonEuConfigurations (Ptr<LoraMac> loraMac) const
 
 }
 
-std::vector<int>
+std::list<uint32_t>
 LoraMacHelper::SetSpreadingFactorsUp (NodeContainer endDevices, NodeContainer gateways, Ptr<LoraChannel> channel)
 {
   NS_LOG_FUNCTION_NOARGS ();
 
-  std::vector<int> sfQuantity (7,0);
+  std::list<uint32_t> outOfRangeDevices;
   for (NodeContainer::Iterator j = endDevices.Begin (); j != endDevices.End (); ++j)
     {
       Ptr<Node> object = *j;
@@ -280,44 +280,37 @@ LoraMacHelper::SetSpreadingFactorsUp (NodeContainer endDevices, NodeContainer ga
       // Get the ED sensitivity
       Ptr<EndDeviceLoraPhy> edPhy = loraNetDevice->GetPhy ()->GetObject<EndDeviceLoraPhy> ();
       const double *edSensitivity = edPhy->sensitivity;
-    
 
-       if(rxPower > *edSensitivity)
+
+      if(rxPower > *edSensitivity)
         {
           mac->SetDataRate (5);
-          sfQuantity[0] = sfQuantity[0] + 1;
         }
       else if (rxPower > *(edSensitivity+1))
         {
           mac->SetDataRate (4);
-          sfQuantity[1] = sfQuantity[1] + 1;
         }
       else if (rxPower > *(edSensitivity+2))
         {
           mac->SetDataRate (3);
-          sfQuantity[2] = sfQuantity[2] + 1;
         }
       else if (rxPower > *(edSensitivity+3))
         {
           mac->SetDataRate (2);
-          sfQuantity[3] = sfQuantity[3] + 1;
         }
       else if (rxPower > *(edSensitivity+4))
         {
           mac->SetDataRate (1);
-          sfQuantity[4] = sfQuantity[4] + 1;
         }
       else if (rxPower > *(edSensitivity+5))
         {
           mac->SetDataRate (0);
-          sfQuantity[5] = sfQuantity[5] + 1;
         }
       else // Device is out of range. Assign SF12.
         {
           // NS_LOG_DEBUG ("Device out of range");
           mac->SetDataRate (0);
-          sfQuantity[6] = sfQuantity[6] + 1;
-          // NS_LOG_DEBUG ("sfQuantity[6] = " << sfQuantity[6]);
+          outOfRangeDevices.push_back (object->GetId ());
 
         }
 
@@ -332,49 +325,42 @@ LoraMacHelper::SetSpreadingFactorsUp (NodeContainer endDevices, NodeContainer ga
       if(rxPower > *gwSensitivity)
         {
           mac->SetDataRate (5);
-          sfQuantity[0] = sfQuantity[0] + 1;
 
         }
       else if (rxPower > *(gwSensitivity+1))
         {
           mac->SetDataRate (4);
-          sfQuantity[1] = sfQuantity[1] + 1;
 
         }
       else if (rxPower > *(gwSensitivity+2))
         {
           mac->SetDataRate (3);
-          sfQuantity[2] = sfQuantity[2] + 1;
 
         }
       else if (rxPower > *(gwSensitivity+3))
         {
           mac->SetDataRate (2);
-          sfQuantity[3] = sfQuantity[3] + 1;
         }
       else if (rxPower > *(gwSensitivity+4))
         {
           mac->SetDataRate (1);
-          sfQuantity[4] = sfQuantity[4] + 1;
         }
       else if (rxPower > *(gwSensitivity+5))
         {
           mac->SetDataRate (0);
-          sfQuantity[5] = sfQuantity[5] + 1;
 
         }
       else // Device is out of range. Assign SF12.
         {
           mac->SetDataRate (0);
-          sfQuantity[6] = sfQuantity[6] + 1;
 
         }
         */
 
     } // end loop on nodes
 
-    return sfQuantity;
-    
+  return outOfRangeDevices;
+
 } //  end function
 
 } //end class

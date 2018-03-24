@@ -16,15 +16,15 @@ useMixedPeriods=true
 
 # Confirmed message variables
 confirmPercent=0
-maxConfirmPercent=100
-incrementPercent=5
+maxConfirmPercent=50
+incrementPercent=10
 
 # Runs
 maxRuns=10
 
 # Directory management
 mkdir -p percentDevicesPlots
-rm percentDevicesPlots/* || exit
+rm -r percentDevicesPlots/* > /dev/null 2>&1
 
 # Move to the waf directory
 cd ../../../ || exit
@@ -58,7 +58,7 @@ do
             do
 
                 output="$(./waf --run "RawCompleteNetworkPerformances
-                        --radius=1000
+                        --radius=1200
                         --nDevices=$nDevices
                         --confirmPercent=$confirmPercent
                         --maxNumbTx=$maxNumbTx

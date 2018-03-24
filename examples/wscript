@@ -1,14 +1,14 @@
 # -*- Mode: python; py-indent-offset: 4; indent-tabs-mode: nil; coding: utf-8; -*-
 
 def build(bld):
-    obj = bld.create_ns3_program('simple-lorawan-network-example', ['lorawan'])
-    obj.source = 'simple-lorawan-network-example.cc'
+    # obj = bld.create_ns3_program('simple-lorawan-network-example', ['lorawan'])
+    # obj.source = 'simple-lorawan-network-example.cc'
 
     obj = bld.create_ns3_program('network-server-example', ['lorawan'])
     obj.source = 'network-server-example.cc'
 
-    obj = bld.create_ns3_program('complete-lorawan-network-example', ['lorawan'])
-    obj.source = 'complete-lorawan-network-example.cc'
+    # obj = bld.create_ns3_program('complete-lorawan-network-example', ['lorawan'])
+    # obj.source = 'complete-lorawan-network-example.cc'
 
     obj = bld.create_ns3_program('header-test', ['lorawan'])
     obj.source = 'header-test.cc'
@@ -34,19 +34,17 @@ def build(bld):
     obj = bld.create_ns3_program('simple-mac-command-example', ['lorawan'])
     obj.source = 'simple-mac-command-example.cc'
 
-    obj = bld.create_ns3_program('repetitionTest', ['lorawan'])
-    obj.source = 'repetitionTest.cc'
+    # obj = bld.create_ns3_program('repetitionTest', ['lorawan'])
+    # obj.source = 'repetitionTest.cc'
 
-    obj = bld.create_ns3_program('CompleteNetworkPerformances', ['lorawan'])
-    obj.source = 'CompleteNetworkPerformances.cc'
+    # obj = bld.create_ns3_program('CompleteNetworkPerformances', ['lorawan'])
+    # obj.source = 'CompleteNetworkPerformances.cc'
 
-    obj = bld.create_ns3_program('UplinkNetworkPerformances', ['lorawan'])
-    obj.source = 'UplinkNetworkPerformances.cc'
+    # obj = bld.create_ns3_program('UplinkNetworkPerformances', ['lorawan'])
+    # obj.source = 'UplinkNetworkPerformances.cc'
 
     obj = bld.create_ns3_program('RawCompleteNetworkPerformances', ['lorawan'])
     obj.source = 'RawCompleteNetworkPerformances.cc'
 
-    obj = bld.create_ns3_program('RealisticNetworkPerformances', ['lorawan'])
-    obj.source = 'RealisticNetworkPerformances.cc'
-
-
+    # obj = bld.create_ns3_program('RealisticNetworkPerformances', ['lorawan'])
+    # obj.source = 'RealisticNetworkPerformances.cc'

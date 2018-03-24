@@ -123,42 +123,42 @@ CheckReceptionByAllGWsComplete (std::map<Ptr<Packet const>, PacketStatus>::itera
 {
   // Check whether this packet is received by all gateways
   // if ((*it).second.outcomeNumber == nGateways)
-    {
-      // Update the statistics
-      PacketStatus status = (*it).second;
-      for (int j = 0; j < nGateways; j++)
-        {
-          switch (status.outcomes.at (j))
+  {
+    // Update the statistics
+    PacketStatus status = (*it).second;
+    for (int j = 0; j < nGateways; j++)
+      {
+        switch (status.outcomes.at (j))
+          {
+          case RECEIVED:
             {
-            case RECEIVED:
-              {
-                received += 1;
-                break;
-              }
-            case UNDER_SENSITIVITY:
-              {
-                underSensitivity += 1;
-                break;
-              }
-            case NO_MORE_RECEIVERS:
-              {
-                noMoreReceivers += 1;
-                break;
-              }
-            case INTERFERED:
-              {
-                interfered += 1;
-                break;
-              }
-            case UNSET:
-              {
-                break;
-              }
+              received += 1;
+              break;
             }
-        }
-      // Remove the packet from the tracker
-      // packetTracker.erase (it);
-    }
+          case UNDER_SENSITIVITY:
+            {
+              underSensitivity += 1;
+              break;
+            }
+          case NO_MORE_RECEIVERS:
+            {
+              noMoreReceivers += 1;
+              break;
+            }
+          case INTERFERED:
+            {
+              interfered += 1;
+              break;
+            }
+          case UNSET:
+            {
+              break;
+            }
+          }
+      }
+    // Remove the packet from the tracker
+    // packetTracker.erase (it);
+  }
 }
 
 void
@@ -172,7 +172,7 @@ PrintVector (std::vector<int> vector)
       std::cout << vector.at (i) << " ";
     }
   //
-    // std::cout << std::endl;
+  // std::cout << std::endl;
 }
 
 
@@ -193,13 +193,21 @@ GetSumRetransmissions (std::vector<int> reTxVector)
 void
 PrintSumRetransmissions (std::vector<int> reTxVector)
 {
-  std::cout << GetSumRetransmissions(reTxVector) << std::endl;
+  std::cout << GetSumRetransmissions (reTxVector) << std::endl;
+}
+
+bool
+DeviceIsInRange (std::list<uint32_t> outOfRangeDevices, uint32_t id)
+{
+  auto iterator = std::find (outOfRangeDevices.begin (), outOfRangeDevices.end (), id);
+
+  return iterator == outOfRangeDevices.end ();
 }
 
 void
 CountRetransmissions (Time transient, Time simulationTime, MacPacketData
                       macPacketTracker, RetransmissionData reTransmissionTracker,
-                      PhyPacketData packetTracker)
+                      PhyPacketData packetTracker, std::list<uint32_t> outOfRangeDevices)
 {
   // NS_LOG_INFO ("CountRetransmissions");
 
@@ -210,53 +218,66 @@ CountRetransmissions (Time transient, Time simulationTime, MacPacketData
   // totPacketsSent receivedPackets interferedPackets noMoreGwPackets underSensitivityPackets
   std::vector<int> performancesAmounts (5, 0);
   Time delaySum = Seconds (0);
-  Time ackDelaySum = Seconds(0);
+  Time ackDelaySum = Seconds (0);
 
   int packetsOutsideTransient = 0;
   int MACpacketsOutsideTransient = 0;
 
-  for (auto itMac = macPacketTracker.begin (); itMac != macPacketTracker.end(); ++itMac)
+  double successfulPackets = 0;
+
+  for (auto itMac = macPacketTracker.begin (); itMac != macPacketTracker.end (); ++itMac)
     {
       // NS_LOG_DEBUG ("Dealing with packet " << (*itMac).first);
 
       if ((*itMac).second.sendTime >= transient && (*itMac).second.sendTime <= simulationTime - transient)
         {
-          packetsOutsideTransient++;
-          MACpacketsOutsideTransient++;
-
-          // Count retransmissions
-          ////////////////////////
-          auto itRetx = reTransmissionTracker.find ((*itMac).first);
-
-          if (itRetx == reTransmissionTracker.end())
+          if (DeviceIsInRange (outOfRangeDevices, (*itMac).second.systemId)) // Then count it
             {
-              NS_LOG_DEBUG ("Packet " << (*itMac).first << " not found. Sent at " << (*itMac).second.sendTime.GetSeconds());
-            }
+              packetsOutsideTransient++;
+              MACpacketsOutsideTransient++;
 
-          // NS_LOG_DEBUG ("Transmission attempts: " << unsigned((*itRetx).second.reTxAttempts));
+              // Count retransmissions
+              ////////////////////////
+              auto itRetx = reTransmissionTracker.find ((*itMac).first);
 
-          totalReTxAmounts.at ((*itRetx).second.reTxAttempts - 1)++;
+              if (itRetx == reTransmissionTracker.end ())
+                {
+                  // NS_LOG_DEBUG ("Packet " << (*itMac).first << " not found. Sent at " << (*itMac).second.sendTime.GetSeconds ());
+                  if ((*itMac).second.receivedTime != Time::Max ())
+                    {
+                      successfulPackets++;
+                    }
+                  ++itMac;
+                  continue;
+                }
 
-          if ((*itRetx).second.successful)
-            {
-              successfulReTxAmounts.at ((*itRetx).second.reTxAttempts - 1)++;
-            }
-          else
-            {
-              failedReTxAmounts.at ((*itRetx).second.reTxAttempts - 1)++;
-            }
+              // NS_LOG_DEBUG ("Transmission attempts: " << unsigned((*itRetx).second.reTxAttempts));
 
-          // Compute delays
-          /////////////////
-          if ((*itMac).second.receivedTime == Time::Max())
-            {
-              // NS_LOG_DEBUG ("Packet never received, ignoring it");
-              packetsOutsideTransient--;
-            }
-          else
-            {
-              delaySum += (*itMac).second.receivedTime - (*itMac).second.sendTime;
-              ackDelaySum += (*itRetx).second.finishTime - (*itRetx).second.firstAttempt;
+              totalReTxAmounts.at ((*itRetx).second.reTxAttempts - 1)++;
+
+              if ((*itRetx).second.successful)
+                {
+                  successfulReTxAmounts.at ((*itRetx).second.reTxAttempts - 1)++;
+                  successfulPackets++;
+                }
+              else
+                {
+                  failedReTxAmounts.at ((*itRetx).second.reTxAttempts - 1)++;
+                }
+
+              // Compute delays
+              /////////////////
+              if ((*itMac).second.receivedTime == Time::Max ())
+                {
+                  // NS_LOG_DEBUG ("Packet never received, ignoring it");
+                  packetsOutsideTransient--;
+                }
+              else
+                {
+                  delaySum += (*itMac).second.receivedTime - (*itMac).second.sendTime;
+                  ackDelaySum += (*itRetx).second.finishTime - (*itRetx).second.firstAttempt;
+                }
+
             }
 
         }
@@ -265,46 +286,44 @@ CountRetransmissions (Time transient, Time simulationTime, MacPacketData
   // Sum PHY outcomes
   //////////////////////////////////
 
-  for (auto itPhy = phyPacketOutcomes.begin(); itPhy != phyPacketOutcomes.end(); ++itPhy)
-  {
-    if ((*itPhy).first >= transient && (*itPhy).first <= simulationTime - transient)
+  for (auto itPhy = phyPacketOutcomes.begin (); itPhy != phyPacketOutcomes.end (); ++itPhy)
     {
-      performancesAmounts.at(0)++;
+      if ((*itPhy).first >= transient && (*itPhy).first <= simulationTime - transient)
+        {
+          performancesAmounts.at (0)++;
 
-      switch ((*itPhy).second)
-      {
-        case RECEIVED:
-          {
-            performancesAmounts.at(1)++;
-            break;
-          }
-        case INTERFERED:
-          {
-            performancesAmounts.at(2)++;
-            break;
-          }
-        case NO_MORE_RECEIVERS:
-          {
-            performancesAmounts.at(3)++;
-            break;
-          }
-        case UNDER_SENSITIVITY:
-          {
-            performancesAmounts.at(4)++;
-            break;
-          }
-        case UNSET:
-          {
-            break;
-          }
-      }   //end switch
+          switch ((*itPhy).second)
+            {
+            case RECEIVED:
+              {
+                performancesAmounts.at (1)++;
+                break;
+              }
+            case INTERFERED:
+              {
+                performancesAmounts.at (2)++;
+                break;
+              }
+            case NO_MORE_RECEIVERS:
+              {
+                performancesAmounts.at (3)++;
+                break;
+              }
+            case UNDER_SENSITIVITY:
+              {
+                performancesAmounts.at (4)++;
+                break;
+              }
+            case UNSET:
+              {
+                break;
+              }
+            } //end switch
+        }
     }
-  }
 
   std::cout << nDevices << " " << totalPktsSent << " " <<
-    float(GetSumRetransmissions
-    (successfulReTxAmounts))/float(GetSumRetransmissions (totalReTxAmounts)) <<
-    std::endl;
+    successfulPackets/MACpacketsOutsideTransient << std::endl;
 }
 
 void
@@ -364,8 +383,8 @@ MacGwReceptionCallback (Ptr<Packet const> packet)
   // NS_LOG_INFO ("Packet tracker size: " << macPacketTracker.size());
 
   // Find the received packet in the macPacketTracker
-  auto it = macPacketTracker.find(packet);
-  if (it != macPacketTracker.end())
+  auto it = macPacketTracker.find (packet);
+  if (it != macPacketTracker.end ())
     {
       // NS_LOG_INFO ("Found the packet in the tracker");
 
@@ -492,8 +511,8 @@ int main (int argc, char *argv[])
   cmd.AddValue ("maxNumbTx", "The maximum number of transmissions allowed.", maxNumbTx);
   cmd.AddValue ("DRAdapt", "Enable data rate adaptation", DRAdapt);
   cmd.AddValue ("mixedPeriods", "Enable mixed application periods", mixedPeriods);
-  cmd.AddValue("buildingsEnabled", "Whether to use buildings in the simulation or not", buildingsEnabled);
-  cmd.AddValue("shadowingEnabled", "Whether to use shadowing in the simulation or not", shadowingEnabled);
+  cmd.AddValue ("buildingsEnabled", "Whether to use buildings in the simulation or not", buildingsEnabled);
+  cmd.AddValue ("shadowingEnabled", "Whether to use shadowing in the simulation or not", shadowingEnabled);
   cmd.AddValue ("printEDs", "Whether or not to print a file containing the ED's positions", printEDs);
   cmd.AddValue ("confirmPercent","Percent of devices that will be ack", confirmPercent);
 
@@ -558,18 +577,18 @@ int main (int argc, char *argv[])
   loss->SetReference (1, 7.7);
 
   if(shadowingEnabled)
-  {
-    // Create the correlated shadowing component
-    Ptr<CorrelatedShadowingPropagationLossModel> shadowing = CreateObject<CorrelatedShadowingPropagationLossModel> ();
+    {
+      // Create the correlated shadowing component
+      Ptr<CorrelatedShadowingPropagationLossModel> shadowing = CreateObject<CorrelatedShadowingPropagationLossModel> ();
 
-    // Aggregate shadowing to the logdistance loss
-    loss->SetNext(shadowing);
+      // Aggregate shadowing to the logdistance loss
+      loss->SetNext (shadowing);
 
-    // Add the effect to the channel propagation loss
-    Ptr<BuildingPenetrationLoss> buildingLoss = CreateObject<BuildingPenetrationLoss> ();
+      // Add the effect to the channel propagation loss
+      Ptr<BuildingPenetrationLoss> buildingLoss = CreateObject<BuildingPenetrationLoss> ();
 
-    shadowing->SetNext(buildingLoss);
-  }
+      shadowing->SetNext (buildingLoss);
+    }
 
   Ptr<PropagationDelayModel> delay = CreateObject<ConstantSpeedPropagationDelayModel> ();
 
@@ -652,8 +671,8 @@ int main (int argc, char *argv[])
           ++cont;
         }
 
-      mac-> SetMaxNumberOfTransmissions(maxNumbTx);
-      mac-> SetDataRateAdaptation(false);
+      mac->SetMaxNumberOfTransmissions (maxNumbTx);
+      mac->SetDataRateAdaptation (false);
 
     }
 
@@ -721,10 +740,10 @@ int main (int argc, char *argv[])
   int gridWidth = 2*radius/(xLength+deltaX);
   int gridHeight = 2*radius/(yLength+deltaY);
   if (buildingsEnabled == false)
-  {
-    gridWidth = 0;
-    gridHeight = 0;
-  }
+    {
+      gridWidth = 0;
+      gridHeight = 0;
+    }
   Ptr<GridBuildingAllocator> gridBuildingAllocator;
   gridBuildingAllocator = CreateObject<GridBuildingAllocator> ();
   gridBuildingAllocator->SetAttribute ("GridWidth", UintegerValue (gridWidth));
@@ -746,25 +765,26 @@ int main (int argc, char *argv[])
 
   // Print the buildings
   if (printEDs)
-  {
-    std::ofstream myfile;
-    myfile.open ("buildings.txt");
-    std::vector<Ptr<Building> >::const_iterator it;
-    int j = 1;
-    for (it = bContainer.Begin (); it != bContainer.End (); ++it, ++j)
     {
-      Box boundaries = (*it)->GetBoundaries ();
-      myfile << "set object " << j << " rect from " << boundaries.xMin << "," << boundaries.yMin << " to " << boundaries.xMax << "," << boundaries.yMax << std::endl;
-    }
-    myfile.close();
+      std::ofstream myfile;
+      myfile.open ("buildings.txt");
+      std::vector<Ptr<Building> >::const_iterator it;
+      int j = 1;
+      for (it = bContainer.Begin (); it != bContainer.End (); ++it, ++j)
+        {
+          Box boundaries = (*it)->GetBoundaries ();
+          myfile << "set object " << j << " rect from " << boundaries.xMin << "," << boundaries.yMin << " to " << boundaries.xMax << "," << boundaries.yMax << std::endl;
+        }
+      myfile.close ();
 
-  }
+    }
 
   /**********************************************
   *  Set up the end device's spreading factor  *
   **********************************************/
 
-  sfQuantity = macHelper.SetSpreadingFactorsUp (endDevices, gateways, channel);
+  std::list<uint32_t> outOfRangeDevices;
+  outOfRangeDevices = macHelper.SetSpreadingFactorsUp (endDevices, gateways, channel);
 
   /**********************************************
   *              Create Network Server          *
@@ -793,17 +813,17 @@ int main (int argc, char *argv[])
   PeriodicSenderHelper appHelper = PeriodicSenderHelper ();
 
   if (mixedPeriods)
-  {
-    appHelper.SetPeriod (Seconds(0));
-    // In this case, as application period we take
-    // the maximum of the possible application periods, i.e. 1 day
-    appPeriodSeconds= (24*60*60);
-    appPeriod = Seconds(appPeriodSeconds);
-  }
+    {
+      appHelper.SetPeriod (Seconds (0));
+      // In this case, as application period we take
+      // the maximum of the possible application periods, i.e. 1 day
+      appPeriodSeconds= (24*60*60);
+      appPeriod = Seconds (appPeriodSeconds);
+    }
   else
-  {
-    appHelper.SetPeriod (appPeriod);
-  }
+    {
+      appHelper.SetPeriod (appPeriod);
+    }
 
   ApplicationContainer appContainer = appHelper.Install (endDevices);
 
@@ -839,7 +859,7 @@ int main (int argc, char *argv[])
 
 
   // Statistics ignoring transient
-  CountRetransmissions (transientPeriods * appPeriod, appStopTime, macPacketTracker, reTransmissionTracker, packetTracker);
+  CountRetransmissions (transientPeriods * appPeriod, appStopTime, macPacketTracker, reTransmissionTracker, packetTracker, outOfRangeDevices);
 
   return 0;
 }

@@ -110,9 +110,9 @@ public:
    * SF11 -> DR1
    * SF12 -> DR0
    */
-  static std::vector<int> SetSpreadingFactorsUp (NodeContainer endDevices,
-                                     NodeContainer gateways,
-                                     Ptr<LoraChannel> channel);
+  static std::list<uint32_t> SetSpreadingFactorsUp (NodeContainer endDevices,
+                                                    NodeContainer gateways,
+                                                    Ptr<LoraChannel> channel);
 
 private:
 
