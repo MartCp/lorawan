@@ -85,8 +85,8 @@ GatewayLoraMac::Send (Ptr<Packet> packet)
       (CreateObject<LogicalLoraChannel> (frequency));
 
   // Add the event to the channelHelper to keep track of duty cycle
-  m_channelHelper.AddEvent (duration, CreateObject<LogicalLoraChannel>
-                              (frequency));
+  //m_channelHelper.AddEvent (duration, CreateObject<LogicalLoraChannel>
+  //                            (frequency));
 
   // Send the packet to the PHY layer to send it on the channel
   m_phy->Send (packet, params, frequency, sendingPower);
