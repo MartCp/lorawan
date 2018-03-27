@@ -19,6 +19,7 @@
  */
 
 #include "ns3/gateway-lora-mac.h"
+#include "ns3/gateway-lora-phy.h"
 #include "ns3/lora-mac-header.h"
 #include "ns3/lora-net-device.h"
 #include "ns3/lora-frame-header.h"
@@ -96,6 +97,12 @@ bool
 GatewayLoraMac::IsTransmitting (void)
 {
   return m_phy->IsTransmitting ();
+}
+
+bool
+GatewayLoraMac::IsReceiving (void)
+{
+  return m_phy->GetObject<GatewayLoraPhy>()->IsReceiving ();
 }
 
 void

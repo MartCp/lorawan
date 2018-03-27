@@ -41,6 +41,8 @@ public:
   // Implementation of the LoraMac interface
   bool IsTransmitting (void);
 
+  bool IsReceiving (void);
+
   // Implementation of the LoraMac interface
   virtual void Receive (Ptr<Packet const> packet);
 

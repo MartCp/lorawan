@@ -98,6 +98,13 @@ GatewayStatus::IsAvailableForTransmission (double frequency)
       return false;
     }
 
+  // Check that the gateway is not already in RX mode
+  if (m_gatewayMac->IsReceiving ())
+    {
+      NS_LOG_INFO ("This gateway is currently receiving");
+      return false;
+    }
+
   // Check that the gateway is not constrained by the duty cycle
   Time waitingTime = m_gatewayMac->GetWaitingTime (frequency);
   if (waitingTime > Seconds (0))
