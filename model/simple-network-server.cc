@@ -213,7 +213,7 @@ SimpleNetworkServer::Receive (Ptr<NetDevice> device, Ptr<const Packet> packet,
       NS_LOG_DEBUG ("There is already a reply for this device. Scheduling it and update frequency");
 
       m_deviceStatuses.at (frameHdr.GetAddress ()).SetFirstReceiveWindowFrequency (tag.GetFrequency ());
-     
+
       // Schedule a reply on the first receive window
       Simulator::Schedule (Seconds (1), &SimpleNetworkServer::SendOnFirstWindow,
                            this, frameHdr.GetAddress ());
@@ -255,20 +255,20 @@ SimpleNetworkServer::SendOnFirstWindow (LoraDeviceAddress address)
 
       NS_LOG_INFO ("Sending reply through the gateway with address " << gatewayForReply << " and initialize the reply.");
 
-      InitializeReply (address, false);
+      // InitializeReply (address, false);
 
       // Inform the gateway of the transmission
       m_gatewayStatuses.find (gatewayForReply)->second.GetNetDevice ()->
       Send (replyPacket, gatewayForReply, 0x0800);
     }
-  else
-    {
-      NS_LOG_FUNCTION ("No suitable GW found, scheduling second window reply");
+  // else
+  //   {
+  //     NS_LOG_FUNCTION ("No suitable GW found, scheduling second window reply");
 
       // Schedule a reply on the second receive window
       Simulator::Schedule (Seconds (1), &SimpleNetworkServer::SendOnSecondWindow, this,
                            address);
-    }
+    // }
 }
 
 void
@@ -301,7 +301,7 @@ SimpleNetworkServer::SendOnSecondWindow (LoraDeviceAddress address)
       NS_LOG_INFO ("Sending reply through the gateway with address " <<
                    gatewayForReply << " and initialize reply.");
 
-      InitializeReply (address, false);
+      // InitializeReply (address, false);
 
       // Inform the gateway of the transmission
       m_gatewayStatuses.find (gatewayForReply)->second.GetNetDevice ()->
