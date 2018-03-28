@@ -238,45 +238,46 @@ CountRetransmissions (Time transient, Time simulationTime, MacPacketData
 
               // Count retransmissions
               ////////////////////////
-              auto itRetx = reTransmissionTracker.find ((*itMac).first);
+              // auto itRetx = reTransmissionTracker.find ((*itMac).first);
 
-              if (itRetx == reTransmissionTracker.end ())
-                {
+              // if (itRetx == reTransmissionTracker.end ())
+              //   {
                   // NS_LOG_DEBUG ("Packet " << (*itMac).first << " not found. Sent at " << (*itMac).second.sendTime.GetSeconds ());
                   if ((*itMac).second.receivedTime != Time::Max ())
                     {
                       successfulPackets++;
                     }
-                  ++itMac;
-                  continue;
-                }
+                  // ++itMac;
+                  // continue;
+                // }
 
-              // NS_LOG_DEBUG ("Transmission attempts: " << unsigned((*itRetx).second.reTxAttempts));
+              // // NS_LOG_DEBUG ("Transmission attempts: " << unsigned((*itRetx).second.reTxAttempts));
 
-              totalReTxAmounts.at ((*itRetx).second.reTxAttempts - 1)++;
+              // totalReTxAmounts.at ((*itRetx).second.reTxAttempts - 1)++;
 
-              if ((*itRetx).second.successful)
-                {
-                  successfulReTxAmounts.at ((*itRetx).second.reTxAttempts - 1)++;
-                  successfulPackets++;
-                }
-              else
-                {
-                  failedReTxAmounts.at ((*itRetx).second.reTxAttempts - 1)++;
-                }
+              // // if ((*itRetx).second.successful)
+              // if ((*itRetx).second.)
+              //   {
+              //     successfulReTxAmounts.at ((*itRetx).second.reTxAttempts - 1)++;
+              //     successfulPackets++;
+              //   }
+              // else
+              //   {
+              //     failedReTxAmounts.at ((*itRetx).second.reTxAttempts - 1)++;
+              //   }
 
-              // Compute delays
-              /////////////////
-              if ((*itMac).second.receivedTime == Time::Max ())
-                {
-                  // NS_LOG_DEBUG ("Packet never received, ignoring it");
-                  packetsOutsideTransient--;
-                }
-              else
-                {
-                  delaySum += (*itMac).second.receivedTime - (*itMac).second.sendTime;
-                  ackDelaySum += (*itRetx).second.finishTime - (*itRetx).second.firstAttempt;
-                }
+              // // Compute delays
+              // /////////////////
+              // if ((*itMac).second.receivedTime == Time::Max ())
+              //   {
+              //     // NS_LOG_DEBUG ("Packet never received, ignoring it");
+              //     packetsOutsideTransient--;
+              //   }
+              // else
+              //   {
+              //     delaySum += (*itMac).second.receivedTime - (*itMac).second.sendTime;
+              //     ackDelaySum += (*itRetx).second.finishTime - (*itRetx).second.firstAttempt;
+              //   }
 
             }
 
