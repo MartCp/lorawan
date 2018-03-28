@@ -1,0 +1,2 @@
+[1187/1367] Compiling src/lorawan/examples/RawCompleteNetworkPerformances.cc
+[1186/1367] Compiling src/lorawan/examples/RawCompleteNetworkPerformances.cc

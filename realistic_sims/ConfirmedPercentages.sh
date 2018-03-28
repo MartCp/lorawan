@@ -1,13 +1,14 @@
 #!/bin/bash
 
 # Number of devices variables
-nDevices=200
-maxnDevices=2000
-incrementDev=200
+nDevices=$1
+incrementDev=$2
+maxnDevices=$3
 
 # Maximum number of tx variables
-maxNumbTx=1
-maxMaxNumbTx=8
+maxNumbTx=$4
+maxMaxNumbTx=$4
+
 numTransientPeriods=1
 numPeriodsToSimulate=3
 
@@ -15,24 +16,26 @@ numPeriodsToSimulate=3
 useMixedPeriods=true
 
 # Confirmed message variables
-confirmPercent=0
-maxConfirmPercent=50
-incrementPercent=10
+confirmPercent=$5
+incrementPercent=$6
+maxConfirmPercent=$7
 
 # Runs
 maxRuns=10
 
 # Directory management
-mkdir -p percentDevicesPlots
-rm -r percentDevicesPlots/* > /dev/null 2>&1
+# mkdir -p percentDevicesPlots
+# rm -r percentDevicesPlots/* > /dev/null 2>&1
 
 # Move to the waf directory
 cd ../../../ || exit
 
-filename="src/lorawan/realistic_sims/percentDevicesPlots/percentDevices.txt"
+filename="src/lorawan/realistic_sims/percentDevicesPlots/percentDevices-$maxNumbTx.txt"
 echo -n "" > $filename
 
-./waf build > /dev/null
+# ./waf build > /dev/null
+
+globalRun=$((maxNumbTx * 300))
 
 # Run the script with a fixed application period
 
@@ -49,6 +52,7 @@ do
             ###########################
 
             run=1
+
             pSuccSum=0
             echo -n "" > "$runsFilename"
             confirmPercent=$(echo "$confirmPercent / 100" | bc -l)
@@ -56,6 +60,9 @@ do
             # echo "Num of devices: $nDevices "
             while [ $run -le $maxRuns ]
             do
+
+                # echo "GlobalRun: $globalRun, Run: $run"
+                # echo "Simulating..."
 
                 output="$(./waf --run "RawCompleteNetworkPerformances
                         --radius=1200
@@ -65,8 +72,7 @@ do
                         --mixedPeriods=$useMixedPeriods
                         --transientPeriods=$numTransientPeriods
                         --periodsToSimulate=$numPeriodsToSimulate
-                        --RngRun=$run" | grep -v "build" | tr -d '\n' )"
-
+                        --RngRun=$globalRun" | grep -v "build" | tr -d '\n' )"
 
                 echo "MaxNumbTx: $maxNumbTx NDevs: $nDevices Confirm%: $confirmPercent Run#: $run Output: $output"
                 echo "$output" >> "$runsFilename"
@@ -77,6 +83,7 @@ do
                 # echo "pSucc: $pSucc,    pSuccSum: $pSuccSum"
 
                 run=$((run+1))
+                globalRun=$((globalRun+1))
             done
 
             avgPSucc=$(echo "$pSuccSum / $maxRuns" | bc -l)
