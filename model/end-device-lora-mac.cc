@@ -128,7 +128,6 @@ EndDeviceLoraMac::EndDeviceLoraMac () :
 
   // Initialize structure for retransmission parameters
   m_retxParams = EndDeviceLoraMac::LoraRetxParameters ();
-  //m_retxParams.retxLeft = MAX_TX_NUMBER;
   m_retxParams.retxLeft= m_maxNumbTx;
 }
 
@@ -183,7 +182,8 @@ EndDeviceLoraMac::Send (Ptr<Packet> packet)
           NS_LOG_INFO ("Max number of transmission achieved: packet not transmitted");
         }
     }
-  else  // the transmitting channel is available and we have not run out the maximum number of retransmissions
+  else 
+  // the transmitting channel is available and we have not run out the maximum number of retransmissions
     {
       // Make sure we can transmit at the current power on this channel
       NS_ASSERT_MSG (m_txPower <= m_channelHelper.GetTxPowerForChannel (txChannel),
@@ -234,8 +234,8 @@ EndDeviceLoraMac::DoSend (Ptr<Packet> packet)
           // Call the callback to notify about the failure
           uint8_t txs = m_maxNumbTx - (m_retxParams.retxLeft);
           m_requiredTxCallback (txs, false, m_retxParams.firstAttempt, m_retxParams.packet);
-          NS_LOG_DEBUG (" ************* ********************txs = " << unsigned(txs) << " maxNumbTx= "
-                                                                    << unsigned(m_maxNumbTx) << " retxLeft= " << unsigned (m_retxParams.retxLeft));
+          NS_LOG_DEBUG (" Received new packet from the application layer: stopping retransmission procedure. 
+                  Used " << unsigned(txs) << " transmissions out of  a maximum of "<< unsigned(m_maxNumbTx) << ".");
         }
 
       // Reset retransmission parameters
@@ -273,7 +273,7 @@ EndDeviceLoraMac::DoSend (Ptr<Packet> packet)
       if (m_retxParams.waitingAck)
         {
           m_retxParams.retxLeft = m_retxParams.retxLeft -1; // decreasing the number of retransmissions
-          NS_LOG_DEBUG ("Retransmitting an old packet");
+          NS_LOG_DEBUG ("Retransmitting an old packet.");
 
           SendToPhy (m_retxParams.packet);
         }
@@ -400,8 +400,7 @@ EndDeviceLoraMac::Receive (Ptr<Packet const> packet)
                 {
                   uint8_t txs = m_maxNumbTx - (m_retxParams.retxLeft);
                   m_requiredTxCallback (txs, false, m_retxParams.firstAttempt, m_retxParams.packet);
-                  NS_LOG_DEBUG (" ************* ********************txs = " << unsigned(txs) << " maxNumbTx= "
-                                                                            << unsigned(m_maxNumbTx) << " retxLeft= " << unsigned (m_retxParams.retxLeft));
+                  NS_LOG_DEBUG ("Failure: no more retransmissions left. Used "<< unsigned(txs) << " transmissions");
 
                   // Reset retransmission parameters
                   resetRetransmissionParameters();
@@ -409,25 +408,24 @@ EndDeviceLoraMac::Receive (Ptr<Packet const> packet)
               else // Reschedule
                 {
                   this->Send (m_retxParams.packet);
-                  NS_LOG_INFO ("Number of retx left: " << unsigned(m_retxParams.retxLeft) << "... Sending the packet for retransmission");
+                  NS_LOG_INFO ("We have " << unsigned(m_retxParams.retxLeft) << " retransmissions left: rescheduling transmission.");
                 }
             }
         }
     }
   else if (m_retxParams.waitingAck && m_secondReceiveWindow.IsExpired ())
     {
+      NS_LOG_INFO ("The packet we are receiving is in uplink.");
       if (m_retxParams.retxLeft > 0)
         {
-          NS_LOG_INFO ("The packet we are receiving is in uplink, rescheduling transmission.");
           this->Send (m_retxParams.packet);
-          NS_LOG_INFO ("Number of retx left: " << unsigned (m_retxParams.retxLeft) << "... Sending the packet for retransmission");
+          NS_LOG_INFO ("We have " << unsigned(m_retxParams.retxLeft) << " retransmissions left: rescheduling transmission.");
         }
       else
         {
           uint8_t txs = m_maxNumbTx - (m_retxParams.retxLeft);
           m_requiredTxCallback (txs, false, m_retxParams.firstAttempt, m_retxParams.packet);
-          NS_LOG_DEBUG (" ************* ********************txs = " << unsigned(txs) << " maxNumbTx= "
-                                                                    << unsigned(m_maxNumbTx) << " retxLeft= " << unsigned (m_retxParams.retxLeft));
+          NS_LOG_DEBUG ("Failure: no more retransmissions left. Used "<< unsigned(txs) << " transmissions");
 
         // Reset retransmission parameters
         resetRetransmissionParameters();
@@ -450,14 +448,13 @@ EndDeviceLoraMac::FailedReception (Ptr<Packet const> packet)
       if (m_retxParams.retxLeft > 0)
         {
           this->Send (m_retxParams.packet);
-          NS_LOG_INFO ("Number of retx left: " << unsigned(m_retxParams.retxLeft) << "... Sending the packet for retransmission");
+          NS_LOG_INFO ("We have " << unsigned(m_retxParams.retxLeft) << " retransmissions left: rescheduling transmission.");
         }
       else
         {
           uint8_t txs = m_maxNumbTx - (m_retxParams.retxLeft);
           m_requiredTxCallback (txs, false, m_retxParams.firstAttempt, m_retxParams.packet);
-          NS_LOG_DEBUG (" ************* ********************txs = " << unsigned(txs) << " maxNumbTx= "
-                                                                    << unsigned(m_maxNumbTx) << " retxLeft= " << unsigned (m_retxParams.retxLeft));
+          NS_LOG_DEBUG ("Failure: no more retransmissions left. Used "<< unsigned(txs) << " transmissions.");
 
           // Reset retransmission parameters
           resetRetransmissionParameters();
@@ -480,8 +477,7 @@ EndDeviceLoraMac::ParseCommands (LoraFrameHeader frameHeader)
 
           uint8_t txs = m_maxNumbTx - (m_retxParams.retxLeft);
           m_requiredTxCallback (txs, true, m_retxParams.firstAttempt, m_retxParams.packet);
-          NS_LOG_DEBUG (" ************* ********************txs = " << unsigned(txs) << " maxNumbTx= "
-                                                                    << unsigned(m_maxNumbTx) << " retxLeft= " << unsigned (m_retxParams.retxLeft));
+          NS_LOG_DEBUG ("Received ACK packet after " << unsigned(txs) << " transmissions: stopping retransmission procedure. ");
 
           // Reset retransmission parameters
           resetRetransmissionParameters();
@@ -491,7 +487,7 @@ EndDeviceLoraMac::ParseCommands (LoraFrameHeader frameHeader)
         }
       else
         {
-          NS_LOG_INFO ("!!! ERROR >>> Received message but it does not contain an ACK but we were waiting for it!! <<< ERROR");
+          NS_LOG_ERROR ("Received downlink message not containing an ACK while we were waiting for it!");
         }
     }
 
@@ -786,32 +782,31 @@ EndDeviceLoraMac::CloseSecondReceiveWindow (void)
     {
       if (m_retxParams.retxLeft > 0 )
         {
-          NS_LOG_INFO ("Number of retx left: " << unsigned(m_retxParams.retxLeft) << "... Sending the packet for retransmission");
-          this->Send (m_retxParams.packet);           //Simulator::Schedule(waitingTime, &LoraMac::Send, this, m_retxParams.packet);
+          NS_LOG_INFO ("We have " << unsigned(m_retxParams.retxLeft) << " retransmissions left: rescheduling transmission.");
+          this->Send (m_retxParams.packet);
         }
+
       else if (m_retxParams.retxLeft == 0 && m_phy->GetObject<EndDeviceLoraPhy> ()->GetState () != EndDeviceLoraPhy::RX)
         {
           uint8_t txs = m_maxNumbTx - (m_retxParams.retxLeft);
           m_requiredTxCallback (txs, false, m_retxParams.firstAttempt, m_retxParams.packet);
-          NS_LOG_DEBUG (" ************* ********************txs = " << unsigned(txs) << " maxNumbTx= "
-                                                                    << unsigned(m_maxNumbTx) << " retxLeft= " << unsigned (m_retxParams.retxLeft));
+          NS_LOG_DEBUG ("Failure: no more retransmissions left. Used "<< unsigned(txs) << " transmissions.");
 
           // Reset retransmission parameters
           resetRetransmissionParameters();
           NS_LOG_DEBUG ("ReTxLeft = " << unsigned(m_retxParams.retxLeft));
         }
+
       else
         {
-          NS_LOG_ERROR ("The number of retransmissions left is negative !!! ");
+          NS_LOG_ERROR ("The number of retransmissions left is negative ! ");
         }
     }
   else
     {
-      NS_LOG_DEBUG (" m_maxNumbTx " << unsigned(m_maxNumbTx) << " m_retxParams.retxLeft " << unsigned(m_retxParams.retxLeft));
       uint8_t txs = m_maxNumbTx - (m_retxParams.retxLeft );
       m_requiredTxCallback (txs, true, m_retxParams.firstAttempt, m_retxParams.packet);
-      NS_LOG_DEBUG (" ************ ************ txs = " << unsigned(txs) << " maxNumbTx= "
-                                                        << unsigned(m_maxNumbTx) << " retxLeft= " << unsigned (m_retxParams.retxLeft));
+      NS_LOG_INFO ("We have " << unsigned(m_retxParams.retxLeft) << " transmissions left. We were not transmitting confirmed messages.");
 
       // Reset retransmission parameters
       resetRetransmissionParameters();
