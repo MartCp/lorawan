@@ -158,7 +158,7 @@ int main (int argc, char *argv[])
   oneShotSenderHelper.Install (endDevices);
   // Setting the time for the second packet
   oneShotSenderHelper.SetSendTime (Seconds (8));
-  //oneShotSenderHelper.Install (endDevices);
+  oneShotSenderHelper.Install (endDevices);
 
 
   /*******************************
@@ -195,9 +195,9 @@ int main (int argc, char *argv[])
   // Channels are called by indexes; the mandatory first three channels are 
   // implemented in this code (indexes 0, 1, 2)
   std::list<int> enabled_channels;        
-  //enabled_channels.push_back(0);
+  enabled_channels.push_back(0);
   enabled_channels.push_back(1);
-  //enabled_channels.push_back(2);
+  enabled_channels.push_back(2);
 
   frameHdr.AddLinkAdrReq(dataRate, txPower, enabled_channels, repetitions);
   reply->AddHeader(frameHdr);

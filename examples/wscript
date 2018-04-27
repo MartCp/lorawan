@@ -37,16 +37,5 @@ def build(bld):
     obj = bld.create_ns3_program('repetitionTest', ['lorawan'])
     obj.source = 'repetitionTest.cc'
 
-    obj = bld.create_ns3_program('CompleteNetworkPerformances', ['lorawan'])
-    obj.source = 'CompleteNetworkPerformances.cc'
-
-    obj = bld.create_ns3_program('UplinkNetworkPerformances', ['lorawan'])
-    obj.source = 'UplinkNetworkPerformances.cc'
-
-    obj = bld.create_ns3_program('RawCompleteNetworkPerformances', ['lorawan'])
-    obj.source = 'RawCompleteNetworkPerformances.cc'
-
-    obj = bld.create_ns3_program('RealisticNetworkPerformances', ['lorawan'])
-    obj.source = 'RealisticNetworkPerformances.cc'
 
 

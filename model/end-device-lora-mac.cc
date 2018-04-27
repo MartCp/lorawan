@@ -234,8 +234,8 @@ EndDeviceLoraMac::DoSend (Ptr<Packet> packet)
           // Call the callback to notify about the failure
           uint8_t txs = m_maxNumbTx - (m_retxParams.retxLeft);
           m_requiredTxCallback (txs, false, m_retxParams.firstAttempt, m_retxParams.packet);
-          NS_LOG_DEBUG (" Received new packet from the application layer: stopping retransmission procedure. 
-                  Used " << unsigned(txs) << " transmissions out of  a maximum of "<< unsigned(m_maxNumbTx) << ".");
+          NS_LOG_DEBUG (" Received new packet from the application layer: stopping retransmission procedure. Used " <<
+           unsigned(txs) << " transmissions out of a maximum of "<< unsigned(m_maxNumbTx) << ".");
         }
 
       // Reset retransmission parameters
