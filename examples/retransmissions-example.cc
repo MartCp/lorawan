@@ -110,9 +110,9 @@ int main (int argc, char *argv[])
   macHelper.SetDeviceType (LoraMacHelper::ED);
   helper.Install (phyHelper, macHelper, endDevices);
 
-  
-  uint32_t id= endDevices.Get(0)->GetId();
-  Vector pos= endDevices.Get(0)->GetObject<MobilityModel>()->GetPosition();
+
+  uint32_t id = endDevices.Get (0)->GetId ();
+  Vector pos = endDevices.Get (0)->GetObject<MobilityModel> ()->GetPosition ();
 
   NS_LOG_DEBUG ("End device id: " << id);
   NS_LOG_DEBUG ("End device position: " << pos);
@@ -142,7 +142,7 @@ int main (int argc, char *argv[])
   *  Set DataRate according to rx power  *
   ****************************************/
   std::vector<int> sfQuantity (6);
-  sfQuantity = macHelper.SetSpreadingFactorsUp(endDevices, gateways, channel);
+  sfQuantity = macHelper.SetSpreadingFactorsUp (endDevices, gateways, channel);
 
 
 
@@ -150,7 +150,7 @@ int main (int argc, char *argv[])
 ***************************************************************************************************************************************/
 
 /*******************************
-*   Building uplink packets  *    
+*   Building uplink packets  *
 *******************************/
 
 // First packet
@@ -158,18 +158,18 @@ int main (int argc, char *argv[])
   NS_LOG_INFO ("\n Creating First Packet for Uplink transmission...");
 
   // Setting ED's address
-  LoraDeviceAddress addr= LoraDeviceAddress(2311);   
-  Ptr<LoraMac> edMac= endDevices.Get(0)->GetDevice(0)->GetObject<LoraNetDevice>()->GetMac();
-  Ptr<EndDeviceLoraMac> edLoraMac = edMac->GetObject<EndDeviceLoraMac>();
-  edLoraMac-> SetDeviceAddress(addr);
-  edLoraMac->SetMType(LoraMacHeader::CONFIRMED_DATA_UP);  // this device will send packets requiring ack
-  edLoraMac->SetMaxNumberOfTransmissions(4);	// the maximum number of transmissions performed is 4.
-                      												// if after 4 transmissions the ack is not received, the 
-                      												// packet is dropped.
+  LoraDeviceAddress addr = LoraDeviceAddress (2311);
+  Ptr<LoraMac> edMac = endDevices.Get (0)->GetDevice (0)->GetObject<LoraNetDevice> ()->GetMac ();
+  Ptr<EndDeviceLoraMac> edLoraMac = edMac->GetObject<EndDeviceLoraMac> ();
+  edLoraMac->SetDeviceAddress (addr);
+  edLoraMac->SetMType (LoraMacHeader::CONFIRMED_DATA_UP);  // this device will send packets requiring ack
+  edLoraMac->SetMaxNumberOfTransmissions (4);    // the maximum number of transmissions performed is 4.
+  // if after 4 transmissions the ack is not received, the
+  // packet is dropped.
 
-  Ptr<Packet> pkt1= Create<Packet>(5);
+  Ptr<Packet> pkt1 = Create<Packet> (5);
 
-  Simulator::Schedule(Seconds(2), &LoraMac::Send, edMac, pkt1);
+  Simulator::Schedule (Seconds (2), &LoraMac::Send, edMac, pkt1);
 
   NS_LOG_DEBUG ("Sent first confirmed packet");
 
@@ -179,38 +179,38 @@ int main (int argc, char *argv[])
 
   NS_LOG_INFO ("\n Creating Second Packet for Uplink transmission...");
 
-  Ptr<Packet> pkt2= Create<Packet>(8);
+  Ptr<Packet> pkt2 = Create<Packet> (8);
 
-  Simulator::Schedule(Seconds(35), &LoraMac::Send, edMac, pkt2);
+  Simulator::Schedule (Seconds (35), &LoraMac::Send, edMac, pkt2);
 
   NS_LOG_DEBUG (" Sent second confirmed packet ");
 
 
   /*******************************
-   *   Building downlink packet  *    
+   *   Building downlink packet  *
    *******************************/
 
   // Creating packet for downlink transmussion
   NS_LOG_INFO ("Creating Packet for Downlink transmission...");
 
-  Ptr<Packet> reply= Create<Packet>(5);
+  Ptr<Packet> reply = Create<Packet> (5);
 
 
   // Setting frame header
   LoraFrameHeader downframeHdr;
-  downframeHdr.SetAsDownlink();
-  downframeHdr.SetAddress(addr);    // indirizzo ED dst
-  downframeHdr.SetAck(true);
+  downframeHdr.SetAsDownlink ();
+  downframeHdr.SetAddress (addr);    // indirizzo ED dst
+  downframeHdr.SetAck (true);
   //frameHdr.SetFPort(0);       // FPort=0 when there are only MAC commands. 
-                                // This instruction not necessary because it is 0 by default
-  reply->AddHeader(downframeHdr);
+  // This instruction not necessary because it is 0 by default
+  reply->AddHeader (downframeHdr);
   NS_LOG_INFO ("Added frame header of size " << downframeHdr.GetSerializedSize () << " bytes");
 
 
   // Setting Mac header
   LoraMacHeader downmacHdr;
-  downmacHdr.SetMType(LoraMacHeader::UNCONFIRMED_DATA_DOWN);
-  reply->AddHeader(downmacHdr);
+  downmacHdr.SetMType (LoraMacHeader::UNCONFIRMED_DATA_DOWN);
+  reply->AddHeader (downmacHdr);
 
   NS_LOG_INFO ("\n Setting parameters for Downlink Transmission...");
 
@@ -225,7 +225,7 @@ int main (int argc, char *argv[])
   downparams.lowDataRateOptimizationEnabled = 0;
 
 
-  Ptr<LoraPhy> gwPhy = gateways.Get(0)->GetDevice(0)->GetObject<LoraNetDevice>()->GetPhy();
+  Ptr<LoraPhy> gwPhy = gateways.Get (0)->GetDevice (0)->GetObject<LoraNetDevice> ()->GetPhy ();
 
   // The end device open its second receive window 2 seconds after the transmission.
   // For educational purposes, we make the end device retransmit its packet.
@@ -233,7 +233,7 @@ int main (int argc, char *argv[])
   // second receive window after the second transmission.
 
   // 2nd rx window: freq= 869.525 MHz, SF=12
-  Simulator::Schedule(Seconds(44.2), &LoraPhy::Send, gwPhy, reply, downparams, 869.525, 27); 
+  Simulator::Schedule (Seconds (44.2), &LoraPhy::Send, gwPhy, reply, downparams, 869.525, 27);
 
 
   /****************
