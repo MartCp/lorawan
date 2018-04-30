@@ -1,15 +1,15 @@
 /*
  * This script simulates a simple network in which one end device sends two
- * confirmed packets to the gateway
- * In the first case, the gateeay does not answer with an acknowledgment and the
- * end device keeps retransmittng until it reaches the maximum number of transmissions
- * allowed (default is 8).
- * Then, a packet with carrying an acknowledgment is manually created and sent by the gateway
- * to the end device.
- * In the second case, the gateway answers to the end device after the second transmisson
- * attempt, in the second receive window. Since the ACK is received, the end device does
- * not perform further retransmissions. 
-
+ * confirmed packets to the gateway.
+ * In the first case, the gateway does not answer with an acknowledgment, causing the
+ * to retransmit the packet until it reaches the maximum number of transmissions
+ * allowed (here set to 4). This simulates a scenario in which the network server
+ * can not answer to the end device or there are packet losses so that the 
+ * ack is never received by the end device.
+ * For the second case, a packet carrying an acknowledgment is manually created 
+ * and sent by the gateway to the end device after the second transmisson
+ * attempt, in the second receive window. 
+ * Since the ACK is received, the end device stops the retransmission procedure. 
  */
 
 #include "ns3/end-device-lora-phy.h"
@@ -30,30 +30,21 @@
 
 using namespace ns3;
 
-NS_LOG_COMPONENT_DEFINE ("SimpleMacCommandExample");
+NS_LOG_COMPONENT_DEFINE ("RetransmissionsExample");
 
 int main (int argc, char *argv[])
 {
 
   // Set up logging
-  LogComponentEnable ("SimpleMacCommandExample", LOG_LEVEL_ALL);
-  LogComponentEnable ("LoraChannel", LOG_LEVEL_INFO);
+  LogComponentEnable ("RetransmissionsExample", LOG_LEVEL_ALL);
   LogComponentEnable ("LoraPhy", LOG_LEVEL_ALL);
   LogComponentEnable ("EndDeviceLoraPhy", LOG_LEVEL_ALL);
   LogComponentEnable ("GatewayLoraPhy", LOG_LEVEL_ALL);
-  // LogComponentEnable ("LoraInterferenceHelper", LOG_LEVEL_ALL);
   LogComponentEnable ("LoraMac", LOG_LEVEL_ALL);
   LogComponentEnable ("EndDeviceLoraMac", LOG_LEVEL_ALL);
   LogComponentEnable ("GatewayLoraMac", LOG_LEVEL_ALL);
-  LogComponentEnable ("LogicalLoraChannelHelper", LOG_LEVEL_ALL);
-  LogComponentEnable ("LogicalLoraChannel", LOG_LEVEL_ALL);
-  LogComponentEnable ("LoraHelper", LOG_LEVEL_ALL);
   LogComponentEnable ("LoraPhyHelper", LOG_LEVEL_ALL);
   LogComponentEnable ("LoraMacHelper", LOG_LEVEL_ALL);
-  // LogComponentEnable ("OneShotSenderHelper", LOG_LEVEL_ALL);
-  LogComponentEnable ("OneShotSender", LOG_LEVEL_ALL);
-  // LogComponentEnable ("LoraMacHeader", LOG_LEVEL_ALL);
-  // LogComponentEnable ("LoraFrameHeader", LOG_LEVEL_ALL);
   LogComponentEnableAll (LOG_PREFIX_FUNC);
   LogComponentEnableAll (LOG_PREFIX_NODE);
   LogComponentEnableAll (LOG_PREFIX_TIME);
@@ -159,21 +150,22 @@ int main (int argc, char *argv[])
 ***************************************************************************************************************************************/
 
 /*******************************
-*   Building uplink packet  *    
+*   Building uplink packets  *    
 *******************************/
 
- // double frequency= 868.3; // set the frequency of uplink and downlink packets
+// First packet
 
-
- // Creating packet for downlink transmission
-  NS_LOG_INFO ("Creating First Packet for Uplink transmission...");
+  NS_LOG_INFO ("\n Creating First Packet for Uplink transmission...");
 
   // Setting ED's address
   LoraDeviceAddress addr= LoraDeviceAddress(2311);   
   Ptr<LoraMac> edMac= endDevices.Get(0)->GetDevice(0)->GetObject<LoraNetDevice>()->GetMac();
   Ptr<EndDeviceLoraMac> edLoraMac = edMac->GetObject<EndDeviceLoraMac>();
   edLoraMac-> SetDeviceAddress(addr);
-  edLoraMac->SetMType(LoraMacHeader::CONFIRMED_DATA_UP);  // this device will send packets requiring Ack
+  edLoraMac->SetMType(LoraMacHeader::CONFIRMED_DATA_UP);  // this device will send packets requiring ack
+  edLoraMac->SetMaxNumberOfTransmissions(4);	// the maximum number of transmissions performed is 4.
+                      												// if after 4 transmissions the ack is not received, the 
+                      												// packet is dropped.
 
   Ptr<Packet> pkt1= Create<Packet>(5);
 
@@ -182,11 +174,17 @@ int main (int argc, char *argv[])
   NS_LOG_DEBUG ("Sent first confirmed packet");
 
 
+
 // Second packet
 
+  NS_LOG_INFO ("\n Creating Second Packet for Uplink transmission...");
+
   Ptr<Packet> pkt2= Create<Packet>(8);
-  Simulator::Schedule(Seconds(62.8), &LoraMac::Send, edMac, pkt2);
+
+  Simulator::Schedule(Seconds(35), &LoraMac::Send, edMac, pkt2);
+
   NS_LOG_DEBUG (" Sent second confirmed packet ");
+
 
   /*******************************
    *   Building downlink packet  *    
@@ -229,10 +227,13 @@ int main (int argc, char *argv[])
 
   Ptr<LoraPhy> gwPhy = gateways.Get(0)->GetDevice(0)->GetObject<LoraNetDevice>()->GetPhy();
 
-  // The end device open its first receive window 1 second after the transmission.
-  // Scheduling sending of the reply packet after and giving the inputs for function "Send", The frequency has
-  // been set looking at the frequency of the previous uplink transmission.
-  // Simulator::Schedule(Seconds(63.8), &LoraPhy::Send, gwPhy, reply, downparams, 869.525, 27); // 2nd rx window: freq= 869.525 MHz, SF=12
+  // The end device open its second receive window 2 seconds after the transmission.
+  // For educational purposes, we make the end device retransmit its packet.
+  // Therefore, the ack reply is scheduled when the end device opens its
+  // second receive window after the second transmission.
+
+  // 2nd rx window: freq= 869.525 MHz, SF=12
+  Simulator::Schedule(Seconds(44.2), &LoraPhy::Send, gwPhy, reply, downparams, 869.525, 27); 
 
 
   /****************

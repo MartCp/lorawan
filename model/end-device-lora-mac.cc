@@ -179,7 +179,7 @@ EndDeviceLoraMac::Send (Ptr<Packet> packet)
         }
       else
         {
-          NS_LOG_INFO ("Max number of transmission achieved: packet not transmitted");
+          NS_LOG_INFO ("Max number of transmission achieved: packet not transmitted.");
         }
     }
   else 
@@ -187,7 +187,7 @@ EndDeviceLoraMac::Send (Ptr<Packet> packet)
     {
       // Make sure we can transmit at the current power on this channel
       NS_ASSERT_MSG (m_txPower <= m_channelHelper.GetTxPowerForChannel (txChannel),
-                     " The selected power is too hight to be supported by this channel ");
+                     " The selected power is too hight to be supported by this channel.");
       DoSend (packet);
     }
 }
@@ -201,7 +201,7 @@ EndDeviceLoraMac::postponeTransmission (Time netxTxDelay, Ptr<Packet> packet)
   Simulator::Cancel (m_nextRetx);
   m_nextTx = Simulator::Schedule (netxTxDelay, &EndDeviceLoraMac::DoSend, this, packet);
   NS_LOG_WARN ("Attempting to send, but the aggregate duty cycle won't allow it. Scheduling a tx at a delay "
-               << netxTxDelay.GetSeconds ());
+               << netxTxDelay.GetSeconds ()<< ".");
 }
 
 
@@ -213,7 +213,7 @@ EndDeviceLoraMac::DoSend (Ptr<Packet> packet)
   if (packet != m_retxParams.packet)
     {
       NS_LOG_DEBUG ("Received a new packet from application. Resetting retransmission parameters.");
-      NS_LOG_DEBUG ("APP packet: " << packet);
+      NS_LOG_DEBUG ("APP packet: " << packet<< ".");
 
       // Add the Lora Frame Header to the packet
       LoraFrameHeader frameHdr;
@@ -221,7 +221,7 @@ EndDeviceLoraMac::DoSend (Ptr<Packet> packet)
       packet->AddHeader (frameHdr);
 
       NS_LOG_INFO ("Added frame header of size " << frameHdr.GetSerializedSize () <<
-                   " bytes");
+                   " bytes.");
 
       // Add the Lora Mac header to the packet
       LoraMacHeader macHdr;
@@ -253,7 +253,7 @@ EndDeviceLoraMac::DoSend (Ptr<Packet> packet)
           NS_LOG_DEBUG ("It is a confirmed packet. Setting retransmission parameters and decreasing the number of transmissions left.");
 
           NS_LOG_INFO ("Added MAC header of size " << macHdr.GetSerializedSize () <<
-                       " bytes");
+                       " bytes.");
 
           // Sent a new packet
           NS_LOG_DEBUG ("Copied packet: " << m_retxParams.packet);
@@ -334,7 +334,7 @@ EndDeviceLoraMac::SendToPhy (Ptr<Packet> packetToSend)
   uint8_t replyDataRate = GetFirstReceiveWindowDataRate ();
   NS_LOG_DEBUG ("m_dataRate: " << unsigned (m_dataRate) <<
                 ", m_rx1DrOffset: " << unsigned (m_rx1DrOffset) <<
-                ", replyDataRate: " << unsigned (replyDataRate));
+                ", replyDataRate: " << unsigned (replyDataRate)<< ".");
 
   m_phy->GetObject<EndDeviceLoraPhy> ()->SetSpreadingFactor
     (GetSfFromDataRate (replyDataRate));
@@ -359,7 +359,7 @@ EndDeviceLoraMac::Receive (Ptr<Packet const> packet)
   // Only keep analyzing the packet if it's downlink
   if (!mHdr.IsUplink ())
     {
-      NS_LOG_INFO ("Found a downlink packet");
+      NS_LOG_INFO ("Found a downlink packet.");
 
       // Remove the Frame Header
       LoraFrameHeader fHdr;
@@ -400,7 +400,7 @@ EndDeviceLoraMac::Receive (Ptr<Packet const> packet)
                 {
                   uint8_t txs = m_maxNumbTx - (m_retxParams.retxLeft);
                   m_requiredTxCallback (txs, false, m_retxParams.firstAttempt, m_retxParams.packet);
-                  NS_LOG_DEBUG ("Failure: no more retransmissions left. Used "<< unsigned(txs) << " transmissions");
+                  NS_LOG_DEBUG ("Failure: no more retransmissions left. Used "<< unsigned(txs) << " transmissions.");
 
                   // Reset retransmission parameters
                   resetRetransmissionParameters();
@@ -425,7 +425,7 @@ EndDeviceLoraMac::Receive (Ptr<Packet const> packet)
         {
           uint8_t txs = m_maxNumbTx - (m_retxParams.retxLeft);
           m_requiredTxCallback (txs, false, m_retxParams.firstAttempt, m_retxParams.packet);
-          NS_LOG_DEBUG ("Failure: no more retransmissions left. Used "<< unsigned(txs) << " transmissions");
+          NS_LOG_DEBUG ("Failure: no more retransmissions left. Used "<< unsigned(txs) << " transmissions.");
 
         // Reset retransmission parameters
         resetRetransmissionParameters();
@@ -471,9 +471,9 @@ EndDeviceLoraMac::ParseCommands (LoraFrameHeader frameHeader)
     {
       if (frameHeader.GetAck ())
         {
-          NS_LOG_INFO ("The message is an ACK, not waiting for it anymore");
+          NS_LOG_INFO ("The message is an ACK, not waiting for it anymore.");
 
-          NS_LOG_DEBUG ("Reset retransmission variables to default values and cancel retransmission if already scheduled");
+          NS_LOG_DEBUG ("Reset retransmission variables to default values and cancel retransmission if already scheduled.");
 
           uint8_t txs = m_maxNumbTx - (m_retxParams.retxLeft);
           m_requiredTxCallback (txs, true, m_retxParams.firstAttempt, m_retxParams.packet);
@@ -495,13 +495,13 @@ EndDeviceLoraMac::ParseCommands (LoraFrameHeader frameHeader)
   std::list<Ptr<MacCommand> >::iterator it;
   for (it = commands.begin (); it != commands.end (); it++)
     {
-      NS_LOG_DEBUG ("Iterating over the MAC commands");
+      NS_LOG_DEBUG ("Iterating over the MAC commands...");
       enum MacCommandType type = (*it)->GetCommandType ();
       switch (type)
         {
         case (LINK_CHECK_ANS):
           {
-            NS_LOG_DEBUG ("Detected a LinkCheckAns command");
+            NS_LOG_DEBUG ("Detected a LinkCheckAns command.");
 
             // Cast the command
             Ptr<LinkCheckAns> linkCheckAns = (*it)->GetObject<LinkCheckAns> ();
@@ -513,7 +513,7 @@ EndDeviceLoraMac::ParseCommands (LoraFrameHeader frameHeader)
           }
         case (LINK_ADR_REQ):
           {
-            NS_LOG_DEBUG ("Detected a LinkAdrReq command");
+            NS_LOG_DEBUG ("Detected a LinkAdrReq command.");
 
             // Cast the command
             Ptr<LinkAdrReq> linkAdrReq = (*it)->GetObject<LinkAdrReq> ();
@@ -527,7 +527,7 @@ EndDeviceLoraMac::ParseCommands (LoraFrameHeader frameHeader)
           }
         case (DUTY_CYCLE_REQ):
           {
-            NS_LOG_DEBUG ("Detected a DutyCycleReq command");
+            NS_LOG_DEBUG ("Detected a DutyCycleReq command.");
 
             // Cast the command
             Ptr<DutyCycleReq> dutyCycleReq = (*it)->GetObject<DutyCycleReq> ();
@@ -539,7 +539,7 @@ EndDeviceLoraMac::ParseCommands (LoraFrameHeader frameHeader)
           }
         case (RX_PARAM_SETUP_REQ):
           {
-            NS_LOG_DEBUG ("Detected a RxParamSetupReq command");
+            NS_LOG_DEBUG ("Detected a RxParamSetupReq command.");
 
             // Cast the command
             Ptr<RxParamSetupReq> rxParamSetupReq = (*it)->GetObject<RxParamSetupReq> ();
@@ -553,7 +553,7 @@ EndDeviceLoraMac::ParseCommands (LoraFrameHeader frameHeader)
           }
         case (DEV_STATUS_REQ):
           {
-            NS_LOG_DEBUG ("Detected a DevStatusReq command");
+            NS_LOG_DEBUG ("Detected a DevStatusReq command.");
 
             // Cast the command
             Ptr<DevStatusReq> devStatusReq = (*it)->GetObject<DevStatusReq> ();
@@ -565,7 +565,7 @@ EndDeviceLoraMac::ParseCommands (LoraFrameHeader frameHeader)
           }
         case (NEW_CHANNEL_REQ):
           {
-            NS_LOG_DEBUG ("Detected a NewChannelReq command");
+            NS_LOG_DEBUG ("Detected a NewChannelReq command.");
 
             // Cast the command
             Ptr<NewChannelReq> newChannelReq = (*it)->GetObject<NewChannelReq> ();
@@ -700,7 +700,7 @@ EndDeviceLoraMac::CloseFirstReceiveWindow (void)
     {
     case EndDeviceLoraPhy::TX:
       NS_ABORT_MSG ("PHY was in TX mode when attempting to " <<
-                    "close a receive window");
+                    "close a receive window.");
       break;
     case EndDeviceLoraPhy::RX:
       // PHY is receiving: let it finish. The Receive method will switch it back to SLEEP.
@@ -724,7 +724,7 @@ EndDeviceLoraMac::OpenSecondReceiveWindow (void)
   // window at all.
   if (m_phy->GetObject<EndDeviceLoraPhy> ()->GetState () == EndDeviceLoraPhy::RX)
     {
-      NS_LOG_INFO ("Won't open second receive window since we are in RX mode");
+      NS_LOG_INFO ("Won't open second receive window since we are in RX mode.");
 
       return;
     }
@@ -769,7 +769,7 @@ EndDeviceLoraMac::CloseSecondReceiveWindow (void)
       break;
     case EndDeviceLoraPhy::RX:
       // PHY is receiving: let it finish
-      NS_LOG_DEBUG ("PHY is receiving: Receive will handle the result");
+      NS_LOG_DEBUG ("PHY is receiving: Receive will handle the result.");
       return;
     case EndDeviceLoraPhy::STANDBY:
       // Turn PHY layer to sleep
@@ -777,7 +777,7 @@ EndDeviceLoraMac::CloseSecondReceiveWindow (void)
       break;
     }
 
-  NS_LOG_DEBUG ("No reception initiated by PHY: rescheduling transmission");
+  NS_LOG_DEBUG ("No reception initiated by PHY: rescheduling transmission.");
   if (m_retxParams.waitingAck)
     {
       if (m_retxParams.retxLeft > 0 )
@@ -794,7 +794,6 @@ EndDeviceLoraMac::CloseSecondReceiveWindow (void)
 
           // Reset retransmission parameters
           resetRetransmissionParameters();
-          NS_LOG_DEBUG ("ReTxLeft = " << unsigned(m_retxParams.retxLeft));
         }
 
       else
@@ -840,7 +839,7 @@ EndDeviceLoraMac::GetNextTransmissionDelay (void)
       waitingTime = std::min (waitingTime, m_channelHelper.GetWaitingTime (logicalChannel));
 
       NS_LOG_DEBUG ("Waiting time before the next transmission in channel with frequecy " << frequency << " is = " <<
-                    waitingTime.GetSeconds ());
+                    waitingTime.GetSeconds ()<< ".");
     }
 
 
@@ -848,8 +847,8 @@ EndDeviceLoraMac::GetNextTransmissionDelay (void)
 
   if (!m_closeFirstWindow.IsExpired () || !m_closeSecondWindow.IsExpired () || !m_secondReceiveWindow.IsExpired () )
     {
-      NS_LOG_WARN ("Attempting to send when there are receive windows" <<
-                   " Transmission postponed");
+      NS_LOG_WARN ("Attempting to send when there are receive windows:" <<
+                   " Transmission postponed.");
       Time endSecondRxWindow= (m_receiveDelay2 + m_receiveWindowDuration);
       waitingTime = std::max (waitingTime, endSecondRxWindow);
     }
@@ -891,7 +890,7 @@ EndDeviceLoraMac::GetChannelForTx (void)
       else
         {
           NS_LOG_DEBUG ("Packet cannot be immediately transmitted on " <<
-                        "the current channel because of duty cycle limitations");
+                        "the current channel because of duty cycle limitations.");
         }
     }
   return 0;           // In this case, no suitable channel was found
