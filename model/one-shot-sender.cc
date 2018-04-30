@@ -73,8 +73,6 @@ OneShotSender::SendPacket (void)
 
   // Create and send a new packet
   Ptr<Packet> packet = Create<Packet>(10);
-  m_mac->GetObject<EndDeviceLoraMac> ()->SetMType
-    (LoraMacHeader::CONFIRMED_DATA_UP);
   m_mac->Send (packet);
 }
 

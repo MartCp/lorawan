@@ -257,6 +257,7 @@ EndDeviceLoraMac::DoSend (Ptr<Packet> packet)
           m_retxParams.firstAttempt = Simulator::Now ();
           m_retxParams.retxLeft = m_retxParams.retxLeft - 1; // decreasing the number of retransmissions
 
+          NS_LOG_DEBUG ("Message type is " << m_mType);
           NS_LOG_DEBUG ("It is a confirmed packet. Setting retransmission parameters and decreasing the number of transmissions left.");
 
           NS_LOG_INFO ("Added MAC header of size " << macHdr.GetSerializedSize () <<
@@ -650,6 +651,7 @@ void
 EndDeviceLoraMac::SetMType (LoraMacHeader::MType mType)
 {
   m_mType = mType;
+  NS_LOG_DEBUG ("Message type is set to " << mType);
 }
 
 LoraMacHeader::MType
