@@ -36,11 +36,10 @@ namespace ns3 {
 class EndDeviceLoraMac : public LoraMac
 {
 public:
-
   static TypeId GetTypeId (void);
 
-  EndDeviceLoraMac();
-  virtual ~EndDeviceLoraMac();
+  EndDeviceLoraMac ();
+  virtual ~EndDeviceLoraMac ();
 
   /////////////////////
   // Sending methods //
@@ -62,11 +61,11 @@ public:
    */
   virtual void DoSend (Ptr<Packet> packet);
 
-   /**
-   * Add headers and send a packet with the sending function of the physical layer.
-   *
-   * \param packet the packet to send
-   */
+  /**
+  * Add headers and send a packet with the sending function of the physical layer.
+  *
+  * \param packet the packet to send
+  */
   virtual void SendToPhy (Ptr<Packet> packet);
 
   /**
@@ -128,7 +127,7 @@ public:
   * Reset retransmission parameters contained in the structure LoraRetxParams
   */
   virtual void resetRetransmissionParameters ();
-  
+
   /**
    * Enable data rate adaptation in the retransmitting procedure.
    *
@@ -365,7 +364,6 @@ public:
                    double maxTxPowerDbm);
 
 private:
-
   /**
   * Structure representing the parameters that will be used in the
   * retransmission procedure.
@@ -374,7 +372,7 @@ private:
   {
     Time firstAttempt;
     Ptr<Packet> packet = 0;
-    bool waitingAck= false;
+    bool waitingAck = false;
     uint8_t retxLeft;
   };
 
@@ -393,8 +391,7 @@ private:
    *
    * Used to pick a random channel on which to send the packet.
    */
-  std::vector<Ptr<LogicalLoraChannel> > Shuffle
-    (std::vector<Ptr<LogicalLoraChannel> > vector);
+  std::vector<Ptr<LogicalLoraChannel> > Shuffle (std::vector<Ptr<LogicalLoraChannel> > vector);
 
   /**
     * Find the minimum waiting time before the next possible transmission.

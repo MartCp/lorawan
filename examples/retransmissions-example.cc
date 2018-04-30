@@ -4,12 +4,12 @@
  * In the first case, the gateway does not answer with an acknowledgment, causing the
  * to retransmit the packet until it reaches the maximum number of transmissions
  * allowed (here set to 4). This simulates a scenario in which the network server
- * can not answer to the end device or there are packet losses so that the 
+ * can not answer to the end device or there are packet losses so that the
  * ack is never received by the end device.
- * For the second case, a packet carrying an acknowledgment is manually created 
+ * For the second case, a packet carrying an acknowledgment is manually created
  * and sent by the gateway to the end device after the second transmisson
- * attempt, in the second receive window. 
- * Since the ACK is received, the end device stops the retransmission procedure. 
+ * attempt, in the second receive window.
+ * Since the ACK is received, the end device stops the retransmission procedure.
  */
 
 #include "ns3/end-device-lora-phy.h"
@@ -75,8 +75,8 @@ int main (int argc, char *argv[])
   MobilityHelper mobility;
   Ptr<ListPositionAllocator> allocator = CreateObject<ListPositionAllocator> ();
   // Position of the end device
-  allocator->Add (Vector (500,0,0)); 
-  // Position of the gateway 
+  allocator->Add (Vector (500,0,0));
+  // Position of the gateway
   allocator->Add (Vector (0,0,0));
   mobility.SetPositionAllocator (allocator);
   mobility.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
@@ -201,7 +201,7 @@ int main (int argc, char *argv[])
   downframeHdr.SetAsDownlink ();
   downframeHdr.SetAddress (addr);    // indirizzo ED dst
   downframeHdr.SetAck (true);
-  //frameHdr.SetFPort(0);       // FPort=0 when there are only MAC commands. 
+  //frameHdr.SetFPort(0);       // FPort=0 when there are only MAC commands.
   // This instruction not necessary because it is 0 by default
   reply->AddHeader (downframeHdr);
   NS_LOG_INFO ("Added frame header of size " << downframeHdr.GetSerializedSize () << " bytes");
@@ -219,7 +219,7 @@ int main (int argc, char *argv[])
   downparams.sf = 12;
   downparams.headerDisabled = 1;
   downparams.codingRate = 1;
-  downparams.bandwidthHz =  125000; 
+  downparams.bandwidthHz =  125000;
   downparams.nPreamble = 8;
   downparams.crcEnabled = 1;
   downparams.lowDataRateOptimizationEnabled = 0;

@@ -28,8 +28,8 @@ namespace ns3 {
 
 NS_LOG_COMPONENT_DEFINE ("LoraMacHelper");
 
-LoraMacHelper::LoraMacHelper () :
-  m_region (LoraMacHelper::EU)
+LoraMacHelper::LoraMacHelper ()
+  : m_region (LoraMacHelper::EU)
 {
 }
 
@@ -188,7 +188,9 @@ LoraMacHelper::ConfigureForEuRegion (Ptr<GatewayLoraMac> gwMac) const
       while (receptionPaths < maxReceptionPaths)
         {
           if (it == frequencies.end ())
-            it = frequencies.begin ();
+            {
+              it = frequencies.begin ();
+            }
           gwPhy->GetObject<GatewayLoraPhy> ()->AddReceptionPath (*it);
           ++it;
           receptionPaths++;
@@ -280,34 +282,34 @@ LoraMacHelper::SetSpreadingFactorsUp (NodeContainer endDevices, NodeContainer ga
       // Get the ED sensitivity
       Ptr<EndDeviceLoraPhy> edPhy = loraNetDevice->GetPhy ()->GetObject<EndDeviceLoraPhy> ();
       const double *edSensitivity = edPhy->sensitivity;
-    
 
-       if(rxPower > *edSensitivity)
+
+      if (rxPower > *edSensitivity)
         {
           mac->SetDataRate (5);
           sfQuantity[0] = sfQuantity[0] + 1;
         }
-      else if (rxPower > *(edSensitivity+1))
+      else if (rxPower > *(edSensitivity + 1))
         {
           mac->SetDataRate (4);
           sfQuantity[1] = sfQuantity[1] + 1;
         }
-      else if (rxPower > *(edSensitivity+2))
+      else if (rxPower > *(edSensitivity + 2))
         {
           mac->SetDataRate (3);
           sfQuantity[2] = sfQuantity[2] + 1;
         }
-      else if (rxPower > *(edSensitivity+3))
+      else if (rxPower > *(edSensitivity + 3))
         {
           mac->SetDataRate (2);
           sfQuantity[3] = sfQuantity[3] + 1;
         }
-      else if (rxPower > *(edSensitivity+4))
+      else if (rxPower > *(edSensitivity + 4))
         {
           mac->SetDataRate (1);
           sfQuantity[4] = sfQuantity[4] + 1;
         }
-      else if (rxPower > *(edSensitivity+5))
+      else if (rxPower > *(edSensitivity + 5))
         {
           mac->SetDataRate (0);
           sfQuantity[5] = sfQuantity[5] + 1;
@@ -373,8 +375,8 @@ LoraMacHelper::SetSpreadingFactorsUp (NodeContainer endDevices, NodeContainer ga
 
     } // end loop on nodes
 
-    return sfQuantity;
-    
+  return sfQuantity;
+
 } //  end function
 
 } //end class

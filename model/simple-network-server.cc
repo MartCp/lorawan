@@ -42,12 +42,12 @@ SimpleNetworkServer::GetTypeId (void)
   return tid;
 }
 
-SimpleNetworkServer::SimpleNetworkServer()
+SimpleNetworkServer::SimpleNetworkServer ()
 {
   NS_LOG_FUNCTION_NOARGS ();
 }
 
-SimpleNetworkServer::~SimpleNetworkServer()
+SimpleNetworkServer::~SimpleNetworkServer ()
 {
   NS_LOG_FUNCTION_NOARGS ();
 }
@@ -176,8 +176,8 @@ SimpleNetworkServer::Receive (Ptr<NetDevice> device, Ptr<const Packet> packet,
                                                                   rcvPower);
 
   // Determine whether the packet requires a reply
-  if (macHdr.GetMType () == LoraMacHeader::CONFIRMED_DATA_UP &&
-      !m_deviceStatuses.at (frameHdr.GetAddress ()).HasReply ())
+  if (macHdr.GetMType () == LoraMacHeader::CONFIRMED_DATA_UP
+      && !m_deviceStatuses.at (frameHdr.GetAddress ()).HasReply ())
     {
       NS_LOG_DEBUG ("Scheduling a reply for this device");
 
@@ -207,13 +207,13 @@ SimpleNetworkServer::Receive (Ptr<NetDevice> device, Ptr<const Packet> packet,
                            this, frameHdr.GetAddress ());
     }
 
-    else if (macHdr.GetMType () == LoraMacHeader::CONFIRMED_DATA_UP &&
-      m_deviceStatuses.at (frameHdr.GetAddress ()).HasReply ())
+  else if (macHdr.GetMType () == LoraMacHeader::CONFIRMED_DATA_UP
+           && m_deviceStatuses.at (frameHdr.GetAddress ()).HasReply ())
     {
       NS_LOG_DEBUG ("There is already a reply for this device. Scheduling it and update frequency");
 
       m_deviceStatuses.at (frameHdr.GetAddress ()).SetFirstReceiveWindowFrequency (tag.GetFrequency ());
-     
+
       // Schedule a reply on the first receive window
       Simulator::Schedule (Seconds (1), &SimpleNetworkServer::SendOnFirstWindow,
                            this, frameHdr.GetAddress ());
@@ -340,10 +340,10 @@ SimpleNetworkServer::GetGatewayForReply (LoraDeviceAddress deviceAddress,
 void
 SimpleNetworkServer::InitializeReply (LoraDeviceAddress addr, bool hasRep)
 {
-      DeviceStatus::Reply reply;
-      reply.hasReply = hasRep;
+  DeviceStatus::Reply reply;
+  reply.hasReply = hasRep;
 
-      m_deviceStatuses.at (addr).SetReply (reply);
+  m_deviceStatuses.at (addr).SetReply (reply);
 }
 
 }
