@@ -16,6 +16,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  * Author: Davide Magrin <magrinda@dei.unipd.it>
+ *         Martina Capuzzo <capuzzom@dei.unipd.it>
  */
 
 #ifndef END_DEVICE_LORA_MAC_H

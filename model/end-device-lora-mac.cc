@@ -16,6 +16,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  * Author: Davide Magrin <magrinda@dei.unipd.it>
+ *         Martina Capuzzo <capuzzom@dei.unipd.it>
  */
 
 #include "ns3/end-device-lora-mac.h"
@@ -23,8 +24,6 @@
 #include "ns3/simulator.h"
 #include "ns3/log.h"
 #include <algorithm>
-
-//const int MAX_TX_NUMBER= 8;
 
 namespace ns3 {
 
@@ -72,14 +71,6 @@ EndDeviceLoraMac::GetTypeId (void)
                      MakeTraceSourceAccessor
                        (&EndDeviceLoraMac::m_aggregatedDutyCycle),
                      "ns3::TracedValueCallback::Double")
-    /*
-    .AddAttribute ("EnableDRAdaptation",
-                 "Enable Data Rate adaptation in retransmission procedure.",
-                  BooleanValue (false),    // transmit at 0dBm = 28mA
-                  MakeBooleanAccessor (&EndDeviceLoraMac::SetDataRateAdaptation,
-                                      &EndDeviceLoraMac::GetDataRateAdaptation),
-                  MakeBooleanChecker<bool> ())
-                  */
     .AddConstructor<EndDeviceLoraMac> ();
   return tid;
 }
@@ -98,12 +89,6 @@ EndDeviceLoraMac::EndDeviceLoraMac ()
     m_receiveDelay2 (Seconds (2)),
     // LoraWAN default
     m_receiveWindowDuration (Seconds (0.01)),
-    m_closeFirstWindow (EventId ()),
-    // Initialize as the default eventId
-    m_closeSecondWindow (EventId ()),
-    // Initialize as the default eventId
-    // m_secondReceiveWindow (EventId ()),       // Initialize as the default eventId
-    // m_secondReceiveWindowDataRate (0),        // LoraWAN default
     m_address (LoraDeviceAddress (0)),
     m_rx1DrOffset (0),
     // LoraWAN default
@@ -127,11 +112,9 @@ EndDeviceLoraMac::EndDeviceLoraMac ()
   m_secondReceiveWindow = EventId ();
   m_secondReceiveWindow.Cancel ();
 
-  // Void the transmission and retransmission event
+  // Void the transmission event
   m_nextTx = EventId ();
   m_nextTx.Cancel ();
-  m_nextRetx = EventId ();
-  m_nextRetx.Cancel ();
 
   // Initialize structure for retransmission parameters
   m_retxParams = EndDeviceLoraMac::LoraRetxParameters ();
@@ -162,11 +145,12 @@ EndDeviceLoraMac::Send (Ptr<Packet> packet)
     }
 
   // If it is not possible to transmit now because of the duty cycle,
-  // or because wwe are receiving, schedule a tx/retx later
+  // or because we are receiving, schedule a tx/retx later
 
   Time netxTxDelay = GetNextTransmissionDelay ();
   if (netxTxDelay != Seconds (0))
     {
+      // Add the ACK_TIMEOUT random delay if it is a retransmission.
       if (m_retxParams.waitingAck)
         {
           double ack_timeout = m_uniformRV->GetValue (1,3);
@@ -203,9 +187,8 @@ void
 EndDeviceLoraMac::postponeTransmission (Time netxTxDelay, Ptr<Packet> packet)
 {
   NS_LOG_FUNCTION (this);
-  // if other transmissions have already been scheduled (by the previous packet) I delete them
+  // Delete previously scheduled transmissions if any.
   Simulator::Cancel (m_nextTx);
-  Simulator::Cancel (m_nextRetx);
   m_nextTx = Simulator::Schedule (netxTxDelay, &EndDeviceLoraMac::DoSend, this, packet);
   NS_LOG_WARN ("Attempting to send, but the aggregate duty cycle won't allow it. Scheduling a tx at a delay "
                << netxTxDelay.GetSeconds () << ".");
@@ -298,7 +281,7 @@ EndDeviceLoraMac::SendToPhy (Ptr<Packet> packetToSend)
 
   NS_LOG_DEBUG ("PacketToSend: " << packetToSend);
 
-  // Data Rate Adaptation
+  // Data Rate Adaptation as in LoRaWAN specification, V1.0.2 (2016)
   if (m_enableDRAdapt && (m_dataRate > 0) && (m_retxParams.retxLeft < m_maxNumbTx) && (m_retxParams.retxLeft % 2 == 0) )
     {
       m_dataRate = m_dataRate - 1;
@@ -400,7 +383,7 @@ EndDeviceLoraMac::Receive (Ptr<Packet const> packet)
           // In this case, we are either receiving in the first receive window
           // and finishing reception inside the second one, or receiving a
           // packet in the second receive window and finding out, after the
-          // fact, that the packet is not for us. In either case, since we no
+          // fact, that the packet is not for us. In either case, if we no
           // longer have any retransmissions left, we declare failure.
           if (m_retxParams.waitingAck && m_secondReceiveWindow.IsExpired ())
             {
@@ -489,8 +472,6 @@ EndDeviceLoraMac::ParseCommands (LoraFrameHeader frameHeader)
 
           // Reset retransmission parameters
           resetRetransmissionParameters ();
-          // If it exists, cancel the retransmission event
-          Simulator::Cancel (m_nextRetx);
 
         }
       else
@@ -786,9 +767,9 @@ EndDeviceLoraMac::CloseSecondReceiveWindow (void)
       break;
     }
 
-  NS_LOG_DEBUG ("No reception initiated by PHY: rescheduling transmission.");
   if (m_retxParams.waitingAck)
     {
+      NS_LOG_DEBUG ("No reception initiated by PHY: rescheduling transmission.");
       if (m_retxParams.retxLeft > 0 )
         {
           NS_LOG_INFO ("We have " << unsigned(m_retxParams.retxLeft) << " retransmissions left: rescheduling transmission.");
@@ -814,7 +795,8 @@ EndDeviceLoraMac::CloseSecondReceiveWindow (void)
     {
       uint8_t txs = m_maxNumbTx - (m_retxParams.retxLeft );
       m_requiredTxCallback (txs, true, m_retxParams.firstAttempt, m_retxParams.packet);
-      NS_LOG_INFO ("We have " << unsigned(m_retxParams.retxLeft) << " transmissions left. We were not transmitting confirmed messages.");
+      NS_LOG_INFO ("We have " << unsigned(m_retxParams.retxLeft) <<
+                   " transmissions left. We were not transmitting confirmed messages.");
 
       // Reset retransmission parameters
       resetRetransmissionParameters ();
@@ -847,8 +829,8 @@ EndDeviceLoraMac::GetNextTransmissionDelay (void)
 
       waitingTime = std::min (waitingTime, m_channelHelper.GetWaitingTime (logicalChannel));
 
-      NS_LOG_DEBUG ("Waiting time before the next transmission in channel with frequecy " << frequency << " is = " <<
-                    waitingTime.GetSeconds () << ".");
+      NS_LOG_DEBUG ("Waiting time before the next transmission in channel with frequecy " <<
+                    frequency << " is = " << waitingTime.GetSeconds () << ".");
     }
 
 
