@@ -28,9 +28,9 @@
 
 namespace ns3 {
 
-class PeriodicSender : public Application {
+class PeriodicSender : public Application
+{
 public:
-
   PeriodicSender ();
   ~PeriodicSender ();
 

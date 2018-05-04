@@ -43,19 +43,19 @@ PeriodicSender::GetTypeId (void)
                    MakeTimeAccessor (&PeriodicSender::GetInterval,
                                      &PeriodicSender::SetInterval),
                    MakeTimeChecker ());
-    // .AddAttribute ("PacketSizeRandomVariable", "The random variable that determines the shape of the packet size, in bytes",
-    //                StringValue ("ns3::UniformRandomVariable[Min=0,Max=10]"),
-    //                MakePointerAccessor (&PeriodicSender::m_pktSizeRV),
-    //                MakePointerChecker <RandomVariableStream>());
+  // .AddAttribute ("PacketSizeRandomVariable", "The random variable that determines the shape of the packet size, in bytes",
+  //                StringValue ("ns3::UniformRandomVariable[Min=0,Max=10]"),
+  //                MakePointerAccessor (&PeriodicSender::m_pktSizeRV),
+  //                MakePointerChecker <RandomVariableStream>());
   return tid;
 }
 
-PeriodicSender::PeriodicSender () :
-  m_interval (Seconds (10)),
-  m_initialDelay (Seconds (1)),
-  m_basePktSize (10),
-  m_pktSizeRV (0)
-    
+PeriodicSender::PeriodicSender ()
+  : m_interval (Seconds (10)),
+    m_initialDelay (Seconds (1)),
+    m_basePktSize (10),
+    m_pktSizeRV (0)
+
 {
   NS_LOG_FUNCTION_NOARGS ();
 }
@@ -87,17 +87,17 @@ PeriodicSender::SetInitialDelay (Time delay)
 }
 
 
-void 
+void
 PeriodicSender::SetPacketSizeRandomVariable (Ptr <RandomVariableStream> rv)
 {
-	m_pktSizeRV = rv;
+  m_pktSizeRV = rv;
 }
 
 
 void
 PeriodicSender::SetPacketSize (uint8_t size)
 {
-	m_basePktSize = size;
+  m_basePktSize = size;
 }
 
 
@@ -111,11 +111,11 @@ PeriodicSender::SendPacket (void)
   if (m_pktSizeRV)
     {
       int randomsize = m_pktSizeRV->GetInteger ();
-      packet = Create<Packet>(m_basePktSize + randomsize);
+      packet = Create<Packet> (m_basePktSize + randomsize);
     }
   else
     {
-      packet = Create<Packet>(m_basePktSize);
+      packet = Create<Packet> (m_basePktSize);
     }
   m_mac->Send (packet);
 
