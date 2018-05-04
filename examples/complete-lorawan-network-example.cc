@@ -395,6 +395,8 @@ int main (int argc, char *argv[])
   Time appStopTime = Seconds (simulationTime);
   PeriodicSenderHelper appHelper = PeriodicSenderHelper ();
   appHelper.SetPeriod (Seconds (appPeriodSeconds));
+  appHelper.SetPacketSize(23);
+  Ptr <RandomVariableStream> rv = CreateObjectWithAttributes<UniformRandomVariable>("Min", DoubleValue(0), "Max", DoubleValue(10));  
   ApplicationContainer appContainer = appHelper.Install (endDevices);
 
   appContainer.Start (Seconds (0));
