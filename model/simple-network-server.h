@@ -119,16 +119,29 @@ public:
    * Initialize the hasReply value of the device to the given value, so that the
    * Reply can be overwritten.
    *
-   * \param addr The address oh the device 
+   * \param addr The address oh the device
    * \param hasRep The new value of the hasReply field,
    */
   void InitializeReply (LoraDeviceAddress addr, bool hasRep);
+
+  /**
+   * Get whether this NS uses a double acknowledgment.
+   */
+  bool GetDoubleAck (void);
+
+  /**
+   * Set whether this NS should use a double acknowledgment.
+   */
+  void SetDoubleAck (bool doubleAck);
 
 
 protected:
   std::map<LoraDeviceAddress,DeviceStatus> m_deviceStatuses;
 
   std::map<Address,GatewayStatus> m_gatewayStatuses;
+
+  bool m_doubleAck;
+
 };
 
 } /* namespace ns3 */

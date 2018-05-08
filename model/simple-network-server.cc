@@ -38,6 +38,11 @@ SimpleNetworkServer::GetTypeId (void)
   static TypeId tid = TypeId ("ns3::SimpleNetworkServer")
     .SetParent<Application> ()
     .AddConstructor<SimpleNetworkServer> ()
+    .AddAttribute("DoubleAck",
+                  "Whether to send two acks (first and second receive windows) or just one",
+                  BooleanValue (false),
+                  MakeBooleanAccessor (&SimpleNetworkServer::m_doubleAck),
+                  MakeBooleanChecker ())
     .SetGroupName ("lorawan");
   return tid;
 }
@@ -213,7 +218,7 @@ SimpleNetworkServer::Receive (Ptr<NetDevice> device, Ptr<const Packet> packet,
       NS_LOG_DEBUG ("There is already a reply for this device. Scheduling it and update frequency");
 
       m_deviceStatuses.at (frameHdr.GetAddress ()).SetFirstReceiveWindowFrequency (tag.GetFrequency ());
-     
+
       // Schedule a reply on the first receive window
       Simulator::Schedule (Seconds (1), &SimpleNetworkServer::SendOnFirstWindow,
                            this, frameHdr.GetAddress ());
@@ -261,7 +266,7 @@ SimpleNetworkServer::SendOnFirstWindow (LoraDeviceAddress address)
       m_gatewayStatuses.find (gatewayForReply)->second.GetNetDevice ()->
       Send (replyPacket, gatewayForReply, 0x0800);
     }
-  else
+  if (gatewayForReply == Address () || m_doubleAck)
     {
       NS_LOG_FUNCTION ("No suitable GW found, scheduling second window reply");
 
@@ -344,6 +349,21 @@ SimpleNetworkServer::InitializeReply (LoraDeviceAddress addr, bool hasRep)
       reply.hasReply = hasRep;
 
       m_deviceStatuses.at (addr).SetReply (reply);
+}
+
+bool
+SimpleNetworkServer::GetDoubleAck (void)
+{
+    return m_doubleAck;
+}
+
+/**
+ * Set whether this NS should use a double acknowledgment.
+ */
+void
+SimpleNetworkServer::SetDoubleAck (bool doubleAck)
+{
+  m_doubleAck = doubleAck;
 }
 
 }
