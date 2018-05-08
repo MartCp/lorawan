@@ -43,7 +43,7 @@
 
 using namespace ns3;
 
-NS_LOG_COMPONENT_DEFINE ("CompleteNetworkPerformances");
+NS_LOG_COMPONENT_DEFINE ("RawCompleteNetworkPerformances");
 
 // Network settings
 int nDevices = 2000;
@@ -71,8 +71,12 @@ bool mixedPeriods = false;
 
 // Output control
 bool print = false;
+
+// Other parameters
 bool buildingsEnabled = false;
 bool shadowingEnabled = false;
+bool txPriority = true;
+bool doubleAck = false;
 
 /**********************
  *  Global Callbacks  *
@@ -507,11 +511,13 @@ int main (int argc, char *argv[])
   cmd.AddValue ("print", "Whether or not to print a file containing the ED's positions and a file containing buildings", print);
   cmd.AddValue("buildingsEnabled", "Whether to use buildings in the simulation or not", buildingsEnabled);
   cmd.AddValue("shadowingEnabled", "Whether to use shadowing in the simulation or not", shadowingEnabled);
+  cmd.AddValue("txPriority", "Whether to give the priority to GW transmissions", txPriority);
+  cmd.AddValue("doubleAck", "Whether to send two ACKs", doubleAck);
 
   cmd.Parse (argc, argv);
 
   // Set up logging
-  LogComponentEnable ("CompleteNetworkPerformances", LOG_LEVEL_ALL);
+  LogComponentEnable ("RawCompleteNetworkPerformances", LOG_LEVEL_ALL);
   // LogComponentEnable("LoraInterferenceHelper", LOG_LEVEL_ALL);
   // LogComponentEnable("LoraMac", LOG_LEVEL_ALL);
   // LogComponentEnable("LogicalLoraChannel", LOG_LEVEL_ALL);
@@ -676,6 +682,7 @@ int main (int argc, char *argv[])
   // Create a netdevice for each gateway
   phyHelper.SetDeviceType (LoraPhyHelper::GW);
   macHelper.SetDeviceType (LoraMacHelper::GW);
+  macHelper.Set ("TxPriority", BooleanValue(txPriority));
   helper.Install (phyHelper, macHelper, gateways);
 
   /************************
@@ -774,6 +781,7 @@ int main (int argc, char *argv[])
 
   // Install the SimpleNetworkServer application on the network server
   NetworkServerHelper networkServerHelper;
+  networkServerHelper.SetAttribute ("DoubleAck", BooleanValue(doubleAck));
   networkServerHelper.SetGateways (gateways);
   networkServerHelper.SetEndDevices (endDevices);
   networkServerHelper.Install (networkServers);
@@ -836,13 +844,13 @@ int main (int argc, char *argv[])
   *  Results  *
   *************/
 
-  // Total statistics of the network 
+  // Total statistics of the network
   std::cout << nDevices << " " << appPeriodSeconds << " ";
 
   if (transientPeriods == 0)
   {
-    std::cout<< totalPktsSent 
-      << " " << received << " " << interfered << " " << noMoreReceivers 
+    std::cout<< totalPktsSent
+      << " " << received << " " << interfered << " " << noMoreReceivers
       << " " << underSensitivity <<" ";
   }
 
