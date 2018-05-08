@@ -59,6 +59,7 @@ public:
 private:
 
 protected:
+  bool m_txPriority;
 
 };
 

@@ -260,7 +260,8 @@ SimpleNetworkServer::SendOnFirstWindow (LoraDeviceAddress address)
 
       NS_LOG_INFO ("Sending reply through the gateway with address " << gatewayForReply << " and initialize the reply.");
 
-      InitializeReply (address, false);
+      // Reset the reply
+      // InitializeReply (address, false);
 
       // Inform the gateway of the transmission
       m_gatewayStatuses.find (gatewayForReply)->second.GetNetDevice ()->

@@ -183,6 +183,12 @@ GatewayLoraPhy::IsTransmitting (void)
 }
 
 bool
+GatewayLoraPhy::IsReceiving (void)
+{
+  return m_occupiedReceptionPaths > 0;
+}
+
+bool
 GatewayLoraPhy::IsOnFrequency (double frequencyMHz)
 {
   NS_LOG_FUNCTION (this << frequencyMHz);

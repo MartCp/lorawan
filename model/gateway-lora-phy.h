@@ -66,6 +66,8 @@ public:
 
   bool IsTransmitting (void);
 
+  bool IsReceiving (void);
+
   virtual bool IsOnFrequency (double frequencyMHz);
 
   /**
