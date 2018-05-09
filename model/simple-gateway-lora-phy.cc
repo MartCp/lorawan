@@ -91,6 +91,7 @@ SimpleGatewayLoraPhy::Send (Ptr<Packet> packet, LoraTxParameters txParams,
           // Free it
           // This also resets all parameters like packet and endReceive call
           currentPath->Free ();
+          m_occupiedReceptionPaths--;
         }
     }
 
@@ -311,6 +312,7 @@ SimpleGatewayLoraPhy::EndReceive (Ptr<Packet> packet,
           return;
         }
     }
+  NS_LOG_ERROR ("Event not found");
 }
 
 }

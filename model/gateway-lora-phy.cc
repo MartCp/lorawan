@@ -185,6 +185,7 @@ GatewayLoraPhy::IsTransmitting (void)
 bool
 GatewayLoraPhy::IsReceiving (void)
 {
+  NS_LOG_DEBUG ("Occupied reception paths: " << m_occupiedReceptionPaths);
   return m_occupiedReceptionPaths > 0;
 }
 
