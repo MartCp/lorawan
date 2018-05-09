@@ -109,6 +109,12 @@ GatewayLoraMac::IsTransmitting (void)
   return m_phy->IsTransmitting ();
 }
 
+bool
+GatewayLoraMac::IsReceiving (void)
+{
+  return m_phy->GetObject<GatewayLoraPhy>()->IsReceiving ();
+}
+
 void
 GatewayLoraMac::Receive (Ptr<Packet const> packet)
 {
