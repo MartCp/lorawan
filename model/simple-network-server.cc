@@ -43,6 +43,11 @@ SimpleNetworkServer::GetTypeId (void)
                   BooleanValue (false),
                   MakeBooleanAccessor (&SimpleNetworkServer::m_doubleAck),
                   MakeBooleanChecker ())
+    .AddAttribute("TxPriority",
+                  "Whether to give priority to transmission (if true) or reception (if false)",
+                  BooleanValue (true),
+                  MakeBooleanAccessor (&SimpleNetworkServer::m_txPriority),
+                  MakeBooleanChecker ())
     .SetGroupName ("lorawan");
   return tid;
 }
@@ -333,7 +338,7 @@ SimpleNetworkServer::GetGatewayForReply (LoraDeviceAddress deviceAddress,
 
   for (auto it = addresses.begin (); it != addresses.end (); ++it)
     {
-      if (m_gatewayStatuses.at (*it).IsAvailableForTransmission (frequency))
+      if (m_gatewayStatuses.at (*it).IsAvailableForTransmission (frequency, m_txPriority))
         {
           m_gatewayStatuses.at (*it).SetNextTransmissionTime (Simulator::Now ());
           return *it;

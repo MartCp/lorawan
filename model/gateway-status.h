@@ -74,7 +74,7 @@ public:
    * be queried.
    * \return True if the gateway's available, false otherwise.
    */
-  bool IsAvailableForTransmission (double frequency);
+  bool IsAvailableForTransmission (double frequency, bool txPriority);
 
   void SetNextTransmissionTime (Time nextTransmissionTime);
   Time GetNextTransmissionTime (void);

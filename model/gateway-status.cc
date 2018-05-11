@@ -80,7 +80,7 @@ GatewayStatus::GetGatewayMac (void)
 }
 
 bool
-GatewayStatus::IsAvailableForTransmission (double frequency)
+GatewayStatus::IsAvailableForTransmission (double frequency, bool txPriority)
 {
   // We can't send multiple packets at once, see SX1301 V2.01 page 29
 
@@ -98,16 +98,25 @@ GatewayStatus::IsAvailableForTransmission (double frequency)
       return false;
     }
 
+  // Check that the gateway is not in RX mode
+  if (!txPriority && m_gatewayMac->IsReceiving ())
+    {
+      NS_LOG_INFO ("This gateway is currently receiving");
+      return false;
+    }
+
   // Check that the gateway is not constrained by the duty cycle
   Time waitingTime = m_gatewayMac->GetWaitingTime (frequency);
   if (waitingTime > Seconds (0))
     {
       NS_LOG_INFO ("Gateway cannot be used because of duty cycle");
-      NS_LOG_INFO ("Waiting time at current GW: " << waitingTime.GetSeconds ()
+      NS_LOG_INFO ("Waiting time at current GW for frequency " << frequency << " MHz: " << waitingTime.GetSeconds ()
                                                   << " seconds");
 
       return false;
     }
+
+  NS_LOG_INFO ("GW is available");
 
   return true;
 }

@@ -538,6 +538,7 @@ int main (int argc, char *argv[])
   // LogComponentEnable("PeriodicSenderHelper", LOG_LEVEL_ALL);
   // LogComponentEnable ("PeriodicSender", LOG_LEVEL_ALL);
   // LogComponentEnable ("SimpleNetworkServer", LOG_LEVEL_ALL);
+  // LogComponentEnable ("SimpleGatewayLoraPhy", LOG_LEVEL_ALL);
   // LogComponentEnable ("GatewayLoraMac", LOG_LEVEL_ALL);
   // LogComponentEnable ("Forwarder", LOG_LEVEL_ALL);
   // LogComponentEnable ("DeviceStatus", LOG_LEVEL_ALL);
@@ -682,7 +683,6 @@ int main (int argc, char *argv[])
   // Create a netdevice for each gateway
   phyHelper.SetDeviceType (LoraPhyHelper::GW);
   macHelper.SetDeviceType (LoraMacHelper::GW);
-  macHelper.Set ("TxPriority", BooleanValue(txPriority));
   helper.Install (phyHelper, macHelper, gateways);
 
   /************************
@@ -782,6 +782,7 @@ int main (int argc, char *argv[])
   // Install the SimpleNetworkServer application on the network server
   NetworkServerHelper networkServerHelper;
   networkServerHelper.SetAttribute ("DoubleAck", BooleanValue(doubleAck));
+  networkServerHelper.SetAttribute ("TxPriority", BooleanValue(txPriority));
   networkServerHelper.SetGateways (gateways);
   networkServerHelper.SetEndDevices (endDevices);
   networkServerHelper.Install (networkServers);

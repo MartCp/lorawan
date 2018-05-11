@@ -11,7 +11,7 @@ nDevices=4000
 radius=19200
 #gwrad=$(echo "10000/(2*($gatewayRings - 1)+1)" | bc -l)
 globalrun=1
-maxRuns=5
+maxRuns=1
 i=$1
 increment=$2
 maxAppPeriod=$3
@@ -19,6 +19,8 @@ periodsToSimulate=$4
 transientPeriods=$5
 DRAdapt=$6
 maxNumbTx=$7
+txPriority=$8
+doubleAck=$9
 
 
 # echo "***** DOWNLINK VARYING APP PERIOD *****"
@@ -34,7 +36,7 @@ maxNumbTx=$7
 # echo "***************************"
 
 # Move to the waf directory
-# cd ../../
+cd ../../.. || exit
 
 # Configure waf to use the optimized build
 # echo "GR:$gatewayRings, r:$radius, gwr:$gwrad, sim:$simTime, runs:$maxRuns"
@@ -43,14 +45,14 @@ maxNumbTx=$7
 # echo "- Receive paths"
 # echo "- Path loss"
 # echo -n "Configuring and building..."
-./waf --build-profile=optimized --out=build/optimized configure > /dev/null
-./waf build > /dev/null
+# ./waf --build-profile=optimized --out=build/optimized configure > /dev/null
+# ./waf build > /dev/null
 # echo " done."
 
 # Run the script with a fixed period
 while [ $i -le $maxAppPeriod ]
 do
-    echo "period= $i"
+    # echo "period= $i"
     # Perform multiple runs
     currentrun=1
     centralappPeriodsum=0
@@ -89,16 +91,20 @@ do
         # nGateways=$[3*$gatewayRings*$gatewayRings-$[3*$gatewayRings]+1]
         # echo -n "Simulating a system with $i end devices and a transmission period of $simTime seconds...  "
         # START=$(date +%s)
+        # ./waf --run "RawCompleteNetworkPerformances --nDevices=4000 --gatewayRings=1 --radius=19200 --gatewayRadius=1500 --appPeriod=4000 --periodsToSimulate=1 --transientPeriods=0 --maxNumbTx=1 --DRAdapt=false --doubleAck=false --txPriority=true"
+
         output="$(./waf --run "RawCompleteNetworkPerformances
             --nDevices=$nDevices
             --gatewayRings=$gatewayRings
             --radius=$radius
             --gatewayRadius=1500
             --appPeriod=$i
-	    --periodsToSimulate=$periodsToSimulate
-	    --transientPeriods=$transientPeriods
+            --periodsToSimulate=$periodsToSimulate
+            --transientPeriods=$transientPeriods
             --maxNumbTx=$maxNumbTx
             --DRAdapt=$DRAdapt
+            --doubleAck=$doubleAck
+            --txPriority=$txPriority
             --RngRun=$globalrun" | grep -v "build" | tr -d '\n')"
         # echo "$output"
         centralnDevices=$(echo "$output" | awk '{print $1}')             # nDevices

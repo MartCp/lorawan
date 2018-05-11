@@ -39,11 +39,6 @@ GatewayLoraMac::GetTypeId (void)
   static TypeId tid = TypeId ("ns3::GatewayLoraMac")
     .SetParent<LoraMac> ()
     .AddConstructor<GatewayLoraMac> ()
-    .AddAttribute("TxPriority",
-                  "Whether to give priority to transmission (if true) or reception (if false)",
-                  BooleanValue (true),
-                  MakeBooleanAccessor (&GatewayLoraMac::m_txPriority),
-                  MakeBooleanChecker ())
     .SetGroupName ("lorawan");
   return tid;
 }
@@ -63,44 +58,41 @@ GatewayLoraMac::Send (Ptr<Packet> packet)
 {
   NS_LOG_FUNCTION (this << packet);
 
-  if (m_txPriority || !m_phy->GetObject<GatewayLoraPhy>()->IsReceiving ())
-    {
-      // Get DataRate to send this packet with
-      LoraTag tag;
-      packet->RemovePacketTag (tag);
-      uint8_t dataRate = tag.GetDataRate ();
-      double frequency = tag.GetFrequency ();
-      NS_LOG_DEBUG ("DR: " << unsigned (dataRate));
-      NS_LOG_DEBUG ("SF: " << unsigned (GetSfFromDataRate (dataRate)));
-      NS_LOG_DEBUG ("BW: " << GetBandwidthFromDataRate (dataRate));
-      NS_LOG_DEBUG ("Freq: " << frequency << " MHz");
-      packet->AddPacketTag (tag);
+  // Get DataRate to send this packet with
+  LoraTag tag;
+  packet->RemovePacketTag (tag);
+  uint8_t dataRate = tag.GetDataRate ();
+  double frequency = tag.GetFrequency ();
+  NS_LOG_DEBUG ("DR: " << unsigned (dataRate));
+  NS_LOG_DEBUG ("SF: " << unsigned (GetSfFromDataRate (dataRate)));
+  NS_LOG_DEBUG ("BW: " << GetBandwidthFromDataRate (dataRate));
+  NS_LOG_DEBUG ("Freq: " << frequency << " MHz");
+  packet->AddPacketTag (tag);
 
-      LoraTxParameters params;
-      params.sf = GetSfFromDataRate (dataRate);
-      params.headerDisabled = false;
-      params.codingRate = 1;
-      params.bandwidthHz = GetBandwidthFromDataRate (dataRate);
-      params.nPreamble = 8;
-      params.crcEnabled = 1;
-      params.lowDataRateOptimizationEnabled = 0;
+  LoraTxParameters params;
+  params.sf = GetSfFromDataRate (dataRate);
+  params.headerDisabled = false;
+  params.codingRate = 1;
+  params.bandwidthHz = GetBandwidthFromDataRate (dataRate);
+  params.nPreamble = 8;
+  params.crcEnabled = 1;
+  params.lowDataRateOptimizationEnabled = 0;
 
-      // Get the duration
-      Time duration = m_phy->GetOnAirTime (packet, params);
+  // Get the duration
+  Time duration = m_phy->GetOnAirTime (packet, params);
 
-      NS_LOG_DEBUG ("Duration: " << duration.GetSeconds ());
+  NS_LOG_DEBUG ("Duration: " << duration.GetSeconds ());
 
-      // Find the channel with the desired frequency
-      double sendingPower = m_channelHelper.GetTxPowerForChannel
-          (CreateObject<LogicalLoraChannel> (frequency));
+  // Find the channel with the desired frequency
+  double sendingPower = m_channelHelper.GetTxPowerForChannel
+      (CreateObject<LogicalLoraChannel> (frequency));
 
-      // Add the event to the channelHelper to keep track of duty cycle
-      m_channelHelper.AddEvent (duration, CreateObject<LogicalLoraChannel>
-                                  (frequency));
+  // Add the event to the channelHelper to keep track of duty cycle
+  m_channelHelper.AddEvent (duration, CreateObject<LogicalLoraChannel>
+                              (frequency));
 
-      // Send the packet to the PHY layer to send it on the channel
-      m_phy->Send (packet, params, frequency, sendingPower);
-    }
+  // Send the packet to the PHY layer to send it on the channel
+  m_phy->Send (packet, params, frequency, sendingPower);
 }
 
 bool

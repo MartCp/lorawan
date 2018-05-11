@@ -141,6 +141,7 @@ protected:
   std::map<Address,GatewayStatus> m_gatewayStatuses;
 
   bool m_doubleAck;
+  bool m_txPriority;
 
 };
 
