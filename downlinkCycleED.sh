@@ -13,7 +13,7 @@ maxEndDevices=6001
 radius=6300
 #gwrad=$(echo "10000/(2*($gatewayRings - 1)+1)" | bc -l)
 globalrun=1
-maxRuns=10
+maxRuns=5
 appPeriod=$1;
 periodsToSimulate=$2;
 transientPeriods=$3;
@@ -29,7 +29,7 @@ if [ $appPeriod -eq 0 ]
 fi
 
 # echo "***** DOWNLINK VARYING NUMBER OF END DEVICES *****"
- echo "            INPUT PARAMETERS    "
+# echo "            INPUT PARAMETERS    "
 # echo "appPeriod= $appPeriod"
 # echo "periodsToSimulate= $periodsToSimulate"
 # echo "transientPeriods= $transientPeriods"
@@ -39,7 +39,7 @@ fi
 # echo "***************************"
 
 # Move to the waf directory
-# cd ../../
+cd ../../
 
 # Configure waf to use the optimized build
 # echo "GR:$gatewayRings, r:$radius, gwr:$gwrad, sim:$simTime, runs:$maxRuns"
@@ -88,13 +88,20 @@ do
     centralavgAckdelaysum=0
     centraltotRetxsum=0
 
+    centralSF7sum=0
+    centralSF8sum=0
+    centralSF9sum=0
+    centralSF10sum=0
+    centralSF11sum=0
+    centralSF12sum=0
+
 # echo "Done initialization"
     while [ $currentrun -le $maxRuns ]
     do
         # nGateways=$[3*$gatewayRings*$gatewayRings-$[3*$gatewayRings]+1]
         # echo -n "Simulating a system with $i end devices and a transmission period of $simTime seconds...  "
         # START=$(date +%s)
-        output="$(./waf --run "RawCompleteNetworkPerformances
+        output="$(./waf --run "RawCompleteNetworkPerformancesWithSF
             --nDevices=$i
             --gatewayRings=$gatewayRings
             --radius=$radius
@@ -106,7 +113,8 @@ do
             --maxNumbTx=$maxNumbTx
             --DRAdapt=$DRAdapt
             --RngRun=$globalrun" | grep -v "build" | tr -d '\n')"
-        echo "$output"
+        # echo "$output"
+        
         centraldevices=$(echo "$output" | awk '{print $1}')             # nDevices
         appPeriodLoop=$(echo "$output" | awk '{print $2}')
         centraltotpacket=$(echo "$output" | awk '{print $3}')             # total packets sent
@@ -136,7 +144,15 @@ do
         centralavgAckdelay=$(echo "$output" | awk '{print $25}')        
         centraltotRetx=$(echo "$output" | awk '{print $26}')
 
-        echo "Got results"
+        centralSF7=$(echo "$output" | awk '{print $27}')
+        centralSF8=$(echo "$output" | awk '{print $28}')
+        centralSF9=$(echo "$output" | awk '{print $29}')
+        centralSF10=$(echo "$output" | awk '{print $30}')
+        centralSF11=$(echo "$output" | awk '{print $31}')
+        centralSF12=$(echo "$output" | awk '{print $32}')
+
+
+        # echo "Got results"
 
         # Sum the results
         centraldevicessum=$(echo "$centraldevicessum + $centraldevices" | bc -l)
@@ -167,6 +183,13 @@ do
         centralavgdelaysum=$(echo "$centralavgdelaysum + $centralavgdelay" | bc -l)
         centralavgAckdelaysum=$(echo "$centralavgAckdelaysum + $centralavgAckdelay" | bc -l)
         centraltotRetxsum=$(echo "$centraltotRetxsum + $centraltotRetx" | bc -l)
+        
+        centralSF7sum=$(echo "$centralSF7sum + $centralSF7" | bc -l)
+        centralSF8sum=$(echo "$centralSF8sum + $centralSF8" | bc -l)
+        centralSF9sum=$(echo "$centralSF9sum + $centralSF9" | bc -l)
+        centralSF10sum=$(echo "$centralSF10sum + $centralSF10" | bc -l)
+        centralSF11sum=$(echo "$centralSF11sum + $centralSF11" | bc -l)
+        centralSF12sum=$(echo "$centralSF12sum + $centralSF12" | bc -l)
 
         currentrun=$(( $currentrun+1 ))
         globalrun=$(( $globalrun+1 ))
@@ -203,8 +226,14 @@ do
     
     echo -n " $(echo "$centralavgdelaysum/$maxRuns" | bc -l)"
     echo -n " $(echo "$centralavgAckdelaysum/$maxRuns" | bc -l)"
-    echo " $(echo "$centraltotRetxsum/$maxRuns" | bc -l)"
+    echo -n " $(echo "$centraltotRetxsum/$maxRuns" | bc -l)"
 
+    echo -n " $(echo "$centralSF7sum/$maxRuns" | bc -l)"
+    echo -n " $(echo "$centralSF8sum/$maxRuns" | bc -l)"
+    echo -n " $(echo "$centralSF9sum/$maxRuns" | bc -l)"
+    echo -n " $(echo "$centralSF10sum/$maxRuns" | bc -l)"
+    echo -n " $(echo "$centralSF11sum/$maxRuns" | bc -l)"
+    echo " $(echo "$centralSF12sum/$maxRuns" | bc -l)"
 
     i=$(( $i+$increment ))
 done
