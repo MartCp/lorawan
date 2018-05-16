@@ -145,13 +145,13 @@ do
         centralavgAckdelay=$(echo "$output" | awk '{print $25}')        
         centraltotRetx=$(echo "$output" | awk '{print $26}')
 
-        centralSF7=$(echo "$output" | awk '{print $27}')
-        centralSF8=$(echo "$output" | awk '{print $28}')
-        centralSF9=$(echo "$output" | awk '{print $29}')
-        centralSF10=$(echo "$output" | awk '{print $30}')
-        centralSF11=$(echo "$output" | awk '{print $31}')
-        centralSF12=$(echo "$output" | awk '{print $32}')
-        centralSFoor=$(echo "$output" | awk '{print $33}')
+        centralSF7=$(echo "$output" | awk '{print $28}')
+        centralSF8=$(echo "$output" | awk '{print $29}')
+        centralSF9=$(echo "$output" | awk '{print $30}')
+        centralSF10=$(echo "$output" | awk '{print $31}')
+        centralSF11=$(echo "$output" | awk '{print $32}')
+        centralSF12=$(echo "$output" | awk '{print $33}')
+        centralSFoor=$(echo "$output" | awk '{print $34}')
 
         # echo "Got results"
 
