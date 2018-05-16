@@ -46,7 +46,7 @@ using namespace ns3;
 NS_LOG_COMPONENT_DEFINE ("CompleteNetworkPerformances");
 
 // Network settings
-int nDevices = 2000;
+int nDevices = 200;
 int gatewayRings = 1;
 int nGateways = 3*gatewayRings*gatewayRings-3*gatewayRings+1;
 double radius = 19200;
@@ -56,7 +56,7 @@ int appPeriodSeconds = 600;
 int periodsToSimulate = 1;
 int transientPeriods = 0;
 int run=1;
-std::vector<int> sfQuantity (6);
+std::vector<int> sfQuantity (7);
 
 int noMoreReceivers = 0;
 int interfered = 0;
@@ -172,11 +172,10 @@ CheckReceptionByAllGWsComplete (std::map<Ptr<Packet const>, PacketStatus>::itera
 void
 PrintVector (std::vector<int> vector)
 {
-  // NS_LOG_INFO ("PrintRetransmissions");
 
   for (int i = 0; i < int(vector.size ()); i++)
     {
-      // NS_LOG_INFO ("i: " << i);
+       NS_LOG_INFO ("i: " << i);
       std::cout << vector.at (i) << " ";
     }
   //
@@ -195,7 +194,7 @@ PrintSumRetransmissions (std::vector<int> reTxVector)
       // NS_LOG_INFO ("i: " << i);
       total += reTxVector[i] * (i + 1);
     }
-  std::cout << total << std::endl;
+  std::cout << total << " ";
 }
 
 void
@@ -878,9 +877,9 @@ int main (int argc, char *argv[])
   CountRetransmissions (transientPeriods * appPeriod, appStopTime, macPacketTracker, reTransmissionTracker, packetTracker);
 
   // Number of end devices using a given SF (from 7 to 12)
-  std::cout << " ";
   
   PrintVector(sfQuantity);
+  std::cout << std::endl;
   
   return 0;
 }
