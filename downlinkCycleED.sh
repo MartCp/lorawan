@@ -94,6 +94,7 @@ do
     centralSF10sum=0
     centralSF11sum=0
     centralSF12sum=0
+    centralSFoorsum=0
 
 # echo "Done initialization"
     while [ $currentrun -le $maxRuns ]
@@ -113,7 +114,7 @@ do
             --maxNumbTx=$maxNumbTx
             --DRAdapt=$DRAdapt
             --RngRun=$globalrun" | grep -v "build" | tr -d '\n')"
-        # echo "$output"
+         echo "$output"
         
         centraldevices=$(echo "$output" | awk '{print $1}')             # nDevices
         appPeriodLoop=$(echo "$output" | awk '{print $2}')
@@ -150,7 +151,7 @@ do
         centralSF10=$(echo "$output" | awk '{print $30}')
         centralSF11=$(echo "$output" | awk '{print $31}')
         centralSF12=$(echo "$output" | awk '{print $32}')
-
+        centralSFoor=$(echo "$output" | awk '{print $33}')
 
         # echo "Got results"
 
@@ -190,7 +191,8 @@ do
         centralSF10sum=$(echo "$centralSF10sum + $centralSF10" | bc -l)
         centralSF11sum=$(echo "$centralSF11sum + $centralSF11" | bc -l)
         centralSF12sum=$(echo "$centralSF12sum + $centralSF12" | bc -l)
-
+        centralSFoorsum=$(echo "$centralSFoorsum + $centralSFoor" | bc -l)
+        
         currentrun=$(( $currentrun+1 ))
         globalrun=$(( $globalrun+1 ))
     done
@@ -233,7 +235,8 @@ do
     echo -n " $(echo "$centralSF9sum/$maxRuns" | bc -l)"
     echo -n " $(echo "$centralSF10sum/$maxRuns" | bc -l)"
     echo -n " $(echo "$centralSF11sum/$maxRuns" | bc -l)"
-    echo " $(echo "$centralSF12sum/$maxRuns" | bc -l)"
+    echo -n " $(echo "$centralSF12sum/$maxRuns" | bc -l)"
+    echo " $(echo "$centralSFoorsum/$maxRuns" | bc -l)"
 
     i=$(( $i+$increment ))
 done
