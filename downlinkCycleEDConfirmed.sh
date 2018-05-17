@@ -102,7 +102,7 @@ do
         # nGateways=$[3*$gatewayRings*$gatewayRings-$[3*$gatewayRings]+1]
         # echo -n "Simulating a system with $i end devices and a transmission period of $simTime seconds...  "
         # START=$(date +%s)
-        output="$(./waf --run "RawCompleteNetworkPerformancesWithSF
+        output="$(./waf --run "RawCompleteNetworkPerformancesWithSFConfirmed
             --nDevices=$i
             --gatewayRings=$gatewayRings
             --radius=$radius
