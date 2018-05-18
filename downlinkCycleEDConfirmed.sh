@@ -67,27 +67,6 @@ do
     centralnomorerxsum=0
     centralundersenssum=0
 
-    centralS1sum=0
-    centralS2sum=0
-    centralS3sum=0
-    centralS4sum=0
-    centralS5sum=0
-    centralS6sum=0
-    centralS7sum=0
-    centralS8sum=0    
-    centralF1sum=0
-    centralF2sum=0
-    centralF3sum=0
-    centralF4sum=0
-    centralF5sum=0
-    centralF6sum=0
-    centralF7sum=0
-    centralF8sum=0
-
-    centralavgdelaysum=0
-    centralavgAckdelaysum=0
-    centraltotRetxsum=0
-
     centralSF7sum=0
     centralSF8sum=0
     centralSF9sum=0

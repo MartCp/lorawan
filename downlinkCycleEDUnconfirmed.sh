@@ -82,6 +82,7 @@ do
             --gatewayRings=$gatewayRings
             --radius=$radius
             --gatewayRadius=1500
+            --RngRun=$globalrun" | grep -v "build" | tr -d '\n')"
  #         echo "$output"
         
         centraldevices=$(echo "$output" | awk '{print $1}')             # nDevices

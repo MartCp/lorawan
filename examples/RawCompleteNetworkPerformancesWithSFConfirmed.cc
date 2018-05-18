@@ -536,7 +536,7 @@ int main (int argc, char *argv[])
   cmd.Parse (argc, argv);
 
   // Set up logging
-  LogComponentEnable ("CompleteNetworkPerformances", LOG_LEVEL_ALL);
+  LogComponentEnable ("RawCompleteNetworkPerformancesWithSFConfirmed", LOG_LEVEL_ALL);
   // LogComponentEnable("LoraInterferenceHelper", LOG_LEVEL_ALL);
   // LogComponentEnable("LoraMac", LOG_LEVEL_ALL);
   // LogComponentEnable("LogicalLoraChannel", LOG_LEVEL_ALL);
