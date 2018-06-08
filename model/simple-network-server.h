@@ -123,11 +123,29 @@ public:
    */
   void InitializeReply (LoraDeviceAddress addr, bool hasRep);
 
+  //////////////////////////
+  // Setting Improvements //
+  //////////////////////////
+  void SetSubBandPriorityImprovement (bool SubBandPrior);
+  void SetSecondReceiveWindowDataRateImprovement (bool drRx2Improv);
+
+
 
 protected:
   std::map<LoraDeviceAddress,DeviceStatus> m_deviceStatuses;
 
   std::map<Address,GatewayStatus> m_gatewayStatuses;
+
+  /**
+   * Proposed improvements:
+   * - sub band prioritization (better transmitting downlink messages in the sub
+   band with the largest duty cycle first )
+   * - In the second receive window, use the same SF than in the first one
+   */
+  bool m_subBandPriorityImprovement;
+  bool m_secondReceiveWindowDataRateImprovement;
+
+
 };
 
 } /* namespace ns3 */

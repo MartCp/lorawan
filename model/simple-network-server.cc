@@ -291,7 +291,15 @@ SimpleNetworkServer::SendOnSecondWindow (LoraDeviceAddress address)
       // Tag the packet so that the Gateway sends it according to the second
       // receive window parameters
       LoraTag replyPacketTag;
-      uint8_t dataRate = m_deviceStatuses.at (address).GetFirstReceiveWindowDataRate ();
+      uint8_t dataRate;
+      if (m_secondReceiveWindowDataRateImprovement)
+        {
+          dataRate = m_deviceStatuses.at (address).GetFirstReceiveWindowDataRate ();
+        }
+      else
+        {
+          dataRate = m_deviceStatuses.at (address).GetSecondReceiveWindowDataRate ();
+        }
       double frequency = m_deviceStatuses.at (address).GetSecondReceiveWindowFrequency ();
       replyPacketTag.SetDataRate (dataRate);
       replyPacketTag.SetFrequency (frequency);
@@ -345,5 +353,23 @@ SimpleNetworkServer::InitializeReply (LoraDeviceAddress addr, bool hasRep)
 
   m_deviceStatuses.at (addr).SetReply (reply);
 }
+
+
+///////////////////////////
+// Setting improvements  //
+///////////////////////////
+
+void
+SimpleNetworkServer::SetSubBandPriorityImprovement (bool SubBandPrior)
+{
+  m_subBandPriorityImprovement = SubBandPrior;
+}
+
+void
+SimpleNetworkServer::SetSecondReceiveWindowDataRateImprovement (bool drRx2Improv)
+{
+  m_secondReceiveWindowDataRateImprovement = drRx2Improv;
+}
+
 
 }

@@ -75,6 +75,11 @@ bool print = false;
 bool buildingsEnabled = false;
 bool shadowingEnabled = false;
 
+// Improvements
+bool propAckToImprovement = false;
+bool subBandPriorityImprovement = false;
+bool secRWDataRateImprovement = false;
+
 /**********************
  *  Global Callbacks  *
  **********************/
@@ -533,6 +538,9 @@ int main (int argc, char *argv[])
   cmd.AddValue ("print", "Whether or not to print a file containing the ED's positions and a file containing buildings", print);
   cmd.AddValue("buildingsEnabled", "Whether to use buildings in the simulation or not", buildingsEnabled);
   cmd.AddValue("shadowingEnabled", "Whether to use shadowing in the simulation or not", shadowingEnabled);
+  cmd.AddValue("propAckToImprovement", "Whether to use shadowing in the simulation or not", propAckToImprovement);
+  cmd.AddValue("subBandPriorityImprovement", "Whether to use shadowing in the simulation or not",subBandPriorityImprovement);
+  cmd.AddValue("RW2DataRateImprovement", "Whether to use shadowing in the simulation or not",secRWDataRateImprovement);
 
   cmd.Parse (argc, argv);
 
@@ -682,6 +690,10 @@ int main (int argc, char *argv[])
       mac-> SetMaxNumberOfTransmissions(maxNumbTx);
       mac->SetDataRateAdaptation(DRAdapt);
 
+      // Setting proposed improvements
+      mac-> SetProportionalAckToImprovement(propAckToImprovement);
+      mac-> SetSubBandPriorityImprovement (subBandPriorityImprovement);
+      mac-> SetSecondReceiveWindowDataRateImprovement (secRWDataRateImprovement);
     }
 
   /*********************
@@ -805,6 +817,8 @@ int main (int argc, char *argv[])
   networkServerHelper.SetGateways (gateways);
   networkServerHelper.SetEndDevices (endDevices);
   networkServerHelper.Install (networkServers);
+  networkServerHelper.SetSubBandPriorityImprovement(subBandPriorityImprovement);
+  networkServerHelper.SetSecondReceiveWindowDataRateImprovement(secRWDataRateImprovement);
 
   // Install the Forwarder application on the gateways
   ForwarderHelper forwarderHelper;
@@ -827,7 +841,7 @@ int main (int argc, char *argv[])
     appPeriodSeconds= (24*60*60);
     appPeriod = Seconds(appPeriodSeconds);
   }
-  else
+  else 
   {
     appHelper.SetPeriod (appPeriod);
   }

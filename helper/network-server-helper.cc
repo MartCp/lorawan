@@ -86,6 +86,8 @@ NetworkServerHelper::InstallPriv (Ptr<Node> node)
 
   app->SetNode (node);
   node->AddApplication (app);
+  app->SetSubBandPriorityImprovement (m_subBandPriorityImprovement);
+  app->SetSecondReceiveWindowDataRateImprovement (m_secondReceiveWindowDataRateImprovement);
 
   // Cycle on each gateway
   for (NodeContainer::Iterator i = m_gateways.Begin ();
@@ -114,4 +116,22 @@ NetworkServerHelper::InstallPriv (Ptr<Node> node)
 
   return app;
 }
+
+  ///////////////////////////
+  // Setting improvements  //
+  ///////////////////////////
+
+  void
+  NetworkServerHelper::SetSubBandPriorityImprovement (bool SubBandPrior)
+  {
+    m_subBandPriorityImprovement = SubBandPrior;
+  }
+
+  void
+  NetworkServerHelper::SetSecondReceiveWindowDataRateImprovement (bool drRx2Improv)
+  {
+    m_secondReceiveWindowDataRateImprovement = drRx2Improv;
+  }
+
+
 } // namespace ns3

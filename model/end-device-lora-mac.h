@@ -364,6 +364,13 @@ public:
   void AddSubBand (double startFrequency, double endFrequency, double dutyCycle,
                    double maxTxPowerDbm);
 
+  ///////////////////////////
+  // Setting improvements  //
+  ///////////////////////////
+  void SetProportionalAckToImprovement (bool PropAckTo);
+  void SetSubBandPriorityImprovement (bool SubBandPrior);
+  void SetSecondReceiveWindowDataRateImprovement (bool drRx2Improv);
+
 private:
   /**
   * Structure representing the parameters that will be used in the
@@ -550,6 +557,18 @@ TracedValue<uint8_t> m_requiredTx;
    * for this device.
    */
   struct LoraRetxParameters m_retxParams;
+
+  /**
+   * Proposed improvements:
+   * - interval in which ACK_TIMEOUT is chosen proportional to packet duration
+   * - sub band prioritization (better transmitting downlink messages in the sub
+       band with the largest duty cycle first )
+   * - In the second receive window, use the same SF than in the first one
+   */
+  bool m_proportionalAckToImprovement ;
+  bool m_subBandPriorityImprovement;
+  bool m_secondReceiveWindowDataRateImprovement;
+
 
   /////////////////
   //  Callbacks  //

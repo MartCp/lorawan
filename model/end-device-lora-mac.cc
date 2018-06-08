@@ -95,7 +95,14 @@ EndDeviceLoraMac::EndDeviceLoraMac ()
     m_lastKnownLinkMargin (0),
     m_lastKnownGatewayCount (0),
     m_aggregatedDutyCycle (1),
-    m_mType (LoraMacHeader::UNCONFIRMED_DATA_UP)
+    m_mType (LoraMacHeader::UNCONFIRMED_DATA_UP),
+
+    // Proposed improvements
+    m_proportionalAckToImprovement (false),
+    m_subBandPriorityImprovement (false),
+    m_secondReceiveWindowDataRateImprovement (false)
+
+
 
 {
   NS_LOG_FUNCTION (this);
@@ -163,8 +170,15 @@ EndDeviceLoraMac::Send (Ptr<Packet> packet)
       // Add the ACK_TIMEOUT random delay if it is a retransmission.
       if (m_retxParams.waitingAck)
         {
-          // double ack_timeout = m_uniformRV->GetValue (1,3);
-          double ack_timeout = m_phy->GetOnAirTime(packet, params).GetSeconds() * 2;
+          double ack_timeout;
+          if (m_proportionalAckToImprovement)
+            {
+              ack_timeout = m_phy->GetOnAirTime(packet, params).GetSeconds() * 2;
+            }
+          else
+            {
+              ack_timeout = m_uniformRV->GetValue (1,3);
+            }
           netxTxDelay = netxTxDelay + Seconds (ack_timeout);
         }
       postponeTransmission (netxTxDelay, packet);
@@ -741,10 +755,16 @@ EndDeviceLoraMac::OpenSecondReceiveWindow (void)
     (m_secondReceiveWindowFrequency);
 
   // Set SF to the same SF of the first receiving window
-  uint8_t sf_second_window = GetSfFromDataRate (GetFirstReceiveWindowDataRate ());
-  m_phy->GetObject<EndDeviceLoraPhy> ()->SetSpreadingFactor (sf_second_window);
-  // m_phy->GetObject<EndDeviceLoraPhy> ()->SetSpreadingFactor (GetSfFromDataRate
-  //                                                              (m_secondReceiveWindowDataRate));
+  if (m_secondReceiveWindowDataRateImprovement)
+    {
+      uint8_t sf_second_window = GetSfFromDataRate (GetFirstReceiveWindowDataRate ());
+      m_phy->GetObject<EndDeviceLoraPhy> ()->SetSpreadingFactor (sf_second_window);
+    }
+  else
+    {
+      m_phy->GetObject<EndDeviceLoraPhy> ()->SetSpreadingFactor (GetSfFromDataRate
+                                                              (m_secondReceiveWindowDataRate));
+    }
 
   // Schedule return to sleep after "at least the time required by the end
   // device's radio transceiver to effectively detect a downlink preamble"
@@ -1272,4 +1292,27 @@ EndDeviceLoraMac::GetAggregatedDutyCycle (void)
 
   return m_aggregatedDutyCycle;
 }
+
+  ///////////////////////////
+  // Setting improvements  //
+  ///////////////////////////
+  void
+  EndDeviceLoraMac::SetProportionalAckToImprovement (bool PropAckTo)
+  {
+    m_proportionalAckToImprovement = PropAckTo;
+  }
+
+  void
+  EndDeviceLoraMac::SetSubBandPriorityImprovement (bool SubBandPrior)
+  {
+    m_subBandPriorityImprovement = SubBandPrior;
+  }
+
+  void
+  EndDeviceLoraMac::SetSecondReceiveWindowDataRateImprovement (bool drRx2Improv)
+  {
+    m_secondReceiveWindowDataRateImprovement = drRx2Improv;
+  }
+
+
 }
