@@ -816,9 +816,9 @@ int main (int argc, char *argv[])
   NetworkServerHelper networkServerHelper;
   networkServerHelper.SetGateways (gateways);
   networkServerHelper.SetEndDevices (endDevices);
-  networkServerHelper.Install (networkServers);
   networkServerHelper.SetSubBandPriorityImprovement(subBandPriorityImprovement);
   networkServerHelper.SetSecondReceiveWindowDataRateImprovement(secRWDataRateImprovement);
+  networkServerHelper.Install (networkServers);
 
   // Install the Forwarder application on the gateways
   ForwarderHelper forwarderHelper;
