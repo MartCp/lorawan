@@ -170,16 +170,8 @@ EndDeviceLoraMac::Send (Ptr<Packet> packet)
       // Add the ACK_TIMEOUT random delay if it is a retransmission.
       if (m_retxParams.waitingAck)
         {
-          double ack_timeout;
-          if (m_proportionalAckToImprovement)
-            {
-              ack_timeout = m_phy->GetOnAirTime(packet, params).GetSeconds() * 2;
-            }
-          else
-            {
-              ack_timeout = m_uniformRV->GetValue (1,3);
-            }
-          netxTxDelay = netxTxDelay + Seconds (ack_timeout);
+          Time ack_timeout = GetAckTimeout (packet, params, m_proportionalAckToImprovement);
+          netxTxDelay = netxTxDelay + ack_timeout;
         }
       postponeTransmission (netxTxDelay, packet);
     }
@@ -881,6 +873,25 @@ EndDeviceLoraMac::GetNextTransmissionDelay (void)
 
   return waitingTime;
 }
+
+
+Time
+EndDeviceLoraMac::GetAckTimeout (Ptr<Packet> packet, LoraTxParameters params,
+                                 bool proportionalAckToImprovement)
+{
+  double ack_timeout;
+  if (proportionalAckToImprovement)
+    {
+      //TODO PROPORTIONAL TIME
+      ack_timeout = m_phy->GetOnAirTime(packet, params).GetSeconds() * 2;
+    }
+  else
+    {
+      ack_timeout = m_uniformRV->GetValue (1,3);
+    }
+  return Seconds (ack_timeout);
+}
+
 
 Ptr<LogicalLoraChannel>
 EndDeviceLoraMac::GetChannelForTx (void)

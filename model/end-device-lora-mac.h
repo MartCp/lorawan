@@ -364,6 +364,16 @@ public:
   void AddSubBand (double startFrequency, double endFrequency, double dutyCycle,
                    double maxTxPowerDbm);
 
+  /**
+   * The ACK_TIMEOUT random delay
+   * \param packet The received packet
+   * \param params The transmission parameters of the device
+   * \param proportionalAckToImprovement If the improvement is activated
+   */
+  Time GetAckTimeout (Ptr<Packet> packet, LoraTxParameters params,
+                      bool proportionalAckToImprovement);
+
+
   ///////////////////////////
   // Setting improvements  //
   ///////////////////////////

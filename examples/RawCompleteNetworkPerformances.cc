@@ -841,17 +841,23 @@ int main (int argc, char *argv[])
     appPeriodSeconds= (24*60*60);
     appPeriod = Seconds(appPeriodSeconds);
   }
-  else 
+  else
   {
     appHelper.SetPeriod (appPeriod);
   }
+
+  //Set random packet size
+  appHelper.SetPacketSize (10);
+  Ptr<UniformRandomVariable> randomComponent = CreateObject<UniformRandomVariable> ();
+  randomComponent-> SetAttribute ("Min", DoubleValue (0));
+  randomComponent-> SetAttribute ("Max", DoubleValue (20));
+  appHelper.SetPacketSizeRandomVariable(randomComponent);
 
   ApplicationContainer appContainer = appHelper.Install (endDevices);
 
   Time appStopTime = appPeriod * periodsToSimulate;
 
   appContainer.Start (Seconds (0));
-  appContainer.Stop (appStopTime);
 
   /**********************
    * Print output files *
