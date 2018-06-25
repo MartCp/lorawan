@@ -174,6 +174,13 @@ public:
   void SetFrequency (double frequencyMHz);
 
   /**
+   * Get the frequency EndDevice is listening on.
+   *
+   * \return The frequency are listening on.
+   */
+  double GetFrequency (void);
+
+/**
    * Set the Spreading Factor this EndDevice will listen for.
    *
    * The EndDeviceLoraPhy object will not be able to lock on transmissions that

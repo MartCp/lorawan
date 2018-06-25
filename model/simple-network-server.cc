@@ -229,8 +229,31 @@ SimpleNetworkServer::SendOnFirstWindow (LoraDeviceAddress address)
   NS_LOG_FUNCTION (this << address);
 
   // Decide on which gateway we'll transmit our reply
-  double firstReceiveWindowFrequency = m_deviceStatuses.at
-      (address).GetFirstReceiveWindowFrequency ();
+  double firstReceiveWindowFrequency;
+  uint32_t firstReceiveWindowDataRate;
+  if (m_subBandPriorityImprovement)
+    {
+      //Select the frequency with higher DC
+      firstReceiveWindowFrequency = m_deviceStatuses.at
+        (address).GetSecondReceiveWindowFrequency ();
+      if (m_secondReceiveWindowDataRateImprovement)
+        {
+          firstReceiveWindowDataRate = m_deviceStatuses.at (address).GetSecondReceiveWindowDataRate ();
+        }
+      else
+        {
+          firstReceiveWindowDataRate = m_deviceStatuses.at (address).GetFirstReceiveWindowDataRate ();
+        }
+    }
+  else
+    {
+      firstReceiveWindowFrequency = m_deviceStatuses.at
+        (address).GetFirstReceiveWindowFrequency ();
+      firstReceiveWindowDataRate = m_deviceStatuses.at (address).GetFirstReceiveWindowDataRate ();
+    }
+
+  NS_LOG_DEBUG ("subBandPriorityImprovement: " << m_subBandPriorityImprovement << " secondReceiveWindowDataRateImprovement: " << m_secondReceiveWindowDataRateImprovement);
+  NS_LOG_DEBUG ("Frequency: " << firstReceiveWindowFrequency << " DataRate: " << firstReceiveWindowDataRate);
 
   Address gatewayForReply = GetGatewayForReply (address,
                                                 firstReceiveWindowFrequency);
@@ -246,10 +269,8 @@ SimpleNetworkServer::SendOnFirstWindow (LoraDeviceAddress address)
       // Tag the packet so that the Gateway sends it according to the first
       // receive window parameters
       LoraTag replyPacketTag;
-      uint8_t dataRate = m_deviceStatuses.at (address).GetFirstReceiveWindowDataRate ();
-      double frequency = m_deviceStatuses.at (address).GetFirstReceiveWindowFrequency ();
-      replyPacketTag.SetDataRate (dataRate);
-      replyPacketTag.SetFrequency (frequency);
+      replyPacketTag.SetDataRate (firstReceiveWindowDataRate);
+      replyPacketTag.SetFrequency (firstReceiveWindowFrequency);
 
       replyPacket->AddPacketTag (replyPacketTag);
 
@@ -276,9 +297,38 @@ SimpleNetworkServer::SendOnSecondWindow (LoraDeviceAddress address)
 {
   NS_LOG_FUNCTION (this << address);
 
-  double secondReceiveWindowFrequency = m_deviceStatuses.at
-      (address).GetSecondReceiveWindowFrequency ();
+  double secondReceiveWindowFrequency;
+  uint8_t secondReceiveWindowDataRate;
+  if (m_subBandPriorityImprovement)
+    {
+      secondReceiveWindowFrequency = m_deviceStatuses.at
+        (address).GetFirstReceiveWindowFrequency ();
+      if (m_secondReceiveWindowDataRateImprovement)
+        {
+          secondReceiveWindowDataRate = m_deviceStatuses.at (address).GetFirstReceiveWindowDataRate ();
+        }
+      else
+        {
+          secondReceiveWindowDataRate = m_deviceStatuses.at (address).GetSecondReceiveWindowDataRate ();
+        }
+    }
+  else
+    {
+      secondReceiveWindowFrequency = m_deviceStatuses.at
+        (address).GetSecondReceiveWindowFrequency ();
+      if (m_secondReceiveWindowDataRateImprovement)
+        {
+          secondReceiveWindowDataRate = m_deviceStatuses.at (address).GetFirstReceiveWindowDataRate ();
+        }
+      else
+        {
+          secondReceiveWindowDataRate = m_deviceStatuses.at (address).GetSecondReceiveWindowDataRate ();
+        }
 
+    }
+
+  NS_LOG_DEBUG ("subBandPriorityImprovement: " << m_subBandPriorityImprovement << " secondReceiveWindowDataRateImprovement: " << m_secondReceiveWindowDataRateImprovement);
+  NS_LOG_DEBUG ("Frequency: " << secondReceiveWindowFrequency << "DataRate: " << unsigned(secondReceiveWindowDataRate));
   // Decide on which gateway we'll transmit our reply
   Address gatewayForReply = GetGatewayForReply (address, secondReceiveWindowFrequency);
 
@@ -291,18 +341,12 @@ SimpleNetworkServer::SendOnSecondWindow (LoraDeviceAddress address)
       // Tag the packet so that the Gateway sends it according to the second
       // receive window parameters
       LoraTag replyPacketTag;
-      uint8_t dataRate;
-      if (m_secondReceiveWindowDataRateImprovement)
-        {
-          dataRate = m_deviceStatuses.at (address).GetFirstReceiveWindowDataRate ();
-        }
-      else
-        {
-          dataRate = m_deviceStatuses.at (address).GetSecondReceiveWindowDataRate ();
-        }
-      double frequency = m_deviceStatuses.at (address).GetSecondReceiveWindowFrequency ();
-      replyPacketTag.SetDataRate (dataRate);
-      replyPacketTag.SetFrequency (frequency);
+
+
+      ////////////////
+      ///////////////
+      replyPacketTag.SetDataRate (secondReceiveWindowDataRate);
+      replyPacketTag.SetFrequency (secondReceiveWindowFrequency);
 
       replyPacket->AddPacketTag (replyPacketTag);
 

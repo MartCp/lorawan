@@ -561,11 +561,11 @@ int main (int argc, char *argv[])
   // LogComponentEnable ("EndDeviceLoraPhy", LOG_LEVEL_ALL);
   // LogComponentEnable ("SimpleEndDeviceLoraPhy", LOG_LEVEL_ALL);
   // LogComponentEnable("LogicalLoraChannelHelper", LOG_LEVEL_ALL);
-  // LogComponentEnable ("EndDeviceLoraMac", LOG_LEVEL_ALL);
+   LogComponentEnable ("EndDeviceLoraMac", LOG_LEVEL_ALL);
   // LogComponentEnable("PointToPointNetDevice", LOG_LEVEL_ALL);
   // LogComponentEnable("PeriodicSenderHelper", LOG_LEVEL_ALL);
   // LogComponentEnable ("PeriodicSender", LOG_LEVEL_ALL);
-  // LogComponentEnable ("SimpleNetworkServer", LOG_LEVEL_ALL);
+   LogComponentEnable ("SimpleNetworkServer", LOG_LEVEL_ALL);
   // LogComponentEnable ("GatewayLoraMac", LOG_LEVEL_ALL);
   // LogComponentEnable ("Forwarder", LOG_LEVEL_ALL);
   // LogComponentEnable ("DeviceStatus", LOG_LEVEL_ALL);

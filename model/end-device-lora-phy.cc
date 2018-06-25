@@ -95,6 +95,12 @@ EndDeviceLoraPhy::GetSpreadingFactor (void)
   return m_sf;
 }
 
+double
+EndDeviceLoraPhy::GetFrequency (void)
+{
+  return m_frequency;
+}
+
 bool
 EndDeviceLoraPhy::IsTransmitting (void)
 {

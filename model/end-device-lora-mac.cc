@@ -684,6 +684,20 @@ EndDeviceLoraMac::OpenFirstReceiveWindow (void)
   // Set Phy in Standby mode
   m_phy->GetObject<EndDeviceLoraPhy> ()->SwitchToStandby ();
 
+
+  if (m_subBandPriorityImprovement)
+    {
+      m_phy->GetObject<EndDeviceLoraPhy> ()->SetFrequency(m_secondReceiveWindowFrequency);
+    }
+
+  double firstReceiveWindowFrequency = m_phy->GetObject<EndDeviceLoraPhy> () -> GetFrequency();
+  double firstReceiveWindowSF = m_phy->GetObject<EndDeviceLoraPhy> () -> GetSpreadingFactor();
+  NS_LOG_INFO ("subBandPriorityImprovement: " << m_subBandPriorityImprovement <<
+               "secondReceiveWindowDataRateImprovement: " <<
+               m_secondReceiveWindowDataRateImprovement);
+    NS_LOG_INFO ("Using parameters: " << firstReceiveWindowFrequency << "Hz, SF " <<
+                 unsigned(firstReceiveWindowSF));
+
   // Schedule return to sleep after "at least the time required by the end
   // device's radio transceiver to effectively detect a downlink preamble"
   // (LoraWAN specification)
@@ -740,23 +754,29 @@ EndDeviceLoraMac::OpenSecondReceiveWindow (void)
   m_phy->GetObject<EndDeviceLoraPhy> ()->SwitchToStandby ();
 
   // Switch to appropriate channel and data rate
-  NS_LOG_INFO ("Using parameters: " << m_secondReceiveWindowFrequency << "Hz, DR"
-                                    << unsigned(m_secondReceiveWindowDataRate));
 
-  m_phy->GetObject<EndDeviceLoraPhy> ()->SetFrequency
-    (m_secondReceiveWindowFrequency);
+  // Default behavior
+  if (!m_subBandPriorityImprovement)
+    {
+      m_phy->GetObject<EndDeviceLoraPhy> ()->SetFrequency
+        (m_secondReceiveWindowFrequency);
+    }
 
   // Set SF to the same SF of the first receiving window
   if (m_secondReceiveWindowDataRateImprovement)
     {
-      uint8_t sf_second_window = GetSfFromDataRate (GetFirstReceiveWindowDataRate ());
-      m_phy->GetObject<EndDeviceLoraPhy> ()->SetSpreadingFactor (sf_second_window);
+      SetSecondReceiveWindowDataRate(GetSfFromDataRate (GetFirstReceiveWindowDataRate()));
     }
-  else
-    {
-      m_phy->GetObject<EndDeviceLoraPhy> ()->SetSpreadingFactor (GetSfFromDataRate
+
+  m_phy->GetObject<EndDeviceLoraPhy> ()->SetSpreadingFactor (GetSfFromDataRate
                                                               (m_secondReceiveWindowDataRate));
-    }
+  NS_LOG_INFO ("subBandPriorityImprovement: " << m_subBandPriorityImprovement <<
+               "secondReceiveWindowDataRateImprovement: " <<
+               m_secondReceiveWindowDataRateImprovement);
+  NS_LOG_INFO ("Using parameters: " << m_secondReceiveWindowFrequency << "Hz, DR "
+                   << unsigned(m_secondReceiveWindowDataRate));
+
+
 
   // Schedule return to sleep after "at least the time required by the end
   // device's radio transceiver to effectively detect a downlink preamble"
@@ -799,7 +819,8 @@ EndDeviceLoraMac::CloseSecondReceiveWindow (void)
       NS_LOG_DEBUG ("No reception initiated by PHY: rescheduling transmission.");
       if (m_retxParams.retxLeft > 0 )
         {
-          NS_LOG_INFO ("We have " << unsigned(m_retxParams.retxLeft) << " retransmissions left: rescheduling transmission.");
+          NS_LOG_INFO ("We have " << unsigned(m_retxParams.retxLeft) <<
+                       " retransmissions left: rescheduling transmission.");
           this->Send (m_retxParams.packet);
         }
 
@@ -807,7 +828,8 @@ EndDeviceLoraMac::CloseSecondReceiveWindow (void)
         {
           uint8_t txs = m_maxNumbTx - (m_retxParams.retxLeft);
           m_requiredTxCallback (txs, false, m_retxParams.firstAttempt, m_retxParams.packet);
-          NS_LOG_DEBUG ("Failure: no more retransmissions left. Used " << unsigned(txs) << " transmissions.");
+          NS_LOG_DEBUG ("Failure: no more retransmissions left. Used " << unsigned(txs) <<
+                        " transmissions.");
 
           // Reset retransmission parameters
           resetRetransmissionParameters ();
