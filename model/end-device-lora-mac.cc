@@ -775,18 +775,21 @@ EndDeviceLoraMac::OpenSecondReceiveWindow (void)
   // Set SF to the same SF of the first receiving window
   if (m_secondReceiveWindowDataRateImprovement)
     {
-      SetSecondReceiveWindowDataRate(GetSfFromDataRate (GetFirstReceiveWindowDataRate()));
+      m_phy->GetObject<EndDeviceLoraPhy> ()->SetSpreadingFactor ((GetSfFromDataRate (GetFirstReceiveWindowDataRate())));
+    }
+  else
+    {
+      m_phy->GetObject<EndDeviceLoraPhy> ()->SetSpreadingFactor (GetSfFromDataRate
+                                                              (m_secondReceiveWindowDataRate));
     }
 
-  m_phy->GetObject<EndDeviceLoraPhy> ()->SetSpreadingFactor (GetSfFromDataRate
-                                                              (m_secondReceiveWindowDataRate));
   NS_LOG_INFO ("subBandPriorityImprovement: " << m_subBandPriorityImprovement <<
                " secondReceiveWindowDataRateImprovement: " <<
                m_secondReceiveWindowDataRateImprovement);
 
   double secondReceiveWindowFrequency = m_phy->GetObject<EndDeviceLoraPhy> () -> GetFrequency();
   double secondReceiveWindowSF = m_phy->GetObject<EndDeviceLoraPhy> () -> GetSpreadingFactor();
-  NS_LOG_INFO ("Using parameters: " << secondReceiveWindowFrequency << "Hz, DR "
+  NS_LOG_INFO ("Using parameters: " << secondReceiveWindowFrequency << "Hz, SF "
                    << unsigned(secondReceiveWindowSF));
 
 
@@ -1345,18 +1348,21 @@ EndDeviceLoraMac::GetAggregatedDutyCycle (void)
   void
   EndDeviceLoraMac::SetProportionalAckToImprovement (bool PropAckTo)
   {
+    NS_LOG_FUNCTION (this << PropAckTo);
     m_proportionalAckToImprovement = PropAckTo;
   }
 
   void
   EndDeviceLoraMac::SetSubBandPriorityImprovement (bool SubBandPrior)
   {
+    NS_LOG_FUNCTION (this << SubBandPrior);
     m_subBandPriorityImprovement = SubBandPrior;
   }
 
   void
   EndDeviceLoraMac::SetSecondReceiveWindowDataRateImprovement (bool drRx2Improv)
   {
+    NS_LOG_FUNCTION (this << drRx2Improv);
     m_secondReceiveWindowDataRateImprovement = drRx2Improv;
   }
 

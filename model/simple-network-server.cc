@@ -238,11 +238,11 @@ SimpleNetworkServer::SendOnFirstWindow (LoraDeviceAddress address)
         (address).GetSecondReceiveWindowFrequency ();
       if (m_secondReceiveWindowDataRateImprovement)
         {
-          firstReceiveWindowDataRate = m_deviceStatuses.at (address).GetSecondReceiveWindowDataRate ();
+          firstReceiveWindowDataRate = m_deviceStatuses.at (address).GetFirstReceiveWindowDataRate ();
         }
       else
         {
-          firstReceiveWindowDataRate = m_deviceStatuses.at (address).GetFirstReceiveWindowDataRate ();
+          firstReceiveWindowDataRate = m_deviceStatuses.at (address).GetSecondReceiveWindowDataRate ();
         }
     }
   else

@@ -538,9 +538,9 @@ int main (int argc, char *argv[])
   cmd.AddValue ("print", "Whether or not to print a file containing the ED's positions and a file containing buildings", print);
   cmd.AddValue("buildingsEnabled", "Whether to use buildings in the simulation or not", buildingsEnabled);
   cmd.AddValue("shadowingEnabled", "Whether to use shadowing in the simulation or not", shadowingEnabled);
-  cmd.AddValue("propAckToImprovement", "Whether to use shadowing in the simulation or not", propAckToImprovement);
-  cmd.AddValue("subBandPriorityImprovement", "Whether to use shadowing in the simulation or not",subBandPriorityImprovement);
-  cmd.AddValue("RW2DataRateImprovement", "Whether to use shadowing in the simulation or not",secRWDataRateImprovement);
+  cmd.AddValue("propAckToImprovement", "Whether to activate proportional ACK TO improvement", propAckToImprovement);
+  cmd.AddValue("subBandPriorityImprovement", "Whether to acrivate subBand priority improvement",subBandPriorityImprovement);
+  cmd.AddValue("RW2DataRateImprovement", "Whether to activate RW2 data rate improvement",secRWDataRateImprovement);
 
   cmd.Parse (argc, argv);
 
