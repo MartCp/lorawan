@@ -100,7 +100,8 @@ EndDeviceLoraMac::EndDeviceLoraMac ()
     // Proposed improvements
     m_proportionalAckToImprovement (false),
     m_subBandPriorityImprovement (false),
-    m_secondReceiveWindowDataRateImprovement (false)
+    m_secondReceiveWindowDataRateImprovement (false),
+    m_ulFrequency (0)
 
 
 
@@ -318,6 +319,8 @@ EndDeviceLoraMac::SendToPhy (Ptr<Packet> packetToSend)
 
   Ptr<LogicalLoraChannel> txChannel = GetChannelForTx ();
 
+  // Save the frequency used in the uplink transmission
+  m_ulFrequency = txChannel -> GetFrequency();
   NS_LOG_DEBUG ("PacketToSend: " << packetToSend);
   m_phy->Send (packetToSend, params, txChannel->GetFrequency (), m_txPower);
 
@@ -756,7 +759,14 @@ EndDeviceLoraMac::OpenSecondReceiveWindow (void)
   // Switch to appropriate channel and data rate
 
   // Default behavior
-  if (!m_subBandPriorityImprovement)
+  NS_LOG_DEBUG ("-- after switching to standby, the frequency is " <<
+                m_phy->GetObject<EndDeviceLoraPhy> () -> GetFrequency());
+
+  if (m_subBandPriorityImprovement)
+    {
+      m_phy->GetObject<EndDeviceLoraPhy> ()->SetFrequency(m_ulFrequency);
+    }
+  else
     {
       m_phy->GetObject<EndDeviceLoraPhy> ()->SetFrequency
         (m_secondReceiveWindowFrequency);
@@ -771,10 +781,13 @@ EndDeviceLoraMac::OpenSecondReceiveWindow (void)
   m_phy->GetObject<EndDeviceLoraPhy> ()->SetSpreadingFactor (GetSfFromDataRate
                                                               (m_secondReceiveWindowDataRate));
   NS_LOG_INFO ("subBandPriorityImprovement: " << m_subBandPriorityImprovement <<
-               "secondReceiveWindowDataRateImprovement: " <<
+               " secondReceiveWindowDataRateImprovement: " <<
                m_secondReceiveWindowDataRateImprovement);
-  NS_LOG_INFO ("Using parameters: " << m_secondReceiveWindowFrequency << "Hz, DR "
-                   << unsigned(m_secondReceiveWindowDataRate));
+
+  double secondReceiveWindowFrequency = m_phy->GetObject<EndDeviceLoraPhy> () -> GetFrequency();
+  double secondReceiveWindowSF = m_phy->GetObject<EndDeviceLoraPhy> () -> GetSpreadingFactor();
+  NS_LOG_INFO ("Using parameters: " << secondReceiveWindowFrequency << "Hz, DR "
+                   << unsigned(secondReceiveWindowSF));
 
 
 

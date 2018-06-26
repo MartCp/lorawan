@@ -579,7 +579,10 @@ TracedValue<uint8_t> m_requiredTx;
   bool m_subBandPriorityImprovement;
   bool m_secondReceiveWindowDataRateImprovement;
 
+  /* Store frequency used for the uplink transmission
+   */
 
+  double m_ulFrequency;
   /////////////////
   //  Callbacks  //
   /////////////////
