@@ -69,6 +69,7 @@ int totalPktsSent = 0;
 int maxNumbTx = 8;
 bool DRAdapt = false;
 bool mixedPeriods = false;
+uint8_t maxPacketSize = 0;
 
 // Output control
 bool print = false;
@@ -536,6 +537,7 @@ int main (int argc, char *argv[])
   cmd.AddValue ("DRAdapt", "Enable data rate adaptation", DRAdapt);
   cmd.AddValue ("mixedPeriods", "Enable mixed application periods", mixedPeriods);
   cmd.AddValue ("print", "Whether or not to print a file containing the ED's positions and a file containing buildings", print);
+  cmd.AddValue("maxPacketSize", "The maximum of the RV selecting the value added to the default packet size (10)",maxPacketSize);
   cmd.AddValue("buildingsEnabled", "Whether to use buildings in the simulation or not", buildingsEnabled);
   cmd.AddValue("shadowingEnabled", "Whether to use shadowing in the simulation or not", shadowingEnabled);
   cmd.AddValue("propAckToImprovement", "Whether to activate proportional ACK TO improvement", propAckToImprovement);
@@ -848,10 +850,13 @@ int main (int argc, char *argv[])
 
   //Set random packet size
   appHelper.SetPacketSize (10);
-  Ptr<UniformRandomVariable> randomComponent = CreateObject<UniformRandomVariable> ();
-  randomComponent-> SetAttribute ("Min", DoubleValue (0));
-  randomComponent-> SetAttribute ("Max", DoubleValue (20));
-  appHelper.SetPacketSizeRandomVariable(randomComponent);
+  if (maxPacketSize > 0)
+    {
+      Ptr<UniformRandomVariable> randomComponent = CreateObject<UniformRandomVariable> ();
+      randomComponent-> SetAttribute ("Min", DoubleValue (0));
+      randomComponent-> SetAttribute ("Max", DoubleValue (maxPacketSize));
+      appHelper.SetPacketSizeRandomVariable(randomComponent);
+    }
 
   ApplicationContainer appContainer = appHelper.Install (endDevices);
 

@@ -920,8 +920,34 @@ EndDeviceLoraMac::GetAckTimeout (Ptr<Packet> packet, LoraTxParameters params,
   double ack_timeout;
   if (proportionalAckToImprovement)
     {
-      //TODO PROPORTIONAL TIME
-      ack_timeout = m_phy->GetOnAirTime(packet, params).GetSeconds() * 2;
+      double packetToA = m_phy->GetOnAirTime(packet, params).GetSeconds();
+      uint8_t rv_min=0;
+      uint8_t rv_max=0;
+      if (packetToA < 0.05)
+        {
+          rv_max= 0.5;
+        }
+      else if ((packetToA > 0.5) && (packetToA < 0.15))
+        {
+          rv_max= 1;
+        }
+      else if ((packetToA > 0.15) && (packetToA < 0.4))
+        {
+          rv_max= 2;
+        }
+      else if ((packetToA > 0.4) && (packetToA < 0.7))
+        {
+          rv_max= 3;
+        }
+      else if ((packetToA > 0.7) && (packetToA < 1.1))
+        {
+          rv_max= 4;
+        }
+      else
+        {
+          rv_max= 5;
+        }
+      ack_timeout = m_uniformRV-> GetValue (rv_min, rv_max);
     }
   else
     {
