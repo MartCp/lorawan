@@ -80,6 +80,7 @@ bool shadowingEnabled = false;
 bool propAckToImprovement = false;
 bool subBandPriorityImprovement = false;
 bool secRWDataRateImprovement = false;
+bool doubleAck = false;
 int maxReceptionPaths = 8;
 
 /**********************
@@ -545,6 +546,7 @@ int main (int argc, char *argv[])
   cmd.AddValue("propAckToImprovement", "Whether to activate proportional ACK TO improvement", propAckToImprovement);
   cmd.AddValue("subBandPriorityImprovement", "Whether to acrivate subBand priority improvement",subBandPriorityImprovement);
   cmd.AddValue("RW2DataRateImprovement", "Whether to activate RW2 data rate improvement",secRWDataRateImprovement);
+  cmd.AddValue("doubleAckImprovement", "Whether to send acks both in RX1 and RX2 when DC allows it",doubleAck);
 
   cmd.Parse (argc, argv);
 
@@ -824,6 +826,7 @@ int main (int argc, char *argv[])
   networkServerHelper.SetEndDevices (endDevices);
   networkServerHelper.SetSubBandPriorityImprovement(subBandPriorityImprovement);
   networkServerHelper.SetSecondReceiveWindowDataRateImprovement(secRWDataRateImprovement);
+  networkServerHelper.SetDoubleAckImprovement(doubleAck);
   networkServerHelper.Install (networkServers);
 
   // Install the Forwarder application on the gateways

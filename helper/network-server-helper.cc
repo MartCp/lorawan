@@ -88,6 +88,7 @@ NetworkServerHelper::InstallPriv (Ptr<Node> node)
   node->AddApplication (app);
   app->SetSubBandPriorityImprovement (m_subBandPriorityImprovement);
   app->SetSecondReceiveWindowDataRateImprovement (m_secondReceiveWindowDataRateImprovement);
+  app->SetDoubleAckImprovement (m_doubleAck);
 
   // Cycle on each gateway
   for (NodeContainer::Iterator i = m_gateways.Begin ();
@@ -133,5 +134,10 @@ NetworkServerHelper::InstallPriv (Ptr<Node> node)
     m_secondReceiveWindowDataRateImprovement = drRx2Improv;
   }
 
+  void
+  NetworkServerHelper::SetDoubleAckImprovement (bool doubleAck)
+  {
+    m_doubleAck = doubleAck;
+  }
 
 } // namespace ns3

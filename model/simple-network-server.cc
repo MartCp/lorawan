@@ -252,7 +252,8 @@ SimpleNetworkServer::SendOnFirstWindow (LoraDeviceAddress address)
       firstReceiveWindowDataRate = m_deviceStatuses.at (address).GetFirstReceiveWindowDataRate ();
     }
 
-  NS_LOG_DEBUG ("subBandPriorityImprovement: " << m_subBandPriorityImprovement << " secondReceiveWindowDataRateImprovement: " << m_secondReceiveWindowDataRateImprovement);
+  NS_LOG_DEBUG ("subBandPriorityImprovement: " << m_subBandPriorityImprovement <<
+                " secondReceiveWindowDataRateImprovement: " << m_secondReceiveWindowDataRateImprovement);
   NS_LOG_DEBUG ("Frequency: " << firstReceiveWindowFrequency << " DataRate: " << firstReceiveWindowDataRate);
 
   Address gatewayForReply = GetGatewayForReply (address,
@@ -261,6 +262,7 @@ SimpleNetworkServer::SendOnFirstWindow (LoraDeviceAddress address)
   if (gatewayForReply != Address ())
     {
       NS_LOG_FUNCTION ("Found a suitable GW!");
+
 
       // Get the packet to use in the reply
       Ptr<Packet> replyPacket = m_deviceStatuses.at (address).GetReplyPacket ();
@@ -274,13 +276,25 @@ SimpleNetworkServer::SendOnFirstWindow (LoraDeviceAddress address)
 
       replyPacket->AddPacketTag (replyPacketTag);
 
-      NS_LOG_INFO ("Sending reply through the gateway with address " << gatewayForReply << " and initialize the reply.");
+      NS_LOG_INFO ("Sending reply through the gateway with address " << gatewayForReply );
 
-      InitializeReply (address, false);
+      if (!m_doubleAck)
+        {
+          NS_LOG_INFO("Initialize the reply.");
+          InitializeReply (address, false);
+        }
 
       // Inform the gateway of the transmission
       m_gatewayStatuses.find (gatewayForReply)->second.GetNetDevice ()->
       Send (replyPacket, gatewayForReply, 0x0800);
+
+      if (m_doubleAck)
+        {
+          // Schedule a reply on the second receive window
+          Simulator::Schedule (Seconds (1), &SimpleNetworkServer::SendOnSecondWindow, this,
+                               address);
+        }
+
     }
   else
     {
@@ -327,10 +341,14 @@ SimpleNetworkServer::SendOnSecondWindow (LoraDeviceAddress address)
 
     }
 
-  NS_LOG_DEBUG ("subBandPriorityImprovement: " << m_subBandPriorityImprovement << " secondReceiveWindowDataRateImprovement: " << m_secondReceiveWindowDataRateImprovement);
-  NS_LOG_DEBUG ("Frequency: " << secondReceiveWindowFrequency << "DataRate: " << unsigned(secondReceiveWindowDataRate));
+  NS_LOG_DEBUG ("subBandPriorityImprovement: " << m_subBandPriorityImprovement <<
+                " secondReceiveWindowDataRateImprovement: " << m_secondReceiveWindowDataRateImprovement);
+  NS_LOG_DEBUG ("Frequency: " << secondReceiveWindowFrequency <<
+                "DataRate: " << unsigned(secondReceiveWindowDataRate));
+
   // Decide on which gateway we'll transmit our reply
   Address gatewayForReply = GetGatewayForReply (address, secondReceiveWindowFrequency);
+  NS_LOG_DEBUG ("Found Gateway for reply");
 
   if (gatewayForReply != Address ())
     {
@@ -415,5 +433,10 @@ SimpleNetworkServer::SetSecondReceiveWindowDataRateImprovement (bool drRx2Improv
   m_secondReceiveWindowDataRateImprovement = drRx2Improv;
 }
 
+void
+SimpleNetworkServer::SetDoubleAckImprovement (bool doubleAck)
+{
+  m_doubleAck = doubleAck;
+}
 
 }

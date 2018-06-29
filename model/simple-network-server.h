@@ -128,6 +128,7 @@ public:
   //////////////////////////
   void SetSubBandPriorityImprovement (bool SubBandPrior);
   void SetSecondReceiveWindowDataRateImprovement (bool drRx2Improv);
+  void SetDoubleAckImprovement (bool doubleAck);
 
 
 
@@ -144,7 +145,7 @@ protected:
    */
   bool m_subBandPriorityImprovement;
   bool m_secondReceiveWindowDataRateImprovement;
-
+  bool m_doubleAck;
 
 };
 
