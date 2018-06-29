@@ -27,8 +27,10 @@ namespace ns3 {
 NS_LOG_COMPONENT_DEFINE ("LoraPhyHelper");
 
 LoraPhyHelper::LoraPhyHelper ()
-{
-}
+  : m_maxReceptionPaths (8)
+  {
+    NS_LOG_FUNCTION (this);
+  }
 
 void
 LoraPhyHelper::SetChannel (Ptr<LoraChannel> channel)
@@ -90,8 +92,9 @@ LoraPhyHelper::Create (Ptr<Node> node, Ptr<NetDevice> device) const
       std::vector<double>::iterator it = frequencies.begin ();
 
       int receptionPaths = 0;
-      int maxReceptionPaths = 8;
-      while (receptionPaths < maxReceptionPaths)
+      // Set maxReceptionPaths as a parameter
+      // int maxReceptionPaths = 8;
+      while (receptionPaths < m_maxReceptionPaths)
         {
           if (it == frequencies.end ())
             it = frequencies.begin ();
@@ -116,4 +119,11 @@ LoraPhyHelper::Create (Ptr<Node> node, Ptr<NetDevice> device) const
 
   return phy;
 }
+
+  void
+  LoraPhyHelper::SetMaxReceptionPaths (int maxReceptionPaths)
+  {
+    NS_LOG_FUNCTION (this << maxReceptionPaths);
+    m_maxReceptionPaths = maxReceptionPaths;
+  }
 }

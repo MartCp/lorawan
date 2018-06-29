@@ -29,8 +29,10 @@ namespace ns3 {
 NS_LOG_COMPONENT_DEFINE ("LoraMacHelper");
 
 LoraMacHelper::LoraMacHelper ()
-  : m_region (LoraMacHelper::EU)
+  : m_region (LoraMacHelper::EU),
+    m_maxReceptionPaths (8)
 {
+  NS_LOG_FUNCTION (this);
 }
 
 void
@@ -184,8 +186,9 @@ LoraMacHelper::ConfigureForEuRegion (Ptr<GatewayLoraMac> gwMac) const
       std::vector<double>::iterator it = frequencies.begin ();
 
       int receptionPaths = 0;
-      int maxReceptionPaths = 8;
-      while (receptionPaths < maxReceptionPaths)
+      // Set maxReceptionPaths as a parameter
+      // int maxReceptionPaths = 8;
+      while (receptionPaths < m_maxReceptionPaths)
         {
           if (it == frequencies.end ())
             {
@@ -379,4 +382,10 @@ LoraMacHelper::SetSpreadingFactorsUp (NodeContainer endDevices, NodeContainer ga
 
 } //  end function
 
+void
+  LoraMacHelper::SetMaxReceptionPaths (int maxReceptionPaths)
+  {
+    NS_LOG_FUNCTION (this << maxReceptionPaths);
+    m_maxReceptionPaths = maxReceptionPaths;
+  }
 } //end class

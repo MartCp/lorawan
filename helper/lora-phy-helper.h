@@ -86,6 +86,15 @@ public:
    */
   Ptr<LoraPhy> Create (Ptr<Node> node, Ptr<NetDevice> device) const;
 
+  /**
+   * Set the maximum number of gateway receive paths
+   *
+   * \param maxReceptionPaths The maximum number of reception paths at
+   *  the gateway
+   */
+  void SetMaxReceptionPaths (int maxReceptionPaths);
+
+
 private:
 
   /**
@@ -97,6 +106,11 @@ private:
    * The channel instance the PHYs will be connected to.
    */
   Ptr<LoraChannel> m_channel;
+
+  /**
+   * The maximum number of receive paths at the gateway
+   */
+  int m_maxReceptionPaths;
 };
 
 } //namespace ns3

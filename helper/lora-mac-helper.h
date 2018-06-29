@@ -112,6 +112,14 @@ public:
   static std::vector<int> SetSpreadingFactorsUp (NodeContainer endDevices,
                                                  NodeContainer gateways,
                                                  Ptr<LoraChannel> channel);
+  /**
+   * Set the maximum number of gateway receive paths
+   *
+   * \param maxReceptionPaths The maximum number of reception paths at
+   *  the gateway
+   */
+  void SetMaxReceptionPaths (int maxReceptionPaths);
+
 
 private:
   /**
@@ -134,6 +142,10 @@ private:
   Ptr<LoraDeviceAddressGenerator> m_addrGen; //!< Pointer to the address generator to use
   enum DeviceType m_deviceType; //!< The kind of device to install
   enum Regions m_region; //!< The region in which the device will operate
+  /**
+   * The maximum number of receive paths at the gateway
+   */
+  int m_maxReceptionPaths;
 };
 
 } //namespace ns3

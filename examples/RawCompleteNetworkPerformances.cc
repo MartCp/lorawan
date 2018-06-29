@@ -80,6 +80,7 @@ bool shadowingEnabled = false;
 bool propAckToImprovement = false;
 bool subBandPriorityImprovement = false;
 bool secRWDataRateImprovement = false;
+int maxReceptionPaths = 8;
 
 /**********************
  *  Global Callbacks  *
@@ -538,6 +539,7 @@ int main (int argc, char *argv[])
   cmd.AddValue ("mixedPeriods", "Enable mixed application periods", mixedPeriods);
   cmd.AddValue ("print", "Whether or not to print a file containing the ED's positions and a file containing buildings", print);
   cmd.AddValue("maxPacketSize", "The maximum of the RV selecting the value added to the default packet size (10)",maxPacketSize);
+  cmd.AddValue("maxReceptionPaths", "The number of gateway's reception paths",maxReceptionPaths);
   cmd.AddValue("buildingsEnabled", "Whether to use buildings in the simulation or not", buildingsEnabled);
   cmd.AddValue("shadowingEnabled", "Whether to use shadowing in the simulation or not", shadowingEnabled);
   cmd.AddValue("propAckToImprovement", "Whether to activate proportional ACK TO improvement", propAckToImprovement);
@@ -715,7 +717,9 @@ int main (int argc, char *argv[])
 
   // Create a netdevice for each gateway
   phyHelper.SetDeviceType (LoraPhyHelper::GW);
+  phyHelper.SetMaxReceptionPaths (maxReceptionPaths);
   macHelper.SetDeviceType (LoraMacHelper::GW);
+  macHelper.SetMaxReceptionPaths (maxReceptionPaths);
   helper.Install (phyHelper, macHelper, gateways);
 
   /************************
