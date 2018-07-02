@@ -94,6 +94,13 @@ public:
    */
   void SetMaxReceptionPaths (int maxReceptionPaths);
 
+  /**
+   * Set if giving priority to downlink transmission over reception at
+   * the gateways
+   */
+  void SetGatewayTransmissionPriority (bool txPriority);
+
+
 
 private:
 
@@ -111,6 +118,12 @@ private:
    * The maximum number of receive paths at the gateway
    */
   int m_maxReceptionPaths;
+
+  /**
+   * If giving priority to downlink transmission over reception at the gateways
+   */
+  bool m_txPriority;
+
 };
 
 } //namespace ns3

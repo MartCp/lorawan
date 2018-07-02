@@ -175,6 +175,7 @@ public:
      */
     void SetEndReceive (EventId endReceiveEventId);
 
+
 private:
 
     /**
@@ -227,6 +228,8 @@ private:
   TracedCallback<Ptr<const Packet>, uint32_t> m_noReceptionBecauseTransmitting;
 
   bool m_isTransmitting; //!< Flag indicating whether a transmission is going on
+
+  bool m_isReceiving; //!< Flag indicating whether a reception is going on
 };
 
 } /* namespace ns3 */

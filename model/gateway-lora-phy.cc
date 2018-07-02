@@ -205,4 +205,5 @@ GatewayLoraPhy::IsOnFrequency (double frequencyMHz)
     }
   return false;
 }
-}
+
+ }

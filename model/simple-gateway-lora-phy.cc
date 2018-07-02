@@ -44,7 +44,9 @@ SimpleGatewayLoraPhy::GetTypeId (void)
   return tid;
 }
 
-SimpleGatewayLoraPhy::SimpleGatewayLoraPhy ()
+  SimpleGatewayLoraPhy::SimpleGatewayLoraPhy ():
+  m_txPriority (true)
+
 {
   NS_LOG_FUNCTION_NOARGS ();
 }
@@ -60,56 +62,65 @@ SimpleGatewayLoraPhy::Send (Ptr<Packet> packet, LoraTxParameters txParams,
 {
   NS_LOG_FUNCTION (this << packet << frequencyMHz << txPowerDbm);
 
-  // Get the time a packet with these parameters will take to be transmitted
-  Time duration = GetOnAirTime (packet, txParams);
-
-  // Interrupt all receive operations
-  std::list<Ptr<SimpleGatewayLoraPhy::ReceptionPath> >::iterator it;
-  for (it = m_receptionPaths.begin (); it != m_receptionPaths.end (); ++it)
+  if (m_txPriority || not m_isReceiving )
     {
+      // Get the time a packet with these parameters will take to be transmitted
+      Time duration = GetOnAirTime (packet, txParams);
 
-      Ptr<SimpleGatewayLoraPhy::ReceptionPath> currentPath = *it;
-
-      if (!currentPath->IsAvailable ()) // Reception path is occupied
+      // Interrupt all receive operations
+      std::list<Ptr<SimpleGatewayLoraPhy::ReceptionPath> >::iterator it;
+      for (it = m_receptionPaths.begin (); it != m_receptionPaths.end (); ++it)
         {
-          // Call the callback for reception interrupted by transmission
-          // Fire the trace source
-          if (m_device)
+
+          Ptr<SimpleGatewayLoraPhy::ReceptionPath> currentPath = *it;
+
+          if (!currentPath->IsAvailable ()) // Reception path is occupied
             {
-              m_noReceptionBecauseTransmitting (currentPath -> GetEvent() -> GetPacket(),
-                                                m_device -> GetNode () -> GetId ());
+              // Call the callback for reception interrupted by transmission
+              // Fire the trace source
+              if (m_device)
+                {
+                  m_noReceptionBecauseTransmitting (currentPath -> GetEvent() -> GetPacket(),
+                                                    m_device -> GetNode () -> GetId ());
 
+                }
+              else
+                {
+                  m_noReceptionBecauseTransmitting (currentPath->GetEvent()->GetPacket(), 0);
+                }
+
+              // Cancel the scheduled EndReceive call
+              Simulator::Cancel (currentPath->GetEndReceive ());
+
+              // Free it
+              // This also resets all parameters like packet and endReceive call
+              currentPath->Free ();
             }
-          else
-            {
-              m_noReceptionBecauseTransmitting (currentPath->GetEvent()->GetPacket(), 0);
-            }
-
-          // Cancel the scheduled EndReceive call
-          Simulator::Cancel (currentPath->GetEndReceive ());
-
-          // Free it
-          // This also resets all parameters like packet and endReceive call
-          currentPath->Free ();
         }
-    }
 
-  // Send the packet in the channel
-  m_channel->Send (this, packet, txPowerDbm, txParams, duration, frequencyMHz);
+      // Send the packet in the channel
+      m_channel->Send (this, packet, txPowerDbm, txParams, duration, frequencyMHz);
 
-  Simulator::Schedule (duration, &SimpleGatewayLoraPhy::TxFinished, this, packet);
+      Simulator::Schedule (duration, &SimpleGatewayLoraPhy::TxFinished, this, packet);
 
-  m_isTransmitting = true;
+      m_isTransmitting = true;
 
-  // Fire the trace source
-  if (m_device)
-    {
-      m_startSending (packet, m_device->GetNode ()->GetId ());
+      // Fire the trace source
+      if (m_device)
+        {
+          m_startSending (packet, m_device->GetNode ()->GetId ());
+        }
+      else
+        {
+          m_startSending (packet, 0);
+        }
     }
   else
     {
-      m_startSending (packet, 0);
+      NS_LOG_INFO ("Dropping transmission because giving priority tp packet reception");
     }
+
+
 }
 
 void
@@ -125,7 +136,7 @@ SimpleGatewayLoraPhy::StartReceive (Ptr<Packet> packet, double rxPowerDbm,
   Ptr<LoraInterferenceHelper::Event> event;
   event = m_interference.Add (duration, rxPowerDbm, sf, packet, frequencyMHz);
 
-  if (m_isTransmitting)
+  if (m_txPriority && m_isTransmitting)
     {
       // If we get to this point, there are no demodulators we can use
       NS_LOG_INFO ("Dropping packet reception of packet with sf = "
@@ -194,6 +205,7 @@ SimpleGatewayLoraPhy::StartReceive (Ptr<Packet> packet, double rxPowerDbm,
               // Block this resource
               currentPath->LockOnEvent (event);
               m_occupiedReceptionPaths++;
+              m_isReceiving = true;
 
               // Schedule the end of the reception of the packet
               EventId endReceiveEventId = Simulator::Schedule (duration,
@@ -308,9 +320,19 @@ SimpleGatewayLoraPhy::EndReceive (Ptr<Packet> packet,
         {
           currentPath->Free ();
           m_occupiedReceptionPaths--;
+          if (m_occupiedReceptionPaths==0)
+            {
+              m_isReceiving = false;
+            }
           return;
         }
     }
 }
+
+  void
+  SimpleGatewayLoraPhy::SetTransmissionPriority (bool txPriority)
+  {
+    m_txPriority = txPriority;
+  }
 
 }

@@ -82,6 +82,7 @@ bool subBandPriorityImprovement = false;
 bool secRWDataRateImprovement = false;
 bool doubleAck = false;
 int maxReceptionPaths = 8;
+bool txPriority = true;
 
 /**********************
  *  Global Callbacks  *
@@ -547,6 +548,7 @@ int main (int argc, char *argv[])
   cmd.AddValue("subBandPriorityImprovement", "Whether to acrivate subBand priority improvement",subBandPriorityImprovement);
   cmd.AddValue("RW2DataRateImprovement", "Whether to activate RW2 data rate improvement",secRWDataRateImprovement);
   cmd.AddValue("doubleAckImprovement", "Whether to send acks both in RX1 and RX2 when DC allows it",doubleAck);
+  cmd.AddValue("txPriority", "Whether to give priority to downlink transmission over reception at the gateways (true)",txPriority);
 
   cmd.Parse (argc, argv);
 
@@ -720,6 +722,7 @@ int main (int argc, char *argv[])
   // Create a netdevice for each gateway
   phyHelper.SetDeviceType (LoraPhyHelper::GW);
   phyHelper.SetMaxReceptionPaths (maxReceptionPaths);
+  phyHelper.SetGatewayTransmissionPriority (txPriority);
   macHelper.SetDeviceType (LoraMacHelper::GW);
   macHelper.SetMaxReceptionPaths (maxReceptionPaths);
   helper.Install (phyHelper, macHelper, gateways);

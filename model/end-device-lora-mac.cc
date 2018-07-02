@@ -918,11 +918,12 @@ EndDeviceLoraMac::GetAckTimeout (Ptr<Packet> packet, LoraTxParameters params,
                                  bool proportionalAckToImprovement)
 {
   double ack_timeout;
+  uint8_t rv_min=0;
+  uint8_t rv_max=3;
   if (proportionalAckToImprovement)
     {
       double packetToA = m_phy->GetOnAirTime(packet, params).GetSeconds();
-      uint8_t rv_min=0;
-      uint8_t rv_max=0;
+
       if (packetToA < 0.2)
         {
           rv_max= 1;
@@ -931,11 +932,11 @@ EndDeviceLoraMac::GetAckTimeout (Ptr<Packet> packet, LoraTxParameters params,
         {
           rv_max= 2.5;
         }
-      else if ((packetToA > 0.5 && (packetToA < 0.8))
+      else if ((packetToA > 0.5) && (packetToA < 0.8))
         {
           rv_max=4;
         }
-        else if ((packetToA > 0.8 && (packetToA < 1.1))
+      else if ((packetToA > 0.8) && (packetToA < 1.1))
         {
           rv_max= 5.5;
         }
@@ -947,21 +948,19 @@ EndDeviceLoraMac::GetAckTimeout (Ptr<Packet> packet, LoraTxParameters params,
         {
           rv_max= 8.5;
         }
-      // else if ((packetToA > 1.5) && (packetToA < 2.5))
-      //   {
-      //     rv_max= 10;
-      //   }
-
-      // else
-      //   {
-      //     rv_max= 1
-            2;
+      else if ((packetToA > 1.5) && (packetToA < 2.5))
+        {
+          rv_max= 10;
+        }
+      else
+        {
+          rv_max= 12;
         }
       ack_timeout = m_uniformRV-> GetValue (rv_min, rv_max);
     }
   else
     {
-      ack_timeout = m_uniformRV->GetValue (1,3);
+      ack_timeout = m_uniformRV->GetValue (rv_min,rv_max);
     }
   return Seconds (ack_timeout);
 }

@@ -54,8 +54,18 @@ public:
 
   virtual void Send (Ptr<Packet> packet, LoraTxParameters txParams,
                      double frequencyMHz, double txPowerDbm);
+  /**
+   * Set priority to downlink transmission over packet reception at the gateway.
+   */
+  void SetTransmissionPriority (bool txPriority);
 
 private:
+
+  /**
+   * Giving priority to downlink transmission over reception
+   */
+  bool m_txPriority;
+
 };
 
 } /* namespace ns3 */
