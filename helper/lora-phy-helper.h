@@ -69,6 +69,8 @@ public:
    */
   void SetDeviceType (enum DeviceType dt);
 
+  TypeId GetDeviceType (void) const;
+
   /**
    * Set an attribute of the underlying PHY object.
    *
