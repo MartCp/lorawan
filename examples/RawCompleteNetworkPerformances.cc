@@ -408,7 +408,7 @@ int main (int argc, char *argv[])
   // Simulation //
   ////////////////
 
-  Simulator::Stop (appStopTime + Hours (1));
+  Simulator::Stop (appStopTime + Hours (1000));
 
   NS_LOG_INFO ("Running simulation...");
   Simulator::Run ();

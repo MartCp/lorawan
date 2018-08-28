@@ -225,11 +225,10 @@ namespace ns3
 
             if (itRetx == reTransmissionTracker.end())
               {
-                NS_LOG_ERROR ("Searched packet was not found" << "Packet " <<
+                // This means that the device did not finish retransmitting
+                NS_ABORT_MSG ("Searched packet was not found" << "Packet " <<
                               (*itMac).first << " not found. Sent at " <<
                               (*itMac).second.sendTime.GetSeconds());
-
-                continue;
               }
 
             packetsOutsideTransient++;
