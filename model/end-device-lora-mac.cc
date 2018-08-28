@@ -144,7 +144,8 @@ EndDeviceLoraMac::Send (Ptr<Packet> packet)
   NS_LOG_FUNCTION (this << packet);
 
   // Check that payload length is below the allowed maximum
-  if (packet->GetSize () > m_maxAppPayloadForDataRate.at (m_dataRate))
+  if (packet->GetSize () > m_maxAppPayloadForDataRate.at (m_dataRate) &&
+      packet != m_retxParams.packet) // Ignore check if this is a retransmission
     {
       NS_LOG_WARN ("Attempting to send a packet larger than the maximum allowed"
                    << " size at this DataRate (DR" << unsigned(m_dataRate) <<
@@ -853,7 +854,7 @@ EndDeviceLoraMac::CloseSecondReceiveWindow (void)
 
       else
         {
-          NS_LOG_ERROR ("The number of retransmissions left is negative ! ");
+          NS_ABORT_MSG ("The number of retransmissions left is negative ! ");
         }
     }
   else
